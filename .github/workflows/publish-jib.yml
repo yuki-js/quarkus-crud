@@ -2,7 +2,6 @@ name: Build and Publish with Jib
 
 on:
   push:
-    branches: [ main, copilot/implement-docker-build-publish ]
     tags:
       - 'v*'
   workflow_dispatch:
