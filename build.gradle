@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'io.quarkus'
+    id 'com.google.cloud.tools.jib' version '3.4.0'
 }
 
 repositories {
@@ -36,4 +37,103 @@ compileJava {
 
 compileTestJava {
     options.encoding = 'UTF-8'
+}
+
+// Jib configuration for containerization
+jib {
+    // Check if this is a native build
+    def isNativeBuild = project.hasProperty('nativeBuild')
+    
+    // Default base images
+    def normalBaseImage = System.getProperty('jib.from.image') ?: 'gcr.io/distroless/java21-debian12'
+    def debugBaseImage = 'debian:bookworm-slim'
+    
+    from {
+        image = normalBaseImage
+    }
+    
+    to {
+        image = System.getProperty('jib.to.image') ?: "ghcr.io/yuki-js/quarkus-crud:${version}"
+        auth {
+            username = System.getProperty('jib.to.auth.username') ?: System.getenv('REGISTRY_USERNAME') ?: ''
+            password = System.getProperty('jib.to.auth.password') ?: System.getenv('REGISTRY_PASSWORD') ?: ''
+        }
+    }
+    
+    container {
+        if (isNativeBuild) {
+            // Native executable configuration
+            entrypoint = ['/quarkus-run']
+            workingDirectory = '/'
+            user = 'nonroot:nonroot'
+            ports = ['8080']
+            
+            // Labels for native image
+            labels = [
+                'org.opencontainers.image.title': 'quarkus-crud-native',
+                'org.opencontainers.image.description': 'Quarkus CRUD application (native)',
+                'org.opencontainers.image.version': "${version}",
+                'org.opencontainers.image.source': 'https://github.com/yuki-js/quarkus-crud'
+            ]
+        } else {
+            // JVM configuration
+            jvmFlags = [
+                '-Djava.util.logging.manager=org.jboss.logmanager.LogManager',
+                '-Dquarkus.http.host=0.0.0.0',
+                '-Dquarkus.http.port=8080'
+            ]
+            mainClass = 'io.quarkus.bootstrap.runner.QuarkusEntryPoint'
+            ports = ['8080']
+            
+            // Labels for JVM image
+            labels = [
+                'org.opencontainers.image.title': 'quarkus-crud-jvm',
+                'org.opencontainers.image.description': 'Quarkus CRUD application (JVM)',
+                'org.opencontainers.image.version': "${version}",
+                'org.opencontainers.image.source': 'https://github.com/yuki-js/quarkus-crud'
+            ]
+        }
+        
+        // Common settings
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+        format = 'OCI'
+    }
+    
+    // For JVM builds, copy the quarkus-app directory
+    if (!isNativeBuild) {
+        extraDirectories {
+            paths {
+                path {
+                    from = file('build/quarkus-app')
+                    into = '/app'
+                }
+            }
+            permissions = [
+                '/app/quarkus-run.jar': '755'
+            ]
+        }
+        
+        container {
+            appRoot = '/app'
+            entrypoint = ['java']
+            args = [
+                '-Djava.util.logging.manager=org.jboss.logmanager.LogManager',
+                '-jar',
+                '/app/quarkus-run.jar'
+            ]
+        }
+    } else {
+        // For native builds, copy the native executable
+        extraDirectories {
+            paths {
+                path {
+                    from = file('build/jib-native')
+                    into = '/'
+                }
+            }
+            permissions = [
+                '/quarkus-run': '755'
+            ]
+        }
+    }
 }
