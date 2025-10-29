@@ -217,6 +217,9 @@ jobs:
           echo "Checking container status..."
           docker ps -a
           docker logs jvm-test
+          echo "Testing health endpoint..."
+          curl -f http://localhost:8080/healthz || (echo "Health check failed!" && docker logs jvm-test && exit 1)
+          echo "Health check passed!"
           echo "Stopping container..."
           docker stop jvm-test || true
           docker rm jvm-test || true
@@ -234,6 +237,9 @@ jobs:
           echo "Checking container status..."
           docker ps -a
           docker logs jvm-debug-test
+          echo "Testing health endpoint..."
+          curl -f http://localhost:8080/healthz || (echo "Health check failed!" && docker logs jvm-debug-test && exit 1)
+          echo "Health check passed!"
           echo "Stopping container..."
           docker stop jvm-debug-test || true
           docker rm jvm-debug-test || true
@@ -251,6 +257,9 @@ jobs:
           echo "Checking container status..."
           docker ps -a
           docker logs native-test
+          echo "Testing health endpoint..."
+          curl -f http://localhost:8080/healthz || (echo "Health check failed!" && docker logs native-test && exit 1)
+          echo "Health check passed!"
           echo "Stopping container..."
           docker stop native-test || true
           docker rm native-test || true
@@ -268,6 +277,9 @@ jobs:
           echo "Checking container status..."
           docker ps -a
           docker logs native-debug-test
+          echo "Testing health endpoint..."
+          curl -f http://localhost:8080/healthz || (echo "Health check failed!" && docker logs native-debug-test && exit 1)
+          echo "Health check passed!"
           echo "Stopping container..."
           docker stop native-debug-test || true
           docker rm native-debug-test || true
