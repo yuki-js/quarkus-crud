@@ -15,7 +15,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   NORMAL_BASE_IMAGE: gcr.io/distroless/java21-debian12
-  DEBUG_BASE_IMAGE: debian:bookworm-slim
+  DEBUG_BASE_IMAGE: eclipse-temurin:21-jre
 
 jobs:
   prepare:

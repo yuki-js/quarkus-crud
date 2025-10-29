@@ -69,9 +69,11 @@ This project uses [Jib](https://github.com/GoogleContainerTools/jib) to build co
 Four image variants are built:
 
 1. **JVM Normal** (`<sha>-jvm`): Lightweight JVM image based on distroless
-2. **JVM Debug** (`<sha>-jvm-debug`): Debug-friendly JVM image based on debian-slim (includes shell and debugging tools)
+2. **JVM Debug** (`<sha>-jvm-debug`): Debug-friendly JVM image based on eclipse-temurin (includes shell and debugging tools)
 3. **Native Normal** (`<sha>-native`): Native executable image based on distroless (smallest, fastest startup)
-4. **Native Debug** (`<sha>-native-debug`): Debug-friendly native image based on debian-slim
+4. **Native Debug** (`<sha>-native-debug`): Debug-friendly native image based on eclipse-temurin
+
+> **Note**: We use `eclipse-temurin:21-jre` as the debug base image instead of `debian:bookworm-slim` due to compatibility with Jib's OCI manifest handling.
 
 ### Local Build and Push
 
@@ -96,9 +98,9 @@ Create a PAT at: https://github.com/settings/tokens/new
   -Djib.to.auth.username=<YOUR_GITHUB_USERNAME> \
   -Djib.to.auth.password=<YOUR_PAT>
 
-# Push JVM debug image (debian-slim)
+# Push JVM debug image (eclipse-temurin)
 ./gradlew jib \
-  -Djib.from.image=debian:bookworm-slim \
+  -Djib.from.image=eclipse-temurin:21-jre \
   -Djib.to.image=ghcr.io/yuki-js/quarkus-crud:<sha>-jvm-debug \
   -Djib.to.auth.username=<YOUR_GITHUB_USERNAME> \
   -Djib.to.auth.password=<YOUR_PAT>
@@ -123,9 +125,9 @@ chmod +x build/jib-native/quarkus-run
   -Djib.to.auth.username=<YOUR_GITHUB_USERNAME> \
   -Djib.to.auth.password=<YOUR_PAT>
 
-# Push native debug image (debian-slim)
+# Push native debug image (eclipse-temurin)
 ./gradlew jib -PnativeBuild \
-  -Djib.from.image=debian:bookworm-slim \
+  -Djib.from.image=eclipse-temurin:21-jre \
   -Djib.to.image=ghcr.io/yuki-js/quarkus-crud:<sha>-native-debug \
   -Djib.to.auth.username=<YOUR_GITHUB_USERNAME> \
   -Djib.to.auth.password=<YOUR_PAT>
@@ -182,10 +184,10 @@ Images are automatically built and pushed to GHCR by the GitHub Actions workflow
 Approximate image sizes (uncompressed):
 - **Native Normal**: ~50-100 MB (smallest)
 - **JVM Normal**: ~200-250 MB
-- **Native Debug**: ~150-200 MB
-- **JVM Debug**: ~300-400 MB (largest, includes debugging tools)
+- **Native Debug**: ~200-300 MB
+- **JVM Debug**: ~400-500 MB (largest, includes JDK and debugging tools)
 
-> **Note**: Debug images (debian-slim based) are significantly larger and should only be used for debugging purposes.
+> **Note**: Debug images (eclipse-temurin based) are significantly larger and should only be used for debugging purposes.
 
 ### Making Images Public on GHCR
 

@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'io.quarkus'
-    id 'com.google.cloud.tools.jib' version '3.4.0'
+    id 'com.google.cloud.tools.jib' version '3.4.4'
 }
 
 repositories {
@@ -96,7 +96,7 @@ jib {
         
         // Common settings
         creationTime = 'USE_CURRENT_TIMESTAMP'
-        format = 'OCI'
+        format = 'Docker'
     }
     
     // For JVM builds, copy the quarkus-app directory
