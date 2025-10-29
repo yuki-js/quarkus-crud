@@ -65,7 +65,6 @@ jib {
             // Native executable configuration
             entrypoint = ['/quarkus-run']
             workingDirectory = '/'
-            user = 'nonroot:nonroot'
             ports = ['8080']
             
             // Labels for native image
