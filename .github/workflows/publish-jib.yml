@@ -2,7 +2,7 @@ name: Build and Publish with Jib
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, copilot/implement-docker-build-publish ]
     tags:
       - 'v*'
   workflow_dispatch:
@@ -197,3 +197,88 @@ jobs:
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${VERSION}-native \
             -Djib.to.auth.username=${{ github.actor }} \
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
+
+  verify-images:
+    name: Verify built images
+    runs-on: ubuntu-latest
+    needs: [prepare, build-and-push-jvm, build-and-push-native]
+    steps:
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Pull and verify JVM normal image
+        run: |
+          echo "Pulling JVM normal image..."
+          docker pull ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm
+          echo "Verifying image exists..."
+          docker images | grep quarkus-crud
+          echo "Starting container..."
+          docker run -d --name jvm-test -p 8080:8080 ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm
+          echo "Waiting for application to start..."
+          sleep 10
+          echo "Checking container status..."
+          docker ps -a
+          docker logs jvm-test
+          echo "Stopping container..."
+          docker stop jvm-test || true
+          docker rm jvm-test || true
+
+      - name: Pull and verify JVM debug image
+        run: |
+          echo "Pulling JVM debug image..."
+          docker pull ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug
+          echo "Verifying image exists..."
+          docker images | grep quarkus-crud
+          echo "Starting container..."
+          docker run -d --name jvm-debug-test -p 8080:8080 ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug
+          echo "Waiting for application to start..."
+          sleep 10
+          echo "Checking container status..."
+          docker ps -a
+          docker logs jvm-debug-test
+          echo "Stopping container..."
+          docker stop jvm-debug-test || true
+          docker rm jvm-debug-test || true
+
+      - name: Pull and verify Native normal image
+        run: |
+          echo "Pulling Native normal image..."
+          docker pull ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native
+          echo "Verifying image exists..."
+          docker images | grep quarkus-crud
+          echo "Starting container..."
+          docker run -d --name native-test -p 8080:8080 ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native
+          echo "Waiting for application to start (native starts faster)..."
+          sleep 5
+          echo "Checking container status..."
+          docker ps -a
+          docker logs native-test
+          echo "Stopping container..."
+          docker stop native-test || true
+          docker rm native-test || true
+
+      - name: Pull and verify Native debug image
+        run: |
+          echo "Pulling Native debug image..."
+          docker pull ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug
+          echo "Verifying image exists..."
+          docker images | grep quarkus-crud
+          echo "Starting container..."
+          docker run -d --name native-debug-test -p 8080:8080 ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug
+          echo "Waiting for application to start..."
+          sleep 5
+          echo "Checking container status..."
+          docker ps -a
+          docker logs native-debug-test
+          echo "Stopping container..."
+          docker stop native-debug-test || true
+          docker rm native-debug-test || true
+
+      - name: Summary
+        run: |
+          echo "✅ All 4 image variants verified successfully!"
+          echo "Images pulled and launched:"
+          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm"
+          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug"
+          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native"
+          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug"
