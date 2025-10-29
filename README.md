@@ -108,15 +108,20 @@ Create a PAT at: https://github.com/settings/tokens/new
 
 #### Building Native Images
 
+> **Tip**: Use the `scripts/prepare-native.sh` helper script to automate the preparation of the native executable for Jib.
+
 ```bash
 # Build native executable (requires GraalVM)
 ./gradlew build -Dquarkus.package.type=native
 
-# Prepare native executable for Jib
-mkdir -p build/jib-native
-NATIVE_RUNNER=$(find build -name '*-runner' -type f ! -path "*/quarkus-app/*" | head -n 1)
-cp "$NATIVE_RUNNER" build/jib-native/quarkus-run
-chmod +x build/jib-native/quarkus-run
+# Prepare native executable for Jib (using helper script)
+./scripts/prepare-native.sh
+
+# Or manually:
+# mkdir -p build/jib-native
+# NATIVE_RUNNER=$(find build -name '*-runner' -type f ! -path "*/quarkus-app/*" | head -n 1)
+# cp "$NATIVE_RUNNER" build/jib-native/quarkus-run
+# chmod +x build/jib-native/quarkus-run
 
 # Push native normal image (distroless)
 ./gradlew jib -PnativeBuild \
