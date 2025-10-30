@@ -11,11 +11,11 @@
 1. **Backend (Quarkus アプリケーション)**
    - Deployment + Service
    - ポート: 8080 (内部)、80 (Service)
-   - イメージ: `ghcr.io/yuki-js/quarkus-crud:latest`
+   - イメージ: `ghcr.io/yuki-js/quarkus-crud:latest-jvm`
 
 2. **PostgreSQL (データベース)**
-   - Deployment + Service + PersistentVolumeClaim
-   - ポート: 5432
+   - CloudNativePG Cluster (3インスタンス)
+   - 自動フェイルオーバーと高可用性
    - ストレージ: 10Gi
 
 3. **Ingress (外部アクセス)**
@@ -36,7 +36,7 @@
 
 ✅ **per-file マニフェスト**:
 - `backend.yaml` - バックエンドの Deployment と Service
-- `postgres.yaml` - PostgreSQL の Deployment、Service、PersistentVolumeClaim
+- `postgres-cluster.yaml` - PostgreSQL の CloudNativePG Cluster
 
 ✅ **Application-wide マニフェスト**:
 - `common-secret.yaml` - データベース認証情報（複数コンポーネントで共有）
@@ -92,33 +92,40 @@
 
 ## GitHub Actions ワークフロー
 
-### Docker イメージビルドとプッシュ
+### Jib を使用した Docker イメージビルドとプッシュ
 
-`.github/workflows/docker-build.yaml` では、以下を実行します：
+`.github/workflows/publish-jib.yml` では、Jib プラグインを使用して以下を実行します：
 
-✅ ワークフロー規約準拠：
-- `name`: `Push Docker image to GitHub Container Registry`
-- `on`: `workflow_dispatch` と適切な push トリガー
-- `jobs.push_to_registry.runs-on`: `ubuntu-latest`
-- `jobs.push_to_registry.permissions`: 必要最小限の権限
-  - `packages: write` - イメージのプッシュ
-  - `contents: read` - リポジトリの読み取り
-- `steps`: Docker ビルドとプッシュのステップ
-- `tags`: `latest` と `github.sha` の両方を指定
-- `cache-from` / `cache-to`: GitHub Actions キャッシュを利用
+✅ ワークフロー機能：
+- **JVM ビルド**: Distroless Java 21 ベースイメージを使用
+- **ネイティブビルド**: GraalVM を使用したネイティブイメージ
+- **デバッグイメージ**: デバッグ用の Eclipse Temurin ベースイメージ
+- **マルチタグ**: コミット SHA、latest、セマンティックバージョン対応
+
+### 生成されるイメージタグ
+
+ワークフローは以下のイメージタグを生成します：
+
+1. **すべての push/PR**:
+   - `{short-sha}-jvm` - JVM 版（通常）
+   - `{short-sha}-jvm-debug` - JVM 版（デバッグ）
+   - `{short-sha}-native` - ネイティブ版（通常）
+   - `{short-sha}-native-debug` - ネイティブ版（デバッグ）
+
+2. **main ブランチへの push**:
+   - `latest-jvm` - JVM 版の最新
+   - `latest-native` - ネイティブ版の最新
+
+3. **タグ push (v* パターン)**:
+   - `{version}-jvm` - JVM 版のバージョン
+   - `{version}-native` - ネイティブ版のバージョン
 
 ### トリガー条件
 
 ワークフローは以下の条件で実行されます：
 
 1. **手動実行**: `workflow_dispatch` により任意のタイミングで実行可能
-2. **自動実行**: `main` ブランチへの push 時に、以下のパスが変更された場合
-   - `src/**`
-   - `build.gradle`
-   - `gradle.properties`
-   - `settings.gradle`
-   - `src/main/docker/Dockerfile.jvm`
-   - `.github/workflows/docker-build.yaml`
+2. **自動実行**: すべての push と pull request で実行
 
 ## クイックスタート
 
@@ -200,17 +207,28 @@ stringData:
   password: your-secure-password-here
 ```
 
+## CloudNativePG の管理
+
+### PostgreSQL クラスターの状態確認
+
+```bash
+# Cluster リソースの確認
+kubectl get cluster -n quarkus-crud
+
+# Pod の状態確認
+kubectl get pods -n quarkus-crud -l cnpg.io/cluster=postgres
+
+# クラスターの詳細情報
+kubectl describe cluster postgres -n quarkus-crud
+```
+
+### バックアップとリストア
+
+CloudNativePG は組み込みのバックアップ機能を提供しています。詳細は [CloudNativePG ドキュメント](https://cloudnative-pg.io/documentation/current/backup/) を参照してください。
+
 ## トラブルシューティング
 
 詳細なトラブルシューティング手順については、`manifests/README.md` を参照してください。
-
-## 既存のワークフロー
-
-このプロジェクトには、既存の Jib ベースのワークフロー (`.github/workflows/publish-jib.yml`) も存在します。
-こちらは JVM と Native の両方のイメージをビルドする高度なワークフローです。
-
-新しい `docker-build.yaml` ワークフローは、より単純な Docker ベースのビルドを提供します。
-プロジェクトの要件に応じて、どちらかを選択してください。
 
 ## 参考資料
 

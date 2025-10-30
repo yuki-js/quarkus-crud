@@ -27,12 +27,12 @@ spec:
         - name: github-registry-secret
       containers:
         - name: backend
-          image: ghcr.io/yuki-js/quarkus-crud:latest
+          image: ghcr.io/yuki-js/quarkus-crud:latest-jvm
           ports:
             - containerPort: 8080
           env:
             - name: QUARKUS_DATASOURCE_JDBC_URL
-              value: jdbc:postgresql://postgres:5432/quarkus_crud
+              value: jdbc:postgresql://postgres-rw:5432/quarkus_crud
             - name: QUARKUS_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:

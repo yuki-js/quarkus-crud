@@ -1,0 +1,23 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+  namespace: quarkus-crud
+  labels:
+    app: quarkus-crud
+    component: postgres
+    name: postgres
+    environment: production
+spec:
+  instances: 3
+  
+  storage:
+    size: 10Gi
+  
+  bootstrap:
+    initdb:
+      database: quarkus_crud
+      owner: postgres
+      secret:
+        name: database-secret

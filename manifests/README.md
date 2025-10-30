@@ -7,10 +7,26 @@
 ### ファイル一覧
 
 - `backend.yaml` - バックエンドアプリケーションの Deployment と Service
-- `postgres.yaml` - PostgreSQL データベースの Deployment、Service、PersistentVolumeClaim
+- `postgres-cluster.yaml` - CloudNativePG による PostgreSQL クラスター定義
 - `common-secret.yaml` - データベース認証情報を含む Secret
 - `ingress.yaml` - 外部アクセス用の Ingress 設定
 - `kustomization.yaml` - Kustomize 設定ファイル
+
+### CloudNativePG について
+
+このプロジェクトでは、PostgreSQL データベースの管理に [CloudNativePG](https://cloudnative-pg.io/) オペレーターを使用しています。CloudNativePG は以下の機能を提供します：
+
+- 自動フェイルオーバーと高可用性
+- 自動バックアップとリカバリー
+- ローリングアップデート
+- 接続プーリング (PgBouncer)
+
+**前提条件**: CloudNativePG オペレーターがクラスターにインストールされている必要があります。
+
+インストール方法:
+```bash
+kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.23/releases/cnpg-1.23.0.yaml
+```
 
 ## デプロイ前の準備
 
@@ -38,9 +54,15 @@ stringData:
 ```
 
 #### Docker イメージ (kustomization.yaml)
-デフォルト: `ghcr.io/yuki-js/quarkus-crud:latest`
+デフォルト: `ghcr.io/yuki-js/quarkus-crud:latest-jvm`
 
 特定のバージョンを使用する場合は、`kustomization.yaml` の `images` セクションで `newTag` を変更してください。
+
+**注意**: GitHub Actions ワークフローは以下のイメージタグを生成します：
+- `latest-jvm` - main ブランチの最新 JVM ビルド
+- `latest-native` - main ブランチの最新ネイティブビルド
+- `{short-sha}-jvm` - 特定コミットの JVM ビルド
+- `{short-sha}-native` - 特定コミットのネイティブビルド
 
 ### 2. ImagePullSecret の作成
 

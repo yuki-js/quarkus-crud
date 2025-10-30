@@ -5,13 +5,13 @@ namespace: quarkus-crud
 
 resources:
   - backend.yaml
-  - postgres.yaml
+  - postgres-cluster.yaml
   - common-secret.yaml
   - ingress.yaml
 
 images:
   - name: ghcr.io/yuki-js/quarkus-crud
-    newTag: latest
+    newTag: latest-jvm
 
 labels:
   - pairs:
