@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: quarkus-crud
+
+resources:
+  - backend.yaml
+  - postgres.yaml
+  - common-secret.yaml
+  - ingress.yaml
+
+images:
+  - name: ghcr.io/yuki-js/quarkus-crud
+    newTag: latest
+
+commonLabels:
+  app: quarkus-crud

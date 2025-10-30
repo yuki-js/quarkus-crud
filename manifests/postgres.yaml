@@ -1,0 +1,93 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: quarkus-crud
+  labels:
+    app: quarkus-crud
+    component: postgres
+    name: postgres
+    environment: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quarkus-crud
+      component: postgres
+  template:
+    metadata:
+      labels:
+        app: quarkus-crud
+        component: postgres
+        name: postgres
+        environment: production
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: quarkus_crud
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: database-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-secret
+                  key: password
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: quarkus-crud
+  labels:
+    app: quarkus-crud
+    component: postgres
+    name: postgres
+    environment: production
+spec:
+  type: ClusterIP
+  selector:
+    app: quarkus-crud
+    component: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: quarkus-crud
+  labels:
+    app: quarkus-crud
+    component: postgres
+    name: postgres-data
+    environment: production
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
