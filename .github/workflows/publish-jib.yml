@@ -44,6 +44,21 @@ jobs:
     name: Build and push JVM images
     runs-on: ubuntu-latest
     needs: prepare
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: quarkus_crud
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -112,6 +127,21 @@ jobs:
     name: Build and push native images
     runs-on: ubuntu-latest
     needs: prepare
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: quarkus_crud
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -200,6 +230,21 @@ jobs:
     name: Verify built images
     runs-on: ubuntu-latest
     needs: [prepare, build-and-push-jvm, build-and-push-native]
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: quarkus_crud
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     steps:
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
@@ -211,9 +256,12 @@ jobs:
           echo "Verifying image exists..."
           docker images | grep quarkus-crud
           echo "Starting container..."
-          docker run -d --name jvm-test -p 8080:8080 ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm
+          docker run -d --name jvm-test -p 8080:8080 \
+            --add-host=host.docker.internal:host-gateway \
+            -e QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://host.docker.internal:5432/quarkus_crud \
+            ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm
           echo "Waiting for application to start..."
-          sleep 10
+          sleep 15
           echo "Checking container status..."
           docker ps -a
           docker logs jvm-test
@@ -231,9 +279,12 @@ jobs:
           echo "Verifying image exists..."
           docker images | grep quarkus-crud
           echo "Starting container..."
-          docker run -d --name jvm-debug-test -p 8080:8080 ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug
+          docker run -d --name jvm-debug-test -p 8080:8080 \
+            --add-host=host.docker.internal:host-gateway \
+            -e QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://host.docker.internal:5432/quarkus_crud \
+            ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug
           echo "Waiting for application to start..."
-          sleep 10
+          sleep 15
           echo "Checking container status..."
           docker ps -a
           docker logs jvm-debug-test
@@ -251,9 +302,12 @@ jobs:
           echo "Verifying image exists..."
           docker images | grep quarkus-crud
           echo "Starting container..."
-          docker run -d --name native-test -p 8080:8080 ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native
+          docker run -d --name native-test -p 8080:8080 \
+            --add-host=host.docker.internal:host-gateway \
+            -e QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://host.docker.internal:5432/quarkus_crud \
+            ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native
           echo "Waiting for application to start (native starts faster)..."
-          sleep 5
+          sleep 10
           echo "Checking container status..."
           docker ps -a
           docker logs native-test
@@ -271,9 +325,12 @@ jobs:
           echo "Verifying image exists..."
           docker images | grep quarkus-crud
           echo "Starting container..."
-          docker run -d --name native-debug-test -p 8080:8080 ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug
+          docker run -d --name native-debug-test -p 8080:8080 \
+            --add-host=host.docker.internal:host-gateway \
+            -e QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://host.docker.internal:5432/quarkus_crud \
+            ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug
           echo "Waiting for application to start..."
-          sleep 5
+          sleep 10
           echo "Checking container status..."
           docker ps -a
           docker logs native-debug-test
