@@ -53,7 +53,8 @@ public class RoomService {
 
     @Transactional
     public void deleteRoom(Long id) {
-        Optional<Room> room = findById(id);
+        // Fetch room before deletion to broadcast the event with room details
+        Optional<Room> room = roomMapper.findById(id);
         roomMapper.deleteById(id);
         room.ifPresent(eventBroadcaster::broadcastRoomDeleted);
     }
