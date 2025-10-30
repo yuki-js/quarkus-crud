@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'io.quarkus'
     id 'com.google.cloud.tools.jib' version '3.4.4'
+    id 'com.diffplug.spotless' version '6.25.0'
+    id 'checkstyle'
 }
 
 repositories {
@@ -136,5 +138,50 @@ jib {
                 '/quarkus-run': '755'
             ]
         }
+    }
+}
+
+// Spotless configuration for code formatting
+spotless {
+    java {
+        // Use Google Java Format for formatting
+        googleJavaFormat('1.19.2')
+        
+        // Apply formatting to all Java source files
+        target 'src/**/*.java'
+        
+        // Add license header (optional - remove if not needed)
+        // licenseHeader '/* Copyright (c) 2024 */'
+        
+        // Format imports
+        importOrder()
+        removeUnusedImports()
+        
+        // Trim trailing whitespace
+        trimTrailingWhitespace()
+        
+        // Ensure files end with a newline
+        endWithNewline()
+    }
+}
+
+// Checkstyle configuration for code quality checks (linting)
+checkstyle {
+    toolVersion = '10.12.5'
+    configFile = file('config/checkstyle/checkstyle.xml')
+    // Don't fail build on violations initially (show warnings only)
+    ignoreFailures = true
+    showViolations = true
+}
+
+// Configure checkstyle tasks to work independently
+tasks.withType(Checkstyle) {
+    // Remove dependency on compilation
+    classpath = files()
+    
+    // Generate HTML reports
+    reports {
+        html.required = true
+        xml.required = false
     }
 }

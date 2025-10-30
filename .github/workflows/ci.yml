@@ -39,6 +39,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Check code formatting
+        run: ./gradlew spotlessCheck
+
+      - name: Check code quality (linting)
+        run: ./gradlew checkstyleMain checkstyleTest
+
       # Skip tests due to pre-existing MyBatis bug - see README_TEST_STATUS.md
       - name: Build
         run: ./gradlew build -x test

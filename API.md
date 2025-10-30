@@ -168,6 +168,31 @@ Deletes a room (only the owner can delete).
 
 **Response:** 204 No Content
 
+### Live Endpoints
+
+#### Subscribe to Live Room Updates (Server-Sent Events)
+Subscribe to real-time room updates via Server-Sent Events. Receive notifications when rooms are created, updated, or deleted.
+
+**Endpoint:** `GET /api/live/rooms`
+
+**Headers Required:** None
+
+**Response:** Server-Sent Events stream
+
+**Event Format:**
+```json
+{
+  "eventType": "ROOM_CREATED|ROOM_UPDATED|ROOM_DELETED",
+  "roomId": 1,
+  "name": "My Room",
+  "description": "A sample room",
+  "userId": 1,
+  "timestamp": "2025-10-30T12:00:00"
+}
+```
+
+**Note:** This endpoint uses Server-Sent Events (SSE) to push real-time updates to connected clients. The connection stays open and events are sent as they occur.
+
 ## Example Usage with curl
 
 ### 1. Create a guest user
@@ -195,6 +220,30 @@ curl -b cookies.txt http://localhost:8080/api/rooms/my
 ### 5. Get all rooms
 ```bash
 curl http://localhost:8080/api/rooms
+```
+
+### 6. Subscribe to live room updates
+```bash
+curl -N http://localhost:8080/api/live/rooms
+```
+
+**Note:** The `-N` flag disables curl's output buffering to see events in real-time.
+
+**Example usage with JavaScript:**
+```javascript
+const eventSource = new EventSource('http://localhost:8080/api/live/rooms');
+
+eventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log(`${data.eventType}: Room "${data.name}" (ID: ${data.roomId})`);
+};
+
+eventSource.onerror = (error) => {
+    console.error('SSE connection error:', error);
+};
+
+// Close the connection when done
+// eventSource.close();
 ```
 
 ## Database Schema
