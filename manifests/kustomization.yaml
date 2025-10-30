@@ -5,7 +5,7 @@ namespace: quarkus-crud
 
 resources:
   - backend.yaml
-  - postgres-cluster.yaml
+  - database.yaml
   - common-secret.yaml
   - ingress.yaml
 
@@ -16,7 +16,7 @@ configMapGenerator:
 
 images:
   - name: ghcr.io/yuki-js/quarkus-crud
-    newTag: latest-jvm
+    newTag: latest-native
 
 labels:
   - pairs:

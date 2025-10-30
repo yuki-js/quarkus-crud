@@ -27,7 +27,7 @@ spec:
         - name: github-registry-secret
       containers:
         - name: backend
-          image: ghcr.io/yuki-js/quarkus-crud:latest-jvm
+          image: ghcr.io/yuki-js/quarkus-crud:latest-native
           ports:
             - containerPort: 8080
           env:
