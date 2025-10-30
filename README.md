@@ -53,6 +53,29 @@ You can then execute your native executable with: `./build/quarkus-template-0.0.
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/gradle-tooling>.
 
+## Code Formatting
+
+This project uses [Spotless](https://github.com/diffplug/spotless) with [Google Java Format](https://github.com/google/google-java-format) to maintain consistent code style across the codebase, similar to how ESLint/Prettier work for JavaScript projects.
+
+### Available Commands
+
+**Check code formatting:**
+```shell script
+./gradlew spotlessCheck
+```
+This command verifies that all Java files follow the formatting rules without making any changes. Use this in CI/CD pipelines or before committing.
+
+**Apply code formatting:**
+```shell script
+./gradlew spotlessApply
+```
+This command automatically formats all Java files according to the configured style. Run this before committing your changes.
+
+**Integration with your workflow:**
+- Run `./gradlew spotlessApply` before committing to ensure consistent formatting
+- The formatter handles indentation, import ordering, whitespace, and more
+- All Java files in `src/` directory are automatically formatted
+
 ## Code Style Guidelines
 
 ### API Input/Output Models

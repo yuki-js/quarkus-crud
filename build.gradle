@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'io.quarkus'
     id 'com.google.cloud.tools.jib' version '3.4.4'
+    id 'com.diffplug.spotless' version '6.25.0'
 }
 
 repositories {
@@ -135,5 +136,29 @@ jib {
                 '/quarkus-run': '755'
             ]
         }
+    }
+}
+
+// Spotless configuration for code formatting
+spotless {
+    java {
+        // Use Google Java Format for formatting
+        googleJavaFormat('1.19.2')
+        
+        // Apply formatting to all Java source files
+        target 'src/**/*.java'
+        
+        // Add license header (optional - remove if not needed)
+        // licenseHeader '/* Copyright (c) 2024 */'
+        
+        // Format imports
+        importOrder()
+        removeUnusedImports()
+        
+        // Trim trailing whitespace
+        trimTrailingWhitespace()
+        
+        // Ensure files end with a newline
+        endWithNewline()
     }
 }
