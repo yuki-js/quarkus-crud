@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.*;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -24,8 +23,9 @@ public class AuthorizationIntegrationTest {
   private static String user2Token;
   private static Long user1RoomId;
 
-  @BeforeAll
-  public static void setup() {
+  @Test
+  @Order(0)
+  public void setup() {
     // Create two different guest users for testing authorization
     Response user1Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     user1Token = user1Response.getCookie("guest_token");

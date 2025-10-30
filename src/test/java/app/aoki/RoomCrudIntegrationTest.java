@@ -20,8 +20,9 @@ public class RoomCrudIntegrationTest {
   private static String guestToken;
   private static Long roomId;
 
-  @BeforeAll
-  public static void setup() {
+  @Test
+  @Order(0)
+  public void setup() {
     // Create a guest user for testing
     Response response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     guestToken = response.getCookie("guest_token");

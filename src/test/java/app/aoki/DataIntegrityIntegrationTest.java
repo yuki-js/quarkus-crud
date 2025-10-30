@@ -6,26 +6,31 @@ import static org.hamcrest.Matchers.*;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Integration tests for data integrity and special cases. Tests handling of special characters,
  * null values, and edge cases.
  */
 @QuarkusTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataIntegrityIntegrationTest {
 
   private static String guestToken;
 
-  @BeforeAll
-  public static void setup() {
+  @Test
+  @Order(0)
+  public void setup() {
     // Create a guest user for testing
     Response response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     guestToken = response.getCookie("guest_token");
   }
 
   @Test
+  @Order(1)
   public void testCreateRoomWithSpecialCharacters() {
     given()
         .cookie("guest_token", guestToken)
