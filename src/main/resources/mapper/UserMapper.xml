@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="app.aoki.mapper.UserMapper">
+    
+    <resultMap id="userResultMap" type="app.aoki.entity.User">
+        <id property="id" column="id"/>
+        <result property="guestToken" column="guest_token"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="app.aoki.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (guest_token, created_at, updated_at)
+        VALUES (#{guestToken}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="userResultMap">
+        SELECT id, guest_token, created_at, updated_at
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByGuestToken" resultMap="userResultMap">
+        SELECT id, guest_token, created_at, updated_at
+        FROM users
+        WHERE guest_token = #{guestToken}
+    </select>
+
+    <update id="update" parameterType="app.aoki.entity.User">
+        UPDATE users
+        SET guest_token = #{guestToken},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+
+</mapper>
