@@ -9,6 +9,11 @@ resources:
   - common-secret.yaml
   - ingress.yaml
 
+configMapGenerator:
+  - name: backend-config
+    files:
+      - application.properties
+
 images:
   - name: ghcr.io/yuki-js/quarkus-crud
     newTag: latest-jvm
