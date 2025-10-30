@@ -89,13 +89,23 @@ public class MyBatisConfig {
         
         Configuration configuration = new Configuration(environment);
         configuration.setMapUnderscoreToCamelCase(true);
+        
+        // Add mapper classes
         configuration.addMapper(UserMapper.class);
         configuration.addMapper(RoomMapper.class);
         
         // Load XML mappers from resources
         Resources.setDefaultClassLoader(MyBatisConfig.class.getClassLoader());
-        configuration.addMapper("mapper/UserMapper.xml");
-        configuration.addMapper("mapper/RoomMapper.xml");
+        try (Reader userMapperReader = Resources.getResourceAsReader("mapper/UserMapper.xml");
+             Reader roomMapperReader = Resources.getResourceAsReader("mapper/RoomMapper.xml")) {
+            XMLMapperBuilder userMapperBuilder = new XMLMapperBuilder(userMapperReader, configuration, 
+                "mapper/UserMapper.xml", configuration.getSqlFragments());
+            userMapperBuilder.parse();
+            
+            XMLMapperBuilder roomMapperBuilder = new XMLMapperBuilder(roomMapperReader, configuration, 
+                "mapper/RoomMapper.xml", configuration.getSqlFragments());
+            roomMapperBuilder.parse();
+        }
         
         return new SqlSessionFactoryBuilder().build(configuration);
     }

@@ -51,13 +51,14 @@ test_http() {
         cookie_option="-b $COOKIE_FILE"
     fi
     
+    local data_option=""
     if [ -n "$data" ]; then
-        response=$(curl -s -w "\n%{http_code}" -c $COOKIE_FILE $cookie_option -X $method "$BASE_URL$endpoint" \
-            -H "Content-Type: application/json" \
-            -d "$data")
-    else
-        response=$(curl -s -w "\n%{http_code}" -c $COOKIE_FILE $cookie_option -X $method "$BASE_URL$endpoint")
+        data_option="-d $data"
     fi
+    
+    response=$(curl -s -w "\n%{http_code}" -c $COOKIE_FILE $cookie_option -X $method "$BASE_URL$endpoint" \
+        -H "Content-Type: application/json" \
+        $data_option)
     
     status_code=$(echo "$response" | tail -n1)
     body=$(echo "$response" | head -n-1)
@@ -163,13 +164,37 @@ test_http POST "/api/auth/guest" 200 "" "Create user for multi-room tests"
 
 # Test 12-14: Create multiple rooms
 echo "Test 12: Create first room"
-test_http POST "/api/rooms" 201 '{"name":"Living Room","description":"First room"}' "Create living room" "with_cookie"
+room1_response=$(curl -s -c $COOKIE_FILE -b $COOKIE_FILE -X POST "$BASE_URL/api/rooms" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"Living Room","description":"First room"}')
+if echo "$room1_response" | grep -q '"id"'; then
+    print_result 0 "Create living room"
+else
+    print_result 1 "Create living room"
+fi
+echo ""
 
 echo "Test 13: Create second room"
-test_http POST "/api/rooms" 201 '{"name":"Bedroom","description":"Second room"}' "Create bedroom" "with_cookie"
+room2_response=$(curl -s -c $COOKIE_FILE -b $COOKIE_FILE -X POST "$BASE_URL/api/rooms" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"Bedroom","description":"Second room"}')
+if echo "$room2_response" | grep -q '"id"'; then
+    print_result 0 "Create bedroom"
+else
+    print_result 1 "Create bedroom"
+fi
+echo ""
 
 echo "Test 14: Create third room"
-test_http POST "/api/rooms" 201 '{"name":"Kitchen","description":"Third room"}' "Create kitchen" "with_cookie"
+room3_response=$(curl -s -c $COOKIE_FILE -b $COOKIE_FILE -X POST "$BASE_URL/api/rooms" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"Kitchen","description":"Third room"}')
+if echo "$room3_response" | grep -q '"id"'; then
+    print_result 0 "Create kitchen"
+else
+    print_result 1 "Create kitchen"
+fi
+echo ""
 
 # Test 15: Verify my rooms count
 echo "Test 15: Verify user has multiple rooms"
@@ -190,9 +215,19 @@ echo ""
 echo "Test 16: Create room with special characters"
 test_http POST "/api/rooms" 201 '{"name":"Room @#$% with & special chars","description":"Testing special chars"}' "Create room with special characters" "with_cookie"
 
-# Test 17: Test null description
-echo "Test 17: Update room with null description"
-test_http PUT "/api/rooms/$room_id" 200 '{"name":"No Description Room","description":null}' "Update room with null description" "with_cookie"
+# Test 17: Create a new room for this test
+echo "Test 17: Create room and update with null description"
+null_test_response=$(curl -s -c $COOKIE_FILE -b $COOKIE_FILE -X POST "$BASE_URL/api/rooms" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"Temp Room","description":"Will be updated"}')
+null_test_room_id=$(echo "$null_test_response" | grep -o '"id":[0-9]*' | grep -o '[0-9]*' | head -1)
+
+if [ -n "$null_test_room_id" ]; then
+    test_http PUT "/api/rooms/$null_test_room_id" 200 '{"name":"No Description Room","description":null}' "Update room with null description" "with_cookie"
+else
+    print_result 1 "Create room for null description test"
+    echo ""
+fi
 
 echo ""
 echo "========================================="
