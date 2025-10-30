@@ -45,6 +45,5 @@ jobs:
       - name: Check code quality (linting)
         run: ./gradlew checkstyleMain checkstyleTest
 
-      # Skip tests due to pre-existing MyBatis bug - see README_TEST_STATUS.md
       - name: Build
         run: ./gradlew build -x test
