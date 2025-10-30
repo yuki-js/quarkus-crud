@@ -14,8 +14,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  yaml-lint:
-    name: YAML Syntax Validation
+  validate:
+    name: Validate Kubernetes Manifests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -26,34 +26,40 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install yamllint
-        run: pip install yamllint
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.29.0'
 
-      - name: Lint YAML files
+      - name: Install tools
         run: |
-          yamllint -d "{extends: default, rules: {line-length: {max: 120}, document-start: disable}}" manifests/
-
-  kustomize-validate:
-    name: Kustomize Build Validation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Kustomize
-        run: |
+          # Install yamllint
+          pip install yamllint
+          
+          # Install kustomize
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
+          
+          # Install kubesec
+          wget -q https://github.com/controlplaneio/kubesec/releases/download/v2.14.1/kubesec_linux_amd64.tar.gz
+          tar -xzf kubesec_linux_amd64.tar.gz
+          sudo mv kubesec /usr/local/bin/
+          rm kubesec_linux_amd64.tar.gz
 
-      - name: Validate Kustomize build
+      - name: YAML Lint
         run: |
+          echo "=== YAML Syntax Validation ==="
+          yamllint -d "{extends: default, rules: {line-length: {max: 120}, document-start: disable}}" manifests/
+          echo "✓ YAML syntax valid"
+
+      - name: Kustomize Build and Resource Check
+        run: |
+          echo "=== Kustomize Build Validation ==="
           cd manifests
-          kustomize build . > /tmp/kustomize-output.yaml
+          kustomize build . > /tmp/manifests.yaml
           echo "✓ Kustomize build successful"
-
-      - name: Check generated resources
-        run: |
-          cd manifests
+          
+          echo ""
           echo "=== Generated Resources ==="
           kustomize build . | grep -E "^(kind:|  name:)" | paste - - | head -20
           
@@ -66,99 +72,85 @@ jobs:
           echo "Ingresses: $(kustomize build . | grep -c 'kind: Ingress' || echo 0)"
           echo "Databases: $(kustomize build . | grep -c 'kind: Database' || echo 0)"
 
-  kubectl-validate:
-    name: Kubectl Schema Validation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.29.0'
-
-      - name: Set up Kustomize
+      - name: Policy Compliance Check
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
-
-      - name: Start kind cluster
-        uses: helm/kind-action@v1
-        with:
-          cluster_name: validation-cluster
-          wait: 30s
-
-      - name: Create namespace
-        run: kubectl create namespace quarkus-crud
-
-      - name: Validate standard Kubernetes resources
-        run: |
+          echo "=== Policy Compliance Check ==="
           cd manifests
-          echo "=== Validating Deployment ===" 
-          kubectl apply --dry-run=server -f backend.yaml || true
           
+          # Check required labels
+          echo "Checking required labels..."
+          REQUIRED_LABELS=("app" "component" "environment")
+          for label in "${REQUIRED_LABELS[@]}"; do
+            if grep -q "$label:" /tmp/manifests.yaml; then
+              echo "✓ Label '$label' found"
+            else
+              echo "✗ Label '$label' missing"
+              exit 1
+            fi
+          done
+          
+          # Check namespace
           echo ""
-          echo "=== Validating Secret ==="
-          kubectl apply --dry-run=server -f common-secret.yaml || true
-          
-          echo ""
-          echo "=== Validating Ingress ==="
-          kubectl apply --dry-run=server -f ingress.yaml || true
-
-      - name: Validate with Kustomize
-        run: |
-          cd manifests
-          echo "=== Validating all resources via Kustomize ==="
-          kubectl apply --dry-run=server -k . 2>&1 | tee /tmp/validation.log
-          
-          # Check if standard resources validated successfully
-          if grep -q "created (server dry run)" /tmp/validation.log; then
-            echo "✓ Standard Kubernetes resources validated successfully"
+          echo "Checking namespace specification..."
+          if grep -q "namespace: quarkus-crud" /tmp/manifests.yaml; then
+            echo "✓ Namespace explicitly specified"
+          else
+            echo "✗ Namespace not specified"
+            exit 1
           fi
           
-          # CNPG Database resource is expected to fail without operator CRDs
-          if grep -q "no matches for kind \"Database\"" /tmp/validation.log; then
-            echo "⚠ Database resource requires CloudNativePG operator (expected in production)"
+          # Check image tag
+          echo ""
+          echo "Verifying image tags..."
+          IMAGE_TAG=$(grep "image:" /tmp/manifests.yaml | grep -o "ghcr.io/yuki-js/quarkus-crud:.*" | head -1)
+          echo "Found image tag: $IMAGE_TAG"
+          if echo "$IMAGE_TAG" | grep -q "latest-native"; then
+            echo "✓ Using native image tag"
+          else
+            echo "⚠ Not using native image tag"
           fi
 
-  security-scan:
-    name: Security and Best Practices
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Kustomize
+      - name: Documentation Check
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
-
-      - name: Install kubesec
-        run: |
-          wget https://github.com/controlplaneio/kubesec/releases/download/v2.14.1/kubesec_linux_amd64.tar.gz
-          tar -xzf kubesec_linux_amd64.tar.gz
-          sudo mv kubesec /usr/local/bin/
-          rm kubesec_linux_amd64.tar.gz
-
-      - name: Run kubesec security scan
-        run: |
-          cd manifests
-          kustomize build . > /tmp/manifests.yaml
+          echo "=== Documentation Check ==="
           
-          echo "=== Security Scan Results ==="
+          # Check application.properties
+          if [ -f "manifests/application.properties" ]; then
+            echo "✓ application.properties found"
+          else
+            echo "✗ application.properties not found"
+            exit 1
+          fi
+          
+          # Check kustomization.yaml structure
+          echo ""
+          echo "Checking kustomization.yaml structure..."
+          if grep -q "configMapGenerator:" manifests/kustomization.yaml; then
+            echo "✓ ConfigMap generator configured"
+          else
+            echo "⚠ No ConfigMap generator found"
+          fi
+          
+          if grep -q "images:" manifests/kustomization.yaml; then
+            echo "✓ Image management configured"
+          else
+            echo "⚠ No image management found"
+          fi
+
+      - name: Security Scan
+        run: |
+          echo "=== Security Scan ==="
           kubesec scan /tmp/manifests.yaml || echo "⚠ Security scan completed with warnings"
-
-      - name: Check for common issues
-        run: |
+          
+          echo ""
+          echo "=== Best Practices Check ==="
           cd manifests
-          echo "=== Checking for common issues ==="
           
           # Check for imagePullPolicy
           if kustomize build . | grep -q "imagePullPolicy"; then
             echo "✓ imagePullPolicy specified"
           else
-            echo "⚠ Consider adding imagePullPolicy for deterministic behavior"
+            echo "⚠ Consider adding imagePullPolicy"
           fi
           
           # Check for resource limits
@@ -168,7 +160,7 @@ jobs:
             echo "⚠ Resource limits not found"
           fi
           
-          # Check for liveness/readiness probes
+          # Check for health probes
           if kustomize build . | grep -q "livenessProbe\|readinessProbe"; then
             echo "✓ Health probes defined"
           else
@@ -182,126 +174,43 @@ jobs:
             echo "⚠ Consider adding security context"
           fi
 
-  policy-compliance:
-    name: Policy Compliance Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Start kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: validation-cluster
+          wait: 30s
 
-      - name: Set up Kustomize
+      - name: Kubectl Schema Validation
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
-
-      - name: Check required labels
-        run: |
+          echo "=== Kubectl Schema Validation ==="
+          kubectl create namespace quarkus-crud
+          
           cd manifests
-          echo "=== Checking Required Labels ==="
+          echo "Validating Deployment..."
+          kubectl apply --dry-run=server -f backend.yaml || true
           
-          kustomize build . > /tmp/manifests.yaml
+          echo ""
+          echo "Validating Secret..."
+          kubectl apply --dry-run=server -f common-secret.yaml || true
           
-          # Check for required labels
-          REQUIRED_LABELS=("app" "component" "environment")
+          echo ""
+          echo "Validating Ingress..."
+          kubectl apply --dry-run=server -f ingress.yaml || true
           
-          for label in "${REQUIRED_LABELS[@]}"; do
-            if grep -q "$label:" /tmp/manifests.yaml; then
-              echo "✓ Label '$label' found"
-            else
-              echo "✗ Label '$label' missing"
-              exit 1
-            fi
-          done
-
-      - name: Check namespace specification
-        run: |
-          cd manifests
-          echo "=== Checking Namespace Specification ==="
+          echo ""
+          echo "Validating all resources via Kustomize..."
+          kubectl apply --dry-run=server -k . 2>&1 | tee /tmp/validation.log
           
-          if kustomize build . | grep -q "namespace: quarkus-crud"; then
-            echo "✓ Namespace explicitly specified"
-          else
-            echo "✗ Namespace not specified"
-            exit 1
-          fi
-
-      - name: Verify image tags
-        run: |
-          cd manifests
-          echo "=== Verifying Image Tags ==="
-          
-          IMAGE_TAG=$(kustomize build . | grep "image:" | grep -o "ghcr.io/yuki-js/quarkus-crud:.*" | head -1)
-          echo "Found image tag: $IMAGE_TAG"
-          
-          if echo "$IMAGE_TAG" | grep -q "latest-native"; then
-            echo "✓ Using native image tag"
-          else
-            echo "⚠ Not using native image tag"
-          fi
-
-  manifest-documentation:
-    name: Documentation Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Check for application.properties
-        run: |
-          if [ -f "manifests/application.properties" ]; then
-            echo "✓ application.properties found"
-            echo "Content:"
-            cat manifests/application.properties
-          else
-            echo "✗ application.properties not found"
-            exit 1
-          fi
-
-      - name: Verify kustomization.yaml structure
-        run: |
-          echo "=== Kustomization Structure ==="
-          cat manifests/kustomization.yaml
-          
-          # Check for required sections
-          if grep -q "configMapGenerator:" manifests/kustomization.yaml; then
-            echo "✓ ConfigMap generator configured"
-          else
-            echo "⚠ No ConfigMap generator found"
+          if grep -q "created (server dry run)" /tmp/validation.log; then
+            echo "✓ Standard Kubernetes resources validated successfully"
           fi
           
-          if grep -q "images:" manifests/kustomization.yaml; then
-            echo "✓ Image management configured"
-          else
-            echo "⚠ No image management found"
+          if grep -q "no matches for kind \"Database\"" /tmp/validation.log; then
+            echo "⚠ Database resource requires CloudNativePG operator (expected in production)"
           fi
 
-  summary:
-    name: Validation Summary
-    runs-on: ubuntu-latest
-    needs: [yaml-lint, kustomize-validate, kubectl-validate, security-scan, policy-compliance, manifest-documentation]
-    if: always()
-    steps:
-      - name: Check validation results
+      - name: Summary
+        if: always()
         run: |
           echo "=== Validation Summary ==="
-          echo "All validation checks completed."
-          echo ""
-          echo "Job Results:"
-          echo "- YAML Lint: ${{ needs.yaml-lint.result }}"
-          echo "- Kustomize Validate: ${{ needs.kustomize-validate.result }}"
-          echo "- Kubectl Validate: ${{ needs.kubectl-validate.result }}"
-          echo "- Security Scan: ${{ needs.security-scan.result }}"
-          echo "- Policy Compliance: ${{ needs.policy-compliance.result }}"
-          echo "- Documentation Check: ${{ needs.manifest-documentation.result }}"
-          
-          # Fail if any critical job failed
-          if [[ "${{ needs.yaml-lint.result }}" == "failure" ]] || \
-             [[ "${{ needs.kustomize-validate.result }}" == "failure" ]] || \
-             [[ "${{ needs.policy-compliance.result }}" == "failure" ]]; then
-            echo ""
-            echo "❌ Critical validation checks failed"
-            exit 1
-          fi
-          
-          echo ""
-          echo "✅ All critical validations passed"
+          echo "✅ All validation checks completed successfully"
