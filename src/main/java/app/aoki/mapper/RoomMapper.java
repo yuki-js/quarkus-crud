@@ -13,13 +13,13 @@ public interface RoomMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Room room);
     
-    @Select("SELECT id, name, description, user_id, created_at, updated_at FROM rooms WHERE id = #{id}")
+    @Select("SELECT id, name, description, user_id AS userId, created_at AS createdAt, updated_at AS updatedAt FROM rooms WHERE id = #{id}")
     Optional<Room> findById(@Param("id") Long id);
     
-    @Select("SELECT id, name, description, user_id, created_at, updated_at FROM rooms WHERE user_id = #{userId}")
+    @Select("SELECT id, name, description, user_id AS userId, created_at AS createdAt, updated_at AS updatedAt FROM rooms WHERE user_id = #{userId}")
     List<Room> findByUserId(@Param("userId") Long userId);
     
-    @Select("SELECT id, name, description, user_id, created_at, updated_at FROM rooms ORDER BY created_at DESC")
+    @Select("SELECT id, name, description, user_id AS userId, created_at AS createdAt, updated_at AS updatedAt FROM rooms ORDER BY created_at DESC")
     List<Room> findAll();
     
     @Update("UPDATE rooms SET name = #{name}, description = #{description}, user_id = #{userId}, updated_at = #{updatedAt} WHERE id = #{id}")

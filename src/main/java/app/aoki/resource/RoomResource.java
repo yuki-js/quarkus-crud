@@ -1,7 +1,5 @@
 package app.aoki.resource;
 
-import app.aoki.dto.RoomRequest;
-import app.aoki.dto.RoomResponse;
 import app.aoki.entity.Room;
 import app.aoki.entity.User;
 import app.aoki.service.RoomService;
@@ -11,6 +9,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,8 +27,45 @@ public class RoomResource {
     @Inject
     UserService userService;
 
+    /**
+     * Request payload for creating or updating a room.
+     */
+    public static record CreateRoomRequest(
+            String name,
+            String description
+    ) {}
+
+    /**
+     * Request payload for updating a room.
+     */
+    public static record UpdateRoomRequest(
+            String name,
+            String description
+    ) {}
+
+    /**
+     * Response representation of a room.
+     */
+    public static record RoomResponse(
+            Long id,
+            String name,
+            String description,
+            Long userId,
+            LocalDateTime createdAt
+    ) {
+        public static RoomResponse from(Room room) {
+            return new RoomResponse(
+                    room.getId(),
+                    room.getName(),
+                    room.getDescription(),
+                    room.getUserId(),
+                    room.getCreatedAt()
+            );
+        }
+    }
+
     @POST
-    public Response createRoom(RoomRequest request, @CookieParam(GUEST_TOKEN_COOKIE) String guestToken) {
+    public Response createRoom(CreateRoomRequest request, @CookieParam(GUEST_TOKEN_COOKIE) String guestToken) {
         if (guestToken == null || guestToken.isEmpty()) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity("{\"error\": \"Authentication required\"}")
@@ -43,7 +79,7 @@ public class RoomResource {
                     .build();
         }
 
-        Room room = roomService.createRoom(request.getName(), request.getDescription(), user.get().getId());
+        Room room = roomService.createRoom(request.name(), request.description(), user.get().getId());
         return Response.status(Response.Status.CREATED)
                 .entity(RoomResponse.from(room))
                 .build();
@@ -93,7 +129,7 @@ public class RoomResource {
 
     @PUT
     @Path("/{id}")
-    public Response updateRoom(@PathParam("id") Long id, RoomRequest request, 
+    public Response updateRoom(@PathParam("id") Long id, UpdateRoomRequest request, 
                                @CookieParam(GUEST_TOKEN_COOKIE) String guestToken) {
         if (guestToken == null || guestToken.isEmpty()) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -122,8 +158,8 @@ public class RoomResource {
                     .build();
         }
 
-        room.setName(request.getName());
-        room.setDescription(request.getDescription());
+        room.setName(request.name());
+        room.setDescription(request.description());
         roomService.updateRoom(room);
 
         return Response.ok(RoomResponse.from(room)).build();

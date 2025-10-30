@@ -53,6 +53,45 @@ You can then execute your native executable with: `./build/quarkus-template-0.0.
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/gradle-tooling>.
 
+## Code Style Guidelines
+
+### API Input/Output Models
+
+All API request and response models are defined as nested types within their respective Resource classes, using Java records where possible. This approach:
+
+- **Improves locality**: Request/response models are co-located with the endpoints that use them
+- **Reduces file scatter**: No separate DTO packages to navigate
+- **Enhances security**: Sensitive fields are easier to audit when they're close to the API definition
+- **Leverages modern Java**: Records provide immutable, concise data carriers
+
+**Naming conventions:**
+- Input models: `CreateXxxRequest`, `UpdateXxxRequest`
+- Output models: `XxxResponse`, `XxxRepresentation`
+- Avoid the term "DTO" in naming
+
+**Example:**
+```java
+@Path("/api/rooms")
+public class RoomResource {
+    
+    public static record CreateRoomRequest(String name, String description) {}
+    
+    public static record RoomResponse(Long id, String name, Long userId, LocalDateTime createdAt) {
+        public static RoomResponse from(Room entity) {
+            return new RoomResponse(entity.getId(), entity.getName(), 
+                                   entity.getUserId(), entity.getCreatedAt());
+        }
+    }
+    
+    @POST
+    public Response createRoom(CreateRoomRequest request) {
+        // Implementation
+    }
+}
+```
+
+**Security note:** Never include sensitive fields (like authentication tokens) in response models. Use HttpOnly cookies or server-side storage instead.
+
 ## Related Guides
 
 - REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.

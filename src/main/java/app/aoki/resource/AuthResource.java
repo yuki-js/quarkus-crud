@@ -1,12 +1,12 @@
 package app.aoki.resource;
 
-import app.aoki.dto.UserResponse;
 import app.aoki.entity.User;
 import app.aoki.service.UserService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Path("/api/auth")
@@ -19,6 +19,19 @@ public class AuthResource {
 
     @Inject
     UserService userService;
+
+    /**
+     * Response for authenticated user information.
+     * Note: guestToken is NOT included for security - it's only in the cookie.
+     */
+    public static record UserResponse(
+            Long id,
+            LocalDateTime createdAt
+    ) {
+        public static UserResponse from(User user) {
+            return new UserResponse(user.getId(), user.getCreatedAt());
+        }
+    }
 
     @POST
     @Path("/guest")

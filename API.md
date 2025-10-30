@@ -26,10 +26,11 @@ Creates an anonymous guest user and sets a cookie with the guest token.
 ```json
 {
   "id": 1,
-  "guestToken": "550e8400-e29b-41d4-a716-446655440000",
   "createdAt": "2025-10-29T18:00:00"
 }
 ```
+
+**Note:** The guest token is NOT included in the response for security reasons. It is only available in the HttpOnly cookie.
 
 **Cookie Set:** `guest_token` (HttpOnly, Max-Age: 1 year)
 
@@ -44,10 +45,11 @@ Retrieves the current user information from the guest token cookie.
 ```json
 {
   "id": 1,
-  "guestToken": "550e8400-e29b-41d4-a716-446655440000",
   "createdAt": "2025-10-29T18:00:00"
 }
 ```
+
+**Note:** The guest token is NOT included in the response for security reasons. It is stored only in the HttpOnly cookie.
 
 ### Room Endpoints
 

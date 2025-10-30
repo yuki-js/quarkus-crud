@@ -12,10 +12,10 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(User user);
     
-    @Select("SELECT id, guest_token, created_at, updated_at FROM users WHERE id = #{id}")
+    @Select("SELECT id, guest_token AS guestToken, created_at AS createdAt, updated_at AS updatedAt FROM users WHERE id = #{id}")
     Optional<User> findById(@Param("id") Long id);
     
-    @Select("SELECT id, guest_token, created_at, updated_at FROM users WHERE guest_token = #{guestToken}")
+    @Select("SELECT id, guest_token AS guestToken, created_at AS createdAt, updated_at AS updatedAt FROM users WHERE guest_token = #{guestToken}")
     Optional<User> findByGuestToken(@Param("guestToken") String guestToken);
     
     @Update("UPDATE users SET guest_token = #{guestToken}, updated_at = #{updatedAt} WHERE id = #{id}")
