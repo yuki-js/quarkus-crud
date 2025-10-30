@@ -53,6 +53,47 @@ You can then execute your native executable with: `./build/quarkus-template-0.0.
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/gradle-tooling>.
 
+## Code Formatting and Linting
+
+This project uses automated tools to maintain code quality, similar to ESLint/Prettier for JavaScript:
+
+- **[Spotless](https://github.com/diffplug/spotless)** with **[Google Java Format](https://github.com/google/google-java-format)** for code formatting (like Prettier)
+- **[Checkstyle](https://checkstyle.org/)** for code quality checks and linting (like ESLint)
+
+### Available Commands
+
+**Check code formatting:**
+```shell script
+./gradlew spotlessCheck
+```
+Verifies that all Java files follow the formatting rules without making any changes.
+
+**Apply code formatting:**
+```shell script
+./gradlew spotlessApply
+```
+Automatically formats all Java files according to Google Java Format style.
+
+**Check code quality (linting):**
+```shell script
+./gradlew checkstyleMain checkstyleTest
+```
+Analyzes code for potential issues, violations of coding standards, and best practices. Generates an HTML report at `build/reports/checkstyle/main.html`.
+
+**Run all checks:**
+```shell script
+./gradlew spotlessCheck checkstyleMain checkstyleTest
+```
+Runs both formatting and linting checks (used in CI).
+
+**Integration with your workflow:**
+- Run `./gradlew spotlessApply` before committing to ensure consistent formatting
+- Run `./gradlew checkstyleMain` to check for code quality issues
+- View detailed reports: `build/reports/checkstyle/main.html`
+- Both checks run automatically in CI/CD pipeline
+- **Formatter** (Spotless) handles: indentation, import ordering, whitespace
+- **Linter** (Checkstyle) checks: star imports, redundant modifiers, naming conventions, common issues, and best practices
+
 ## Code Style Guidelines
 
 ### API Input/Output Models
