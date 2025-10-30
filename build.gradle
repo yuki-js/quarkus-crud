@@ -3,6 +3,7 @@ plugins {
     id 'io.quarkus'
     id 'com.google.cloud.tools.jib' version '3.4.4'
     id 'com.diffplug.spotless' version '6.25.0'
+    id 'checkstyle'
 }
 
 repositories {
@@ -160,5 +161,26 @@ spotless {
         
         // Ensure files end with a newline
         endWithNewline()
+    }
+}
+
+// Checkstyle configuration for code quality checks (linting)
+checkstyle {
+    toolVersion = '10.12.5'
+    configFile = file('config/checkstyle/checkstyle.xml')
+    // Don't fail build on violations initially (show warnings only)
+    ignoreFailures = true
+    showViolations = true
+}
+
+// Configure checkstyle tasks to work independently
+tasks.withType(Checkstyle) {
+    // Remove dependency on compilation
+    classpath = files()
+    
+    // Generate HTML reports
+    reports {
+        html.required = true
+        xml.required = false
     }
 }

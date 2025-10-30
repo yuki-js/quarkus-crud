@@ -53,9 +53,12 @@ You can then execute your native executable with: `./build/quarkus-template-0.0.
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/gradle-tooling>.
 
-## Code Formatting
+## Code Formatting and Linting
 
-This project uses [Spotless](https://github.com/diffplug/spotless) with [Google Java Format](https://github.com/google/google-java-format) to maintain consistent code style across the codebase, similar to how ESLint/Prettier work for JavaScript projects.
+This project uses automated tools to maintain code quality, similar to ESLint/Prettier for JavaScript:
+
+- **[Spotless](https://github.com/diffplug/spotless)** with **[Google Java Format](https://github.com/google/google-java-format)** for code formatting (like Prettier)
+- **[Checkstyle](https://checkstyle.org/)** for code quality checks and linting (like ESLint)
 
 ### Available Commands
 
@@ -63,18 +66,33 @@ This project uses [Spotless](https://github.com/diffplug/spotless) with [Google 
 ```shell script
 ./gradlew spotlessCheck
 ```
-This command verifies that all Java files follow the formatting rules without making any changes. Use this in CI/CD pipelines or before committing.
+Verifies that all Java files follow the formatting rules without making any changes.
 
 **Apply code formatting:**
 ```shell script
 ./gradlew spotlessApply
 ```
-This command automatically formats all Java files according to the configured style. Run this before committing your changes.
+Automatically formats all Java files according to Google Java Format style.
+
+**Check code quality (linting):**
+```shell script
+./gradlew checkstyleMain checkstyleTest
+```
+Analyzes code for potential issues, violations of coding standards, and best practices. Generates an HTML report at `build/reports/checkstyle/main.html`.
+
+**Run all checks:**
+```shell script
+./gradlew spotlessCheck checkstyleMain checkstyleTest
+```
+Runs both formatting and linting checks (used in CI).
 
 **Integration with your workflow:**
 - Run `./gradlew spotlessApply` before committing to ensure consistent formatting
-- The formatter handles indentation, import ordering, whitespace, and more
-- All Java files in `src/` directory are automatically formatted
+- Run `./gradlew checkstyleMain` to check for code quality issues
+- View detailed reports: `build/reports/checkstyle/main.html`
+- Both checks run automatically in CI/CD pipeline
+- **Formatter** (Spotless) handles: indentation, import ordering, whitespace
+- **Linter** (Checkstyle) checks: star imports, redundant modifiers, naming conventions, common issues, and best practices
 
 ## Code Style Guidelines
 

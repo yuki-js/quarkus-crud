@@ -42,5 +42,8 @@ jobs:
       - name: Check code formatting
         run: ./gradlew spotlessCheck
 
+      - name: Check code quality (linting)
+        run: ./gradlew checkstyleMain checkstyleTest
+
       - name: Build
         run: ./gradlew build
