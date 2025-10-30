@@ -13,5 +13,6 @@ images:
   - name: ghcr.io/yuki-js/quarkus-crud
     newTag: latest
 
-commonLabels:
-  app: quarkus-crud
+labels:
+  - pairs:
+      app: quarkus-crud
