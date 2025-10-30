@@ -16,6 +16,9 @@ public class RoomService {
     @Inject
     RoomMapper roomMapper;
 
+    @Inject
+    RoomEventBroadcaster eventBroadcaster;
+
     @Transactional
     public Room createRoom(String name, String description, Long userId) {
         Room room = new Room();
@@ -25,6 +28,7 @@ public class RoomService {
         room.setCreatedAt(LocalDateTime.now());
         room.setUpdatedAt(LocalDateTime.now());
         roomMapper.insert(room);
+        eventBroadcaster.broadcastRoomCreated(room);
         return room;
     }
 
@@ -44,10 +48,14 @@ public class RoomService {
     public void updateRoom(Room room) {
         room.setUpdatedAt(LocalDateTime.now());
         roomMapper.update(room);
+        eventBroadcaster.broadcastRoomUpdated(room);
     }
 
     @Transactional
     public void deleteRoom(Long id) {
+        // Fetch room before deletion to broadcast the event with room details
+        Optional<Room> room = roomMapper.findById(id);
         roomMapper.deleteById(id);
+        room.ifPresent(eventBroadcaster::broadcastRoomDeleted);
     }
 }
