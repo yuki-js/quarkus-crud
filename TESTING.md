@@ -233,3 +233,61 @@ Test execution time:
 - [ ] Add mutation testing
 - [ ] Increase coverage to 90%+
 - [ ] Add API schema validation tests
+
+## Automated Test Evidence Generation
+
+### GitHub Actions Summary
+
+When tests run in CI, GitHub Actions automatically generates a comprehensive test evidence summary visible in the Actions UI. This includes:
+
+- **Test Results Summary**: Total tests, failures, errors, and skipped tests
+- **Test Suite Breakdown**: Individual test suite results with timings
+- **Database Verification**: Actual record counts from PostgreSQL
+- **Sample Data**: Recent users and rooms created during test execution
+- **Coverage Areas**: All tested functionality areas
+- **Overall Status**: Clear pass/fail indication
+
+To view the test evidence:
+1. Go to the Actions tab in GitHub
+2. Click on a workflow run
+3. Scroll down to see the detailed test evidence summary
+
+### Local Test Evidence Report
+
+You can generate a detailed test evidence report locally using the provided script:
+
+```bash
+# Run tests first
+./gradlew clean test
+
+# Generate evidence report
+./scripts/generate-test-evidence.sh
+
+# Or specify custom output file
+./scripts/generate-test-evidence.sh MY_REPORT.md
+```
+
+The script generates a markdown report including:
+- Complete test results breakdown
+- Database verification (requires PostgreSQL running)
+- Recent data samples from the database
+- User-room relationship statistics
+- Overall test status
+
+**Requirements for database verification:**
+- PostgreSQL client (`psql`) installed
+- Database accessible at localhost:5432 (default)
+- Or set environment variables: `POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+
+**Example:**
+```bash
+# With custom database
+export POSTGRES_HOST=localhost
+export POSTGRES_USER=myuser
+export POSTGRES_PASSWORD=mypassword
+export POSTGRES_DB=quarkus_crud
+
+./scripts/generate-test-evidence.sh
+```
+
+The generated report provides the same level of detail as the static `TEST_EVIDENCE.md` but with your current test results.
