@@ -193,3 +193,73 @@ tasks.withType(Checkstyle) {
         xml.required = false
     }
 }
+
+// OpenAPI Generator configuration
+configurations {
+    openApiGenerator
+}
+
+dependencies {
+    openApiGenerator 'org.openapitools:openapi-generator-cli:7.10.0'
+}
+
+task generateOpenApiModels(type: JavaExec) {
+    group = 'openapi'
+    description = 'Generate Java models from OpenAPI specification'
+    
+    classpath = configurations.openApiGenerator
+    mainClass = 'org.openapitools.codegen.OpenAPIGenerator'
+    
+    def inputSpec = file('src/main/resources/META-INF/openapi.yaml')
+    def outputDir = file('build/generated-src/openapi')
+    
+    inputs.file(inputSpec)
+    outputs.dir(outputDir)
+    
+    args = [
+        'generate',
+        '-i', inputSpec.absolutePath,
+        '-g', 'java',
+        '-o', outputDir.absolutePath,
+        '--model-package', 'app.aoki.generated.model',
+        '--api-package', 'app.aoki.generated.api',
+        '--skip-validate-spec',
+        '--library', 'native',
+        '--additional-properties',
+        [
+            'useBeanValidation=true',
+            'dateLibrary=java8',
+            'openApiNullable=false',
+            'hideGenerationTimestamp=true',
+            'useJakartaEe=true',
+            'generateApiTests=false',
+            'generateModelTests=false',
+            'generateApiDocumentation=false',
+            'generateModelDocumentation=false',
+            'generateSupportingFiles=false'
+        ].join(',')
+    ]
+    
+    doFirst {
+        outputDir.mkdirs()
+    }
+}
+
+// Add generated sources to source sets
+sourceSets {
+    main {
+        java {
+            srcDir 'build/generated-src/openapi/src/main/java'
+        }
+    }
+}
+
+// Clean generated sources on clean
+clean {
+    delete 'build/generated-src'
+}
+
+// Optional: Make compileJava depend on generateOpenApiModels for automatic generation
+// Uncomment the line below to auto-generate on every build (not recommended for CI)
+// For manual control, run: ./gradlew generateOpenApiModels
+// compileJava.dependsOn generateOpenApiModels
