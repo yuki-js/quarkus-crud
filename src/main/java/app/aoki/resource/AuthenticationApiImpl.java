@@ -1,8 +1,8 @@
 package app.aoki.resource;
 
 import app.aoki.entity.User;
-import app.aoki.exception.Authenticated;
-import app.aoki.exception.AuthenticatedUser;
+import app.aoki.filter.Authenticated;
+import app.aoki.filter.AuthenticatedUser;
 import app.aoki.generated.api.AuthenticationApi;
 import app.aoki.generated.model.UserResponse;
 import app.aoki.service.UserService;

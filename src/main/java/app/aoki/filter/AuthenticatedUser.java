@@ -1,4 +1,4 @@
-package app.aoki.exception;
+package app.aoki.filter;
 
 import app.aoki.entity.User;
 import jakarta.ws.rs.container.ContainerRequestContext;

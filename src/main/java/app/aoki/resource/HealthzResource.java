@@ -18,20 +18,14 @@ import org.eclipse.microprofile.health.Liveness;
 @Path("/healthz")
 public class HealthzResource {
 
-  @Inject @Liveness Iterable<org.eclipse.microprofile.health.HealthCheck> livenessChecks;
+  @Inject @Liveness DatabaseHealthCheck databaseHealthCheck;
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public Response health() {
-    // Check if all liveness checks pass
-    boolean allHealthy = true;
-    for (org.eclipse.microprofile.health.HealthCheck check : livenessChecks) {
-      HealthCheckResponse response = check.call();
-      if (response.getStatus() != HealthCheckResponse.Status.UP) {
-        allHealthy = false;
-        break;
-      }
-    }
+    // Check database health
+    HealthCheckResponse dbHealth = databaseHealthCheck.call();
+    boolean allHealthy = dbHealth.getStatus() == HealthCheckResponse.Status.UP;
 
     Map<String, String> health = new HashMap<>();
     health.put("status", allHealthy ? "UP" : "DOWN");
