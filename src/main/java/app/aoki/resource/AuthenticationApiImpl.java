@@ -2,8 +2,9 @@ package app.aoki.resource;
 
 import app.aoki.entity.User;
 import app.aoki.generated.api.AuthenticationApi;
-import app.aoki.generated.model.ErrorResponse;
 import app.aoki.generated.model.UserResponse;
+import app.aoki.security.Authenticated;
+import app.aoki.security.AuthenticatedUser;
 import app.aoki.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -11,7 +12,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
-import java.util.Optional;
 
 @ApplicationScoped
 @Path("/api/auth")
@@ -21,6 +21,7 @@ public class AuthenticationApiImpl implements AuthenticationApi {
   private static final int COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
   @Inject UserService userService;
+  @Inject AuthenticatedUser authenticatedUser;
 
   @Override
   public Response createGuestUser() {
@@ -38,21 +39,10 @@ public class AuthenticationApiImpl implements AuthenticationApi {
   }
 
   @Override
+  @Authenticated
   public Response getCurrentUser(String guestToken) {
-    if (guestToken == null || guestToken.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("No guest token found"))
-          .build();
-    }
-
-    Optional<User> user = userService.findByGuestToken(guestToken);
-    if (user.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Invalid guest token"))
-          .build();
-    }
-
-    return Response.ok(toUserResponse(user.get())).build();
+    User user = authenticatedUser.get();
+    return Response.ok(toUserResponse(user)).build();
   }
 
   private UserResponse toUserResponse(User user) {

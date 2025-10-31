@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -33,14 +34,7 @@ public interface UserMapper {
 
   @Select(
       "SELECT id, guest_token, created_at, updated_at FROM users WHERE guest_token = #{guestToken}")
-  @Results(
-      id = "userResultMapByToken",
-      value = {
-        @Result(property = "id", column = "id", id = true),
-        @Result(property = "guestToken", column = "guest_token"),
-        @Result(property = "createdAt", column = "created_at"),
-        @Result(property = "updatedAt", column = "updated_at")
-      })
+  @ResultMap("userResultMap")
   Optional<User> findByGuestToken(@Param("guestToken") String guestToken);
 
   @Update(

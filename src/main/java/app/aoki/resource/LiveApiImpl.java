@@ -40,13 +40,13 @@ public class LiveApiImpl {
   private RoomEventResponse toRoomEventResponse(RoomEvent event) {
     RoomEventResponse.EventTypeEnum eventType;
     switch (event.eventType()) {
-      case "ROOM_CREATED":
+      case RoomEventBroadcaster.EVENT_ROOM_CREATED:
         eventType = RoomEventResponse.EventTypeEnum.CREATED;
         break;
-      case "ROOM_UPDATED":
+      case RoomEventBroadcaster.EVENT_ROOM_UPDATED:
         eventType = RoomEventResponse.EventTypeEnum.UPDATED;
         break;
-      case "ROOM_DELETED":
+      case RoomEventBroadcaster.EVENT_ROOM_DELETED:
         eventType = RoomEventResponse.EventTypeEnum.DELETED;
         break;
       default:
