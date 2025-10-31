@@ -1,0 +1,131 @@
+name: OpenAPI Validation
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'copilot/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-openapi:
+    name: Validate OpenAPI Specification
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: Set up Node.js (for Spectral)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli
+      
+      - name: Validate OpenAPI spec with Spectral
+        run: spectral lint src/main/resources/META-INF/openapi.yaml --ruleset .spectral.yaml
+        continue-on-error: true
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+      
+      - name: Download OpenAPI Generator CLI
+        run: |
+          wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar -O openapi-generator-cli.jar
+      
+      - name: Validate OpenAPI spec with generator
+        run: |
+          java -jar openapi-generator-cli.jar validate -i src/main/resources/META-INF/openapi.yaml
+
+  generate-models:
+    name: Generate and Verify Models
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+      
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      
+      - name: Generate OpenAPI models
+        run: ./gradlew generateOpenApiModels
+      
+      - name: Verify models compile
+        run: ./gradlew compileJava
+      
+      - name: Check for generation issues
+        run: |
+          if [ -d "build/generated-src/openapi/src/main/java/app/aoki/generated/model" ]; then
+            echo "✓ Models generated successfully"
+            ls -la build/generated-src/openapi/src/main/java/app/aoki/generated/model/
+          else
+            echo "✗ Model generation failed"
+            exit 1
+          fi
+
+  contract-tests:
+    name: Run Contract Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: quarkus_crud
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+      
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      
+      - name: Generate OpenAPI models
+        run: ./gradlew generateOpenApiModels
+      
+      - name: Run contract tests
+        run: ./gradlew test --tests OpenApiContractTest
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-test-results
+          path: build/reports/tests/

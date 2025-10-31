@@ -33,6 +33,9 @@ dependencies {
     
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.rest-assured:rest-assured'
+    
+    // OpenAPI contract validation for tests
+    testImplementation 'com.atlassian.oai:swagger-request-validator-restassured:2.41.0'
 }
 
 group = 'app.aoki'
