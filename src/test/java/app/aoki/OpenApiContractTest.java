@@ -1,8 +1,8 @@
 package app.aoki;
 
-import static com.atlassian.oai.validator.restassured.OpenApiValidationFilter.openApiValidationFilter;
 import static io.restassured.RestAssured.given;
 
+import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -23,9 +23,13 @@ public class OpenApiContractTest {
   @BeforeAll
   public static void setupValidationFilter() {
     // Create validation filter using the OpenAPI spec from resources
-    validationFilter =
-        openApiValidationFilter("META-INF/openapi.yaml")
-            .withBasePathOverride("http://localhost:8081"); // Quarkus test default port
+    OpenApiInteractionValidator validator =
+        OpenApiInteractionValidator.createForInlineApiSpecification(
+                OpenApiContractTest.class
+                    .getClassLoader()
+                    .getResource("META-INF/openapi.yaml"))
+            .build();
+    validationFilter = new OpenApiValidationFilter(validator);
   }
 
   @Test
