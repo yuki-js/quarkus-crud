@@ -438,7 +438,6 @@ components:
       description: Request payload for creating a room
       required:
       - name
-      - description
       type: object
       properties:
         name:
@@ -448,14 +447,14 @@ components:
           type: string
           example: My Room
         description:
-          description: Room description
+          description: Room description (can be null)
           type: string
+          nullable: true
           example: A sample room
     UpdateRoomRequest:
       description: Request payload for updating a room
       required:
       - name
-      - description
       type: object
       properties:
         name:
@@ -465,15 +464,15 @@ components:
           type: string
           example: Updated Room
         description:
-          description: Updated room description
+          description: Updated room description (can be null)
           type: string
+          nullable: true
           example: Updated description
     RoomResponse:
       description: Room information response
       required:
       - id
       - name
-      - description
       - userId
       - createdAt
       type: object
@@ -488,8 +487,9 @@ components:
           type: string
           example: My Room
         description:
-          description: Room description
+          description: Room description (can be null)
           type: string
+          nullable: true
           example: A sample room
         userId:
           format: int64
