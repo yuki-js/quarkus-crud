@@ -1,0 +1,748 @@
+{
+  "openapi" : "3.0.3",
+  "info" : {
+    "title" : "Quarkus CRUD API",
+    "description" : "Guest User Authentication API with CRUD operations for rooms.\nThis API provides anonymous guest user authentication using cookies and real-time updates via Server-Sent Events.\n",
+    "version" : "0.0.1",
+    "contact" : {
+      "name" : "API Support"
+    },
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "https://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "servers" : [ {
+    "url" : "http://localhost:8080",
+    "description" : "Local development server"
+  }, {
+    "url" : "https://api.example.com",
+    "description" : "Production server"
+  } ],
+  "tags" : [ {
+    "name" : "Authentication",
+    "description" : "Guest user authentication operations"
+  }, {
+    "name" : "Rooms",
+    "description" : "Room CRUD operations"
+  }, {
+    "name" : "Live",
+    "description" : "Real-time updates via Server-Sent Events"
+  } ],
+  "paths" : {
+    "/api/auth/guest" : {
+      "post" : {
+        "tags" : [ "Authentication" ],
+        "summary" : "Create a guest user",
+        "description" : "Creates an anonymous guest user and sets a cookie with the guest token",
+        "operationId" : "createGuestUser",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "headers" : {
+              "Set-Cookie" : {
+                "description" : "HttpOnly cookie containing the guest token",
+                "schema" : {
+                  "type" : "string",
+                  "example" : "guest_token=<token>; Path=/; Max-Age=31536000; HttpOnly"
+                }
+              }
+            },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                },
+                "example" : {
+                  "id" : 1,
+                  "createdAt" : "2025-10-29T18:00:00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me" : {
+      "get" : {
+        "tags" : [ "Authentication" ],
+        "summary" : "Get current user",
+        "description" : "Retrieves the current user information from the guest token cookie",
+        "operationId" : "getCurrentUser",
+        "security" : [ {
+          "cookieAuth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                },
+                "example" : {
+                  "id" : 1,
+                  "createdAt" : "2025-10-29T18:00:00"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized - No guest token found or invalid token",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "noToken" : {
+                    "summary" : "No token provided",
+                    "value" : {
+                      "error" : "No guest token found"
+                    }
+                  },
+                  "invalidToken" : {
+                    "summary" : "Invalid token",
+                    "value" : {
+                      "error" : "Invalid guest token"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters" : [ {
+          "name" : "guest_token",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
+      }
+    },
+    "/api/rooms" : {
+      "post" : {
+        "tags" : [ "Rooms" ],
+        "summary" : "Create a room",
+        "description" : "Creates a new room for the authenticated user",
+        "operationId" : "createRoom",
+        "security" : [ {
+          "cookieAuth" : [ ]
+        } ],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateRoomRequest"
+              },
+              "example" : {
+                "name" : "My Room",
+                "description" : "A sample room"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Room created successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RoomResponse"
+                },
+                "example" : {
+                  "id" : 1,
+                  "name" : "My Room",
+                  "description" : "A sample room",
+                  "userId" : 1,
+                  "createdAt" : "2025-10-29T18:00:00"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized - Authentication required",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "authRequired" : {
+                    "summary" : "No authentication provided",
+                    "value" : {
+                      "error" : "Authentication required"
+                    }
+                  },
+                  "invalidAuth" : {
+                    "summary" : "Invalid authentication",
+                    "value" : {
+                      "error" : "Invalid authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "parameters" : [ {
+          "name" : "guest_token",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
+      },
+      "get" : {
+        "tags" : [ "Rooms" ],
+        "summary" : "Get all rooms",
+        "description" : "Retrieves all rooms in the system",
+        "operationId" : "getAllRooms",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RoomResponse"
+                  }
+                },
+                "example" : [ {
+                  "id" : 1,
+                  "name" : "My Room",
+                  "description" : "A sample room",
+                  "userId" : 1,
+                  "createdAt" : "2025-10-29T18:00:00"
+                } ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rooms/{id}" : {
+      "get" : {
+        "tags" : [ "Rooms" ],
+        "summary" : "Get room by ID",
+        "description" : "Retrieves a specific room by ID",
+        "operationId" : "getRoomById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Room ID",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RoomResponse"
+                },
+                "example" : {
+                  "id" : 1,
+                  "name" : "My Room",
+                  "description" : "A sample room",
+                  "userId" : 1,
+                  "createdAt" : "2025-10-29T18:00:00"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Room not found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "Room not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Rooms" ],
+        "summary" : "Update a room",
+        "description" : "Updates an existing room (only the owner can update)",
+        "operationId" : "updateRoom",
+        "security" : [ {
+          "cookieAuth" : [ ]
+        } ],
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Room ID",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "name" : "guest_token",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateRoomRequest"
+              },
+              "example" : {
+                "name" : "Updated Room",
+                "description" : "Updated description"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RoomResponse"
+                },
+                "example" : {
+                  "id" : 1,
+                  "name" : "Updated Room",
+                  "description" : "Updated description",
+                  "userId" : 1,
+                  "createdAt" : "2025-10-29T18:00:00"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized - Authentication required",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "authRequired" : {
+                    "summary" : "No authentication provided",
+                    "value" : {
+                      "error" : "Authentication required"
+                    }
+                  },
+                  "invalidAuth" : {
+                    "summary" : "Invalid authentication",
+                    "value" : {
+                      "error" : "Invalid authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden - User does not have permission to update this room",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "You don't have permission to update this room"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Room not found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "Room not found"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Rooms" ],
+        "summary" : "Delete a room",
+        "description" : "Deletes a room (only the owner can delete)",
+        "operationId" : "deleteRoom",
+        "security" : [ {
+          "cookieAuth" : [ ]
+        } ],
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Room ID",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "name" : "guest_token",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Room deleted successfully"
+          },
+          "401" : {
+            "description" : "Unauthorized - Authentication required",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "authRequired" : {
+                    "summary" : "No authentication provided",
+                    "value" : {
+                      "error" : "Authentication required"
+                    }
+                  },
+                  "invalidAuth" : {
+                    "summary" : "Invalid authentication",
+                    "value" : {
+                      "error" : "Invalid authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden - User does not have permission to delete this room",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "You don't have permission to delete this room"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Room not found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "Room not found"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/api/rooms/my" : {
+      "get" : {
+        "tags" : [ "Rooms" ],
+        "summary" : "Get my rooms",
+        "description" : "Retrieves all rooms created by the authenticated user",
+        "operationId" : "getMyRooms",
+        "security" : [ {
+          "cookieAuth" : [ ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RoomResponse"
+                  }
+                },
+                "example" : [ {
+                  "id" : 1,
+                  "name" : "My Room",
+                  "description" : "A sample room",
+                  "userId" : 1,
+                  "createdAt" : "2025-10-29T18:00:00"
+                } ]
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized - Authentication required",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "examples" : {
+                  "authRequired" : {
+                    "summary" : "No authentication provided",
+                    "value" : {
+                      "error" : "Authentication required"
+                    }
+                  },
+                  "invalidAuth" : {
+                    "summary" : "Invalid authentication",
+                    "value" : {
+                      "error" : "Invalid authentication"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters" : [ {
+          "name" : "guest_token",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ]
+      }
+    },
+    "/api/live/rooms" : {
+      "get" : {
+        "tags" : [ "Live" ],
+        "summary" : "Subscribe to live room updates",
+        "description" : "Subscribe to real-time room updates via Server-Sent Events. \nClients can subscribe to this endpoint to receive live notifications when rooms are created, updated, or deleted.\nThe connection stays open and events are sent as they occur.\n",
+        "operationId" : "streamRoomEvents",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/event-stream" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RoomEventResponse"
+                  },
+                  "allOf" : [ {
+                    "$ref" : "#/components/schemas/RoomEventResponse"
+                  } ]
+                },
+                "example" : "data: {\"eventType\":\"ROOM_CREATED\",\"roomId\":1,\"name\":\"My Room\",\"description\":\"A sample room\",\"userId\":1,\"timestamp\":\"2025-10-30T12:00:00\"}\n"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Health",
+        "tags" : [ "Health Resource" ]
+      }
+    }
+  },
+  "components" : {
+    "securitySchemes" : {
+      "cookieAuth" : {
+        "type" : "apiKey",
+        "in" : "cookie",
+        "name" : "guest_token",
+        "description" : "Guest authentication token stored in HttpOnly cookie"
+      }
+    },
+    "schemas" : {
+      "UserResponse" : {
+        "description" : "User information response. Note that guestToken is NOT included for security - it's only in the cookie.",
+        "required" : [ "id", "createdAt" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "description" : "User ID",
+            "type" : "integer",
+            "example" : 1
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "description" : "When the user was created",
+            "type" : "string",
+            "example" : "2025-10-29T18:00:00"
+          }
+        }
+      },
+      "CreateRoomRequest" : {
+        "description" : "Request payload for creating a room",
+        "required" : [ "name", "description" ],
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "description" : "Room name",
+            "maxLength" : 255,
+            "minLength" : 1,
+            "type" : "string",
+            "example" : "My Room"
+          },
+          "description" : {
+            "description" : "Room description",
+            "type" : "string",
+            "example" : "A sample room"
+          }
+        }
+      },
+      "UpdateRoomRequest" : {
+        "description" : "Request payload for updating a room",
+        "required" : [ "name", "description" ],
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "description" : "Updated room name",
+            "maxLength" : 255,
+            "minLength" : 1,
+            "type" : "string",
+            "example" : "Updated Room"
+          },
+          "description" : {
+            "description" : "Updated room description",
+            "type" : "string",
+            "example" : "Updated description"
+          }
+        }
+      },
+      "RoomResponse" : {
+        "description" : "Room information response",
+        "required" : [ "id", "name", "description", "userId", "createdAt" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "description" : "Room ID",
+            "type" : "integer",
+            "example" : 1
+          },
+          "name" : {
+            "description" : "Room name",
+            "type" : "string",
+            "example" : "My Room"
+          },
+          "description" : {
+            "description" : "Room description",
+            "type" : "string",
+            "example" : "A sample room"
+          },
+          "userId" : {
+            "format" : "int64",
+            "description" : "ID of the user who created the room",
+            "type" : "integer",
+            "example" : 1
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "description" : "When the room was created",
+            "type" : "string",
+            "example" : "2025-10-29T18:00:00"
+          }
+        }
+      },
+      "RoomEventResponse" : {
+        "description" : "Room event for Server-Sent Events",
+        "required" : [ "eventType", "roomId", "name", "description", "userId", "timestamp" ],
+        "type" : "object",
+        "properties" : {
+          "eventType" : {
+            "description" : "Type of event",
+            "enum" : [ "ROOM_CREATED", "ROOM_UPDATED", "ROOM_DELETED" ],
+            "type" : "string",
+            "example" : "ROOM_CREATED"
+          },
+          "roomId" : {
+            "format" : "int64",
+            "description" : "Room ID",
+            "type" : "integer",
+            "example" : 1
+          },
+          "name" : {
+            "description" : "Room name",
+            "type" : "string",
+            "example" : "My Room"
+          },
+          "description" : {
+            "description" : "Room description",
+            "type" : "string",
+            "example" : "A sample room"
+          },
+          "userId" : {
+            "format" : "int64",
+            "description" : "ID of the user who owns the room",
+            "type" : "integer",
+            "example" : 1
+          },
+          "timestamp" : {
+            "format" : "date-time",
+            "description" : "When the event occurred",
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/LocalDateTime"
+            } ],
+            "example" : "2025-10-30T12:00:00"
+          }
+        }
+      },
+      "ErrorResponse" : {
+        "description" : "Error response format",
+        "required" : [ "error" ],
+        "type" : "object",
+        "properties" : {
+          "error" : {
+            "description" : "Error message",
+            "type" : "string",
+            "example" : "Authentication required"
+          }
+        }
+      },
+      "LocalDateTime" : {
+        "format" : "date-time",
+        "type" : "string",
+        "example" : "2022-03-10T12:15:50"
+      }
+    }
+  }
+}
