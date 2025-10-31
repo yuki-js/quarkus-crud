@@ -1,6 +1,5 @@
 package app.aoki.exception;
 
-import app.aoki.model.ErrorResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.core.Response;

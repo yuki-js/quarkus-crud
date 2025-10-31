@@ -1,6 +1,5 @@
 package app.aoki.exception;
 
-import app.aoki.model.ErrorResponse;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;

@@ -1,4 +1,4 @@
-package app.aoki.security;
+package app.aoki.exception;
 
 import app.aoki.entity.User;
 import jakarta.ws.rs.container.ContainerRequestContext;

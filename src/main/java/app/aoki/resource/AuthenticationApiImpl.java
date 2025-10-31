@@ -1,10 +1,10 @@
 package app.aoki.resource;
 
 import app.aoki.entity.User;
+import app.aoki.exception.Authenticated;
+import app.aoki.exception.AuthenticatedUser;
 import app.aoki.generated.api.AuthenticationApi;
 import app.aoki.generated.model.UserResponse;
-import app.aoki.security.Authenticated;
-import app.aoki.security.AuthenticatedUser;
 import app.aoki.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

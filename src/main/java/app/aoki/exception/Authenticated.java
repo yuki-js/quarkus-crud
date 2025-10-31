@@ -1,4 +1,4 @@
-package app.aoki.security;
+package app.aoki.exception;
 
 import jakarta.ws.rs.NameBinding;
 import java.lang.annotation.ElementType;

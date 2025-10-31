@@ -1,4 +1,4 @@
-package app.aoki.health;
+package app.aoki.resource;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;

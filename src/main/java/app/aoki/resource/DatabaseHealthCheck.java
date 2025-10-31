@@ -1,4 +1,4 @@
-package app.aoki.health;
+package app.aoki.resource;
 
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;

@@ -1,7 +1,6 @@
-package app.aoki.security;
+package app.aoki.exception;
 
 import app.aoki.entity.User;
-import app.aoki.model.ErrorResponse;
 import app.aoki.service.UserService;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;

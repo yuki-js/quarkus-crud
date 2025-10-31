@@ -2,12 +2,13 @@ package app.aoki.resource;
 
 import app.aoki.entity.Room;
 import app.aoki.entity.User;
+import app.aoki.exception.Authenticated;
+import app.aoki.exception.AuthenticatedUser;
+import app.aoki.exception.ErrorResponse;
 import app.aoki.generated.api.RoomsApi;
 import app.aoki.generated.model.CreateRoomRequest;
 import app.aoki.generated.model.RoomResponse;
 import app.aoki.generated.model.UpdateRoomRequest;
-import app.aoki.security.Authenticated;
-import app.aoki.security.AuthenticatedUser;
 import app.aoki.service.RoomService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -43,14 +44,14 @@ public class RoomsApiImpl implements RoomsApi {
     Optional<Room> existingRoom = roomService.findById(id);
     if (existingRoom.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new app.aoki.model.ErrorResponse("Room not found"))
+          .entity(new ErrorResponse("Room not found"))
           .build();
     }
 
     Room room = existingRoom.get();
     if (!room.getUserId().equals(user.getId())) {
       return Response.status(Response.Status.FORBIDDEN)
-          .entity(new app.aoki.model.ErrorResponse("You don't have permission to delete this room"))
+          .entity(new ErrorResponse("You don't have permission to delete this room"))
           .build();
     }
 
@@ -81,7 +82,7 @@ public class RoomsApiImpl implements RoomsApi {
     Optional<Room> room = roomService.findById(id);
     if (room.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new app.aoki.model.ErrorResponse("Room not found"))
+          .entity(new ErrorResponse("Room not found"))
           .build();
     }
     return Response.ok(toRoomResponse(room.get())).build();
@@ -95,14 +96,14 @@ public class RoomsApiImpl implements RoomsApi {
     Optional<Room> existingRoom = roomService.findById(id);
     if (existingRoom.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new app.aoki.model.ErrorResponse("Room not found"))
+          .entity(new ErrorResponse("Room not found"))
           .build();
     }
 
     Room room = existingRoom.get();
     if (!room.getUserId().equals(user.getId())) {
       return Response.status(Response.Status.FORBIDDEN)
-          .entity(new app.aoki.model.ErrorResponse("You don't have permission to update this room"))
+          .entity(new ErrorResponse("You don't have permission to update this room"))
           .build();
     }
 

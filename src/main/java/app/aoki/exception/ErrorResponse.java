@@ -1,4 +1,4 @@
-package app.aoki.model;
+package app.aoki.exception;
 
 /**
  * Standard error response format for the API.
