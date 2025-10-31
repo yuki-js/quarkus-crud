@@ -2,7 +2,6 @@ package app.aoki.resource;
 
 import app.aoki.entity.Room;
 import app.aoki.entity.User;
-import app.aoki.exception.ErrorResponse;
 import app.aoki.filter.Authenticated;
 import app.aoki.filter.AuthenticatedUser;
 import app.aoki.generated.api.RoomsApi;
@@ -10,6 +9,7 @@ import app.aoki.generated.model.CreateRoomRequest;
 import app.aoki.generated.model.RoomResponse;
 import app.aoki.generated.model.UpdateRoomRequest;
 import app.aoki.service.RoomService;
+import app.aoki.support.ErrorResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;

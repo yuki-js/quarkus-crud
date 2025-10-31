@@ -1,4 +1,4 @@
-package app.aoki.exception;
+package app.aoki.support;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
