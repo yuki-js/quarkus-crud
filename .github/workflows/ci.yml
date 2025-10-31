@@ -109,10 +109,10 @@ jobs:
             
             echo "| Metric | Count | Status |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Total Tests | $TOTAL_TESTS | ✅ |" >> $GITHUB_STEP_SUMMARY
-            echo "| Failures | $TOTAL_FAILURES | $([ $TOTAL_FAILURES -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
-            echo "| Errors | $TOTAL_ERRORS | $([ $TOTAL_ERRORS -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
-            echo "| Skipped | $TOTAL_SKIPPED | ℹ️ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Total Tests | ${TOTAL_TESTS:-0} | ✅ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failures | ${TOTAL_FAILURES:-0} | $([ ${TOTAL_FAILURES:-0} -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Errors | ${TOTAL_ERRORS:-0} | $([ ${TOTAL_ERRORS:-0} -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Skipped | ${TOTAL_SKIPPED:-0} | ℹ️ |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             
             # Test Suites Breakdown
@@ -188,10 +188,13 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Build Status
+          TOTAL_FAILURES=${TOTAL_FAILURES:-0}
+          TOTAL_ERRORS=${TOTAL_ERRORS:-0}
+          
           if [ "$TOTAL_FAILURES" -eq 0 ] && [ "$TOTAL_ERRORS" -eq 0 ]; then
             echo "## ✅ Build Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "All $TOTAL_TESTS tests passed successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+            echo "All ${TOTAL_TESTS:-0} tests passed successfully! 🎉" >> $GITHUB_STEP_SUMMARY
           else
             echo "## ❌ Build Status: FAILURE" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
