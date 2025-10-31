@@ -1,4 +1,4 @@
-package app.aoki.exception;
+package app.aoki.support;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -36,11 +36,4 @@ public class WebApplicationExceptionMapper implements ExceptionMapper<WebApplica
         .entity(new ErrorResponse(exception.getMessage()))
         .build();
   }
-
-  /**
-   * Simple error response record matching the existing API error format.
-   *
-   * @param error the error message
-   */
-  public record ErrorResponse(String error) {}
 }

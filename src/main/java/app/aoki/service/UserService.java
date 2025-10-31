@@ -38,6 +38,10 @@ public class UserService {
     userMapper.update(user);
   }
 
+  /**
+   * Deletes a user by ID. Note: All rooms owned by this user will be automatically deleted due to
+   * the ON DELETE CASCADE constraint on the rooms.user_id foreign key.
+   */
   @Transactional
   public void deleteUser(Long id) {
     userMapper.deleteById(id);

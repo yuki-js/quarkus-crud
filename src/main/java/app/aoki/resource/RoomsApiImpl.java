@@ -2,13 +2,14 @@ package app.aoki.resource;
 
 import app.aoki.entity.Room;
 import app.aoki.entity.User;
+import app.aoki.filter.Authenticated;
+import app.aoki.filter.AuthenticatedUser;
 import app.aoki.generated.api.RoomsApi;
 import app.aoki.generated.model.CreateRoomRequest;
-import app.aoki.generated.model.ErrorResponse;
 import app.aoki.generated.model.RoomResponse;
 import app.aoki.generated.model.UpdateRoomRequest;
 import app.aoki.service.RoomService;
-import app.aoki.service.UserService;
+import app.aoki.support.ErrorResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
@@ -23,55 +24,34 @@ import java.util.stream.Collectors;
 public class RoomsApiImpl implements RoomsApi {
 
   @Inject RoomService roomService;
-  @Inject UserService userService;
+  @Inject AuthenticatedUser authenticatedUser;
 
   @Override
+  @Authenticated
   public Response createRoom(CreateRoomRequest createRoomRequest, String guestToken) {
-    if (guestToken == null || guestToken.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Authentication required"))
-          .build();
-    }
-
-    Optional<User> user = userService.findByGuestToken(guestToken);
-    if (user.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Invalid authentication"))
-          .build();
-    }
-
+    User user = authenticatedUser.get();
     Room room =
         roomService.createRoom(
-            createRoomRequest.getName(), createRoomRequest.getDescription(), user.get().getId());
+            createRoomRequest.getName(), createRoomRequest.getDescription(), user.getId());
     return Response.status(Response.Status.CREATED).entity(toRoomResponse(room)).build();
   }
 
   @Override
+  @Authenticated
   public Response deleteRoom(Long id, String guestToken) {
-    if (guestToken == null || guestToken.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Authentication required"))
-          .build();
-    }
-
-    Optional<User> user = userService.findByGuestToken(guestToken);
-    if (user.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Invalid authentication"))
-          .build();
-    }
+    User user = authenticatedUser.get();
 
     Optional<Room> existingRoom = roomService.findById(id);
     if (existingRoom.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new ErrorResponse().error("Room not found"))
+          .entity(new ErrorResponse("Room not found"))
           .build();
     }
 
     Room room = existingRoom.get();
-    if (!room.getUserId().equals(user.get().getId())) {
+    if (!room.getUserId().equals(user.getId())) {
       return Response.status(Response.Status.FORBIDDEN)
-          .entity(new ErrorResponse().error("You don't have permission to delete this room"))
+          .entity(new ErrorResponse("You don't have permission to delete this room"))
           .build();
     }
 
@@ -87,22 +67,11 @@ public class RoomsApiImpl implements RoomsApi {
   }
 
   @Override
+  @Authenticated
   public Response getMyRooms(String guestToken) {
-    if (guestToken == null || guestToken.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Authentication required"))
-          .build();
-    }
-
-    Optional<User> user = userService.findByGuestToken(guestToken);
-    if (user.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Invalid authentication"))
-          .build();
-    }
-
+    User user = authenticatedUser.get();
     List<RoomResponse> rooms =
-        roomService.findByUserId(user.get().getId()).stream()
+        roomService.findByUserId(user.getId()).stream()
             .map(this::toRoomResponse)
             .collect(Collectors.toList());
     return Response.ok(rooms).build();
@@ -113,38 +82,28 @@ public class RoomsApiImpl implements RoomsApi {
     Optional<Room> room = roomService.findById(id);
     if (room.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new ErrorResponse().error("Room not found"))
+          .entity(new ErrorResponse("Room not found"))
           .build();
     }
     return Response.ok(toRoomResponse(room.get())).build();
   }
 
   @Override
+  @Authenticated
   public Response updateRoom(Long id, UpdateRoomRequest updateRoomRequest, String guestToken) {
-    if (guestToken == null || guestToken.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Authentication required"))
-          .build();
-    }
-
-    Optional<User> user = userService.findByGuestToken(guestToken);
-    if (user.isEmpty()) {
-      return Response.status(Response.Status.UNAUTHORIZED)
-          .entity(new ErrorResponse().error("Invalid authentication"))
-          .build();
-    }
+    User user = authenticatedUser.get();
 
     Optional<Room> existingRoom = roomService.findById(id);
     if (existingRoom.isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new ErrorResponse().error("Room not found"))
+          .entity(new ErrorResponse("Room not found"))
           .build();
     }
 
     Room room = existingRoom.get();
-    if (!room.getUserId().equals(user.get().getId())) {
+    if (!room.getUserId().equals(user.getId())) {
       return Response.status(Response.Status.FORBIDDEN)
-          .entity(new ErrorResponse().error("You don't have permission to update this room"))
+          .entity(new ErrorResponse("You don't have permission to update this room"))
           .build();
     }
 

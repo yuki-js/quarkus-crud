@@ -27,6 +27,9 @@ dependencies {
     // Validation support for generated models
     implementation 'io.quarkus:quarkus-hibernate-validator'
     
+    // Health checks
+    implementation 'io.quarkus:quarkus-smallrye-health'
+    
     // Swagger annotations for generated API code
     implementation 'io.swagger:swagger-annotations:1.6.14'
     

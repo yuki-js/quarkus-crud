@@ -1,4 +1,4 @@
-package app.aoki.exception;
+package app.aoki.support;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -33,11 +33,4 @@ public class ConstraintViolationExceptionMapper
     String propertyName = propertyPath.substring(propertyPath.lastIndexOf('.') + 1);
     return propertyName + " " + violation.getMessage();
   }
-
-  /**
-   * Simple error response record matching the existing API error format.
-   *
-   * @param error the error message
-   */
-  public record ErrorResponse(String error) {}
 }
