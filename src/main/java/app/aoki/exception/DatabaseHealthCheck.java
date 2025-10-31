@@ -1,4 +1,4 @@
-package app.aoki.health;
+package app.aoki.exception;
 
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;

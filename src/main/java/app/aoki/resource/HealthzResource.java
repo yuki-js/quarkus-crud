@@ -1,6 +1,6 @@
 package app.aoki.resource;
 
-import app.aoki.health.DatabaseHealthCheck;
+import app.aoki.exception.DatabaseHealthCheck;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
