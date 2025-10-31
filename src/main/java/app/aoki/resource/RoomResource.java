@@ -2,6 +2,7 @@ package app.aoki.resource;
 
 import app.aoki.entity.Room;
 import app.aoki.entity.User;
+import app.aoki.mapper.dto.RoomDtoMapper;
 import app.aoki.service.RoomService;
 import app.aoki.service.UserService;
 import jakarta.inject.Inject;
@@ -23,6 +24,8 @@ public class RoomResource {
   @Inject RoomService roomService;
 
   @Inject UserService userService;
+
+  @Inject RoomDtoMapper roomDtoMapper;
 
   /** Request payload for creating or updating a room. */
   public static record CreateRoomRequest(String name, String description) {}
@@ -63,10 +66,19 @@ public class RoomResource {
     return Response.status(Response.Status.CREATED).entity(RoomResponse.from(room)).build();
   }
 
+  /**
+   * Get all rooms. This endpoint demonstrates the OpenAPI-first workflow using generated DTOs and
+   * MapStruct mappers.
+   *
+   * @return list of rooms as generated RoomResponse DTOs
+   */
   @GET
   public Response getAllRooms() {
-    List<RoomResponse> rooms =
-        roomService.findAll().stream().map(RoomResponse::from).collect(Collectors.toList());
+    // Use generated DTO and MapStruct mapper instead of nested record
+    List<app.aoki.generated.model.RoomResponse> rooms =
+        roomService.findAll().stream()
+            .map(roomDtoMapper::toRoomResponse)
+            .collect(Collectors.toList());
     return Response.ok(rooms).build();
   }
 
