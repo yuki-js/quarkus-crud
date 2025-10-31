@@ -4,10 +4,49 @@ name: CI build
 
 on:
   push:
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
+  openapi-validation:
+    name: OpenAPI Specification Validation
     runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: Set up Node.js (for Spectral)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli
+      
+      - name: Validate OpenAPI spec with Spectral
+        run: spectral lint src/main/resources/META-INF/openapi.yaml --ruleset .spectral.yaml
+        continue-on-error: true
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+      
+      - name: Download OpenAPI Generator CLI
+        run: |
+          wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar -O openapi-generator-cli.jar
+      
+      - name: Validate OpenAPI spec with generator
+        run: |
+          java -jar openapi-generator-cli.jar validate -i src/main/resources/META-INF/openapi.yaml
+
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: openapi-validation
     
     services:
       postgres:
@@ -24,7 +63,8 @@ jobs:
           - 5432:5432
     
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -39,13 +79,16 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Generate OpenAPI models
+        run: ./gradlew generateOpenApiModels
+
       - name: Check code formatting
         run: ./gradlew spotlessCheck
 
       - name: Check code quality (linting)
         run: ./gradlew checkstyleMain checkstyleTest
 
-      - name: Build and Test
+      - name: Build and Test (includes contract tests)
         run: ./gradlew build
 
       - name: Generate Test Evidence Summary
@@ -66,10 +109,10 @@ jobs:
             
             echo "| Metric | Count | Status |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Total Tests | $TOTAL_TESTS | ✅ |" >> $GITHUB_STEP_SUMMARY
-            echo "| Failures | $TOTAL_FAILURES | $([ $TOTAL_FAILURES -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
-            echo "| Errors | $TOTAL_ERRORS | $([ $TOTAL_ERRORS -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
-            echo "| Skipped | $TOTAL_SKIPPED | ℹ️ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Total Tests | ${TOTAL_TESTS:-0} | ✅ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failures | ${TOTAL_FAILURES:-0} | $([ ${TOTAL_FAILURES:-0} -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Errors | ${TOTAL_ERRORS:-0} | $([ ${TOTAL_ERRORS:-0} -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Skipped | ${TOTAL_SKIPPED:-0} | ℹ️ |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             
             # Test Suites Breakdown
@@ -145,10 +188,13 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Build Status
+          TOTAL_FAILURES=${TOTAL_FAILURES:-0}
+          TOTAL_ERRORS=${TOTAL_ERRORS:-0}
+          
           if [ "$TOTAL_FAILURES" -eq 0 ] && [ "$TOTAL_ERRORS" -eq 0 ]; then
             echo "## ✅ Build Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "All $TOTAL_TESTS tests passed successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+            echo "All ${TOTAL_TESTS:-0} tests passed successfully! 🎉" >> $GITHUB_STEP_SUMMARY
           else
             echo "## ❌ Build Status: FAILURE" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY

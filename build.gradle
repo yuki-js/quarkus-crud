@@ -19,16 +19,31 @@ dependencies {
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
     implementation 'io.quarkus:quarkus-flyway'
     implementation 'io.quarkus:quarkus-arc'
+    
+    // OpenAPI and Swagger UI support
+    implementation 'io.quarkus:quarkus-smallrye-openapi'
+    implementation 'io.quarkus:quarkus-swagger-ui'
+    
+    // Validation support for generated models
+    implementation 'io.quarkus:quarkus-hibernate-validator'
+    
+    // Swagger annotations for generated API code
+    implementation 'io.swagger:swagger-annotations:1.6.14'
+    
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.rest-assured:rest-assured'
+    
+    // OpenAPI contract validation for tests
+    testImplementation 'com.atlassian.oai:swagger-request-validator-restassured:2.41.0'
 }
 
 group = 'app.aoki'
 version = '0.0.1'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 test {
@@ -184,4 +199,79 @@ tasks.withType(Checkstyle) {
         html.required = true
         xml.required = false
     }
+}
+
+// OpenAPI Generator configuration
+configurations {
+    openApiGenerator
+}
+
+dependencies {
+    openApiGenerator 'org.openapitools:openapi-generator-cli:7.10.0'
+}
+
+task generateOpenApiModels(type: JavaExec) {
+    group = 'openapi'
+    description = 'Generate Java models from OpenAPI specification'
+    
+    classpath = configurations.openApiGenerator
+    mainClass = 'org.openapitools.codegen.OpenAPIGenerator'
+    
+    def inputSpec = file('src/main/resources/META-INF/openapi.yaml')
+    def outputDir = file('build/generated-src/openapi')
+    
+    inputs.file(inputSpec)
+    outputs.dir(outputDir)
+    
+    args = [
+        'generate',
+        '-i', inputSpec.absolutePath,
+        '-g', 'jaxrs-spec',
+        '-o', outputDir.absolutePath,
+        '--model-package', 'app.aoki.generated.model',
+        '--api-package', 'app.aoki.generated.api',
+        '--skip-validate-spec',
+        '--additional-properties',
+        [
+            'useBeanValidation=true',
+            'dateLibrary=java8',
+            'openApiNullable=false',
+            'hideGenerationTimestamp=true',
+            'useJakartaEe=true',
+            'generateApiTests=false',
+            'generateModelTests=false',
+            'generateApiDocumentation=false',
+            'generateModelDocumentation=false',
+            'generateSupportingFiles=false',
+            'interfaceOnly=true',
+            'returnResponse=true',
+            'useTags=true'
+        ].join(',')
+    ]
+    
+    doFirst {
+        outputDir.mkdirs()
+    }
+}
+
+// Add generated sources to source sets
+sourceSets {
+    main {
+        java {
+            srcDir 'build/generated-src/openapi/src/gen/java'
+        }
+    }
+}
+
+// Clean generated sources on clean
+clean {
+    delete 'build/generated-src'
+}
+
+// Make compileJava depend on generateOpenApiModels for automatic generation
+compileJava.dependsOn generateOpenApiModels
+
+// Make checkstyleMain depend on generateOpenApiModels to avoid implicit dependency
+tasks.named('checkstyleMain').configure {
+    dependsOn generateOpenApiModels
 }
