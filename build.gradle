@@ -267,7 +267,5 @@ clean {
     delete 'build/generated-src'
 }
 
-// Optional: Make compileJava depend on generateOpenApiModels for automatic generation
-// Uncomment the line below to auto-generate on every build (not recommended for CI)
-// For manual control, run: ./gradlew generateOpenApiModels
-// compileJava.dependsOn generateOpenApiModels
+// Make compileJava depend on generateOpenApiModels for automatic generation
+compileJava.dependsOn generateOpenApiModels

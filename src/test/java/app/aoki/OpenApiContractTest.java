@@ -6,6 +6,9 @@ import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.*;
 
 /**
@@ -21,15 +24,18 @@ public class OpenApiContractTest {
   private static Long testRoomId;
 
   @BeforeAll
-  public static void setupValidationFilter() {
+  public static void setupValidationFilter() throws IOException {
     // Create validation filter using the OpenAPI spec from resources
+    URL specUrl = OpenApiContractTest.class.getClassLoader().getResource("META-INF/openapi.yaml");
+    if (specUrl == null) {
+      throw new IllegalStateException("OpenAPI spec file not found");
+    }
+
+    // Read the spec file content
+    String specContent = new String(specUrl.openStream().readAllBytes(), StandardCharsets.UTF_8);
+
     OpenApiInteractionValidator validator =
-        OpenApiInteractionValidator.createForInlineApiSpecification(
-                OpenApiContractTest.class
-                    .getClassLoader()
-                    .getResource("META-INF/openapi.yaml")
-                    .toExternalForm())
-            .build();
+        OpenApiInteractionValidator.createForInlineApiSpecification(specContent).build();
     validationFilter = new OpenApiValidationFilter(validator);
   }
 
