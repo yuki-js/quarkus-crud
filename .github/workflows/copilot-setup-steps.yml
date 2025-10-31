@@ -44,8 +44,6 @@ jobs:
 
       - name: Setup Gradle toolchain
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.x' # optional: pin if desired
 
       - name: Cache Gradle wrapper & caches
         uses: actions/cache@v4
