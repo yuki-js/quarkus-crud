@@ -25,9 +25,7 @@ public class OpenApiContractTest {
     // Create validation filter using the OpenAPI spec from resources
     OpenApiInteractionValidator validator =
         OpenApiInteractionValidator.createForInlineApiSpecification(
-                OpenApiContractTest.class
-                    .getClassLoader()
-                    .getResource("META-INF/openapi.yaml"))
+                OpenApiContractTest.class.getClassLoader().getResource("META-INF/openapi.yaml"))
             .build();
     validationFilter = new OpenApiValidationFilter(validator);
   }
