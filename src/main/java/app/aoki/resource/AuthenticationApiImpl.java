@@ -7,12 +7,14 @@ import app.aoki.generated.model.UserResponse;
 import app.aoki.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
 @ApplicationScoped
+@Path("/api/auth")
 public class AuthenticationApiImpl implements AuthenticationApi {
 
   private static final String GUEST_TOKEN_COOKIE = "guest_token";

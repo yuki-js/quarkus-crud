@@ -11,6 +11,7 @@ import app.aoki.service.RoomService;
 import app.aoki.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
+@Path("/api/rooms")
 public class RoomsApiImpl implements RoomsApi {
 
   @Inject RoomService roomService;

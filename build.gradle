@@ -269,3 +269,8 @@ clean {
 
 // Make compileJava depend on generateOpenApiModels for automatic generation
 compileJava.dependsOn generateOpenApiModels
+
+// Make checkstyleMain depend on generateOpenApiModels to avoid implicit dependency
+tasks.named('checkstyleMain').configure {
+    dependsOn generateOpenApiModels
+}
