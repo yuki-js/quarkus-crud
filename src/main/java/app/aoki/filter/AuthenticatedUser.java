@@ -1,15 +1,23 @@
 package app.aoki.filter;
 
 import app.aoki.entity.User;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.ext.Provider;
+import jakarta.enterprise.context.RequestScoped;
 
 /** Helper to access the authenticated user from the request context. */
-@Provider
+@RequestScoped
 public class AuthenticatedUser {
 
-  @Context private ContainerRequestContext requestContext;
+  private static final ThreadLocal<User> USER_THREAD_LOCAL = new ThreadLocal<>();
+
+  // Package-private setter for AuthenticationFilter to set the user
+  static void setUser(User user) {
+    USER_THREAD_LOCAL.set(user);
+  }
+
+  // Package-private method to clear the user (for cleanup)
+  static void clear() {
+    USER_THREAD_LOCAL.remove();
+  }
 
   /**
    * Gets the authenticated user from the request context.
@@ -19,7 +27,7 @@ public class AuthenticatedUser {
    *     if @Authenticated is used correctly)
    */
   public User get() {
-    User user = (User) requestContext.getProperty(AuthenticationFilter.USER_PROPERTY);
+    User user = USER_THREAD_LOCAL.get();
     if (user == null) {
       throw new IllegalStateException("No authenticated user found in request context");
     }

@@ -18,23 +18,57 @@ import java.util.Optional;
  * to endpoints annotated with @Authenticated.
  */
 @Provider
-@Authenticated
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
 
+  // Paths that don't require authentication
+  private static final String[] PUBLIC_PATHS = {"/api/auth/guest", "/healthz", "/q/"};
+
+  private boolean isPublicEndpoint(ContainerRequestContext requestContext) {
+    String path = requestContext.getUriInfo().getPath();
+    String method = requestContext.getMethod();
+
+    // Check if path starts with any public path
+    for (String publicPath : PUBLIC_PATHS) {
+      if (path.startsWith(publicPath)) {
+        return true;
+      }
+    }
+
+    // Special handling for /api/rooms endpoints
+    // GET /api/rooms and GET /api/rooms/{id} are public
+    // Everything else requires authentication
+    if (path.startsWith("/api/rooms")) {
+      if ("GET".equals(method) && !path.contains("/my")) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   private static final String GUEST_TOKEN_COOKIE = "guest_token";
-  static final String USER_PROPERTY = "authenticated.user";
 
   @Inject UserService userService;
 
   @Override
   public void filter(ContainerRequestContext requestContext) {
+    // Skip authentication for public endpoints
+    if (isPublicEndpoint(requestContext)) {
+      return;
+    }
+
     Cookie cookie = requestContext.getCookies().get(GUEST_TOKEN_COOKIE);
 
+    // Get path to customize error messages
+    String path = requestContext.getUriInfo().getPath();
+    boolean isAuthEndpoint = path.startsWith("/api/auth/");
+
     if (cookie == null || cookie.getValue() == null || cookie.getValue().isEmpty()) {
+      String errorMessage = isAuthEndpoint ? "No guest token found" : "Authentication required";
       requestContext.abortWith(
           Response.status(Response.Status.UNAUTHORIZED)
-              .entity(new ErrorResponse("Authentication required"))
+              .entity(new ErrorResponse(errorMessage))
               .build());
       return;
     }
@@ -43,14 +77,15 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     Optional<User> user = userService.findByGuestToken(guestToken);
 
     if (user.isEmpty()) {
+      String errorMessage = isAuthEndpoint ? "Invalid guest token" : "Authentication required";
       requestContext.abortWith(
           Response.status(Response.Status.UNAUTHORIZED)
-              .entity(new ErrorResponse("Invalid authentication"))
+              .entity(new ErrorResponse(errorMessage))
               .build());
       return;
     }
 
-    // Store the authenticated user in the request context for use in the endpoint
-    requestContext.setProperty(USER_PROPERTY, user.get());
+    // Store the authenticated user in the ThreadLocal
+    AuthenticatedUser.setUser(user.get());
   }
 }
