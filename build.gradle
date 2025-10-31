@@ -27,9 +27,8 @@ dependencies {
     // Validation support for generated models
     implementation 'io.quarkus:quarkus-hibernate-validator'
     
-    // MapStruct for DTO-to-entity mapping
-    implementation 'org.mapstruct:mapstruct:1.6.3'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    // Swagger annotations for generated API code
+    implementation 'io.swagger:swagger-annotations:1.6.14'
     
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.rest-assured:rest-assured'
@@ -226,12 +225,11 @@ task generateOpenApiModels(type: JavaExec) {
     args = [
         'generate',
         '-i', inputSpec.absolutePath,
-        '-g', 'java',
+        '-g', 'jaxrs-spec',
         '-o', outputDir.absolutePath,
         '--model-package', 'app.aoki.generated.model',
         '--api-package', 'app.aoki.generated.api',
         '--skip-validate-spec',
-        '--library', 'native',
         '--additional-properties',
         [
             'useBeanValidation=true',
@@ -243,7 +241,10 @@ task generateOpenApiModels(type: JavaExec) {
             'generateModelTests=false',
             'generateApiDocumentation=false',
             'generateModelDocumentation=false',
-            'generateSupportingFiles=false'
+            'generateSupportingFiles=false',
+            'interfaceOnly=true',
+            'returnResponse=true',
+            'useTags=true'
         ].join(',')
     ]
     
@@ -256,7 +257,7 @@ task generateOpenApiModels(type: JavaExec) {
 sourceSets {
     main {
         java {
-            srcDir 'build/generated-src/openapi/src/main/java'
+            srcDir 'build/generated-src/openapi/src/gen/java'
         }
     }
 }

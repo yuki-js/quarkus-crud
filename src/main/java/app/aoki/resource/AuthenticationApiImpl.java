@@ -1,35 +1,26 @@
 package app.aoki.resource;
 
 import app.aoki.entity.User;
+import app.aoki.generated.api.AuthenticationApi;
+import app.aoki.generated.model.ErrorResponse;
+import app.aoki.generated.model.UserResponse;
 import app.aoki.service.UserService;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.*;
-import java.time.LocalDateTime;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
-@Path("/api/auth")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
-public class AuthResource {
+@ApplicationScoped
+public class AuthenticationApiImpl implements AuthenticationApi {
 
   private static final String GUEST_TOKEN_COOKIE = "guest_token";
   private static final int COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
   @Inject UserService userService;
 
-  /**
-   * Response for authenticated user information. Note: guestToken is NOT included for security -
-   * it's only in the cookie.
-   */
-  public static record UserResponse(Long id, LocalDateTime createdAt) {
-    public static UserResponse from(User user) {
-      return new UserResponse(user.getId(), user.getCreatedAt());
-    }
-  }
-
-  @POST
-  @Path("/guest")
+  @Override
   public Response createGuestUser() {
     User user = userService.createGuestUser();
 
@@ -41,25 +32,30 @@ public class AuthResource {
             .httpOnly(true)
             .build();
 
-    return Response.ok(UserResponse.from(user)).cookie(cookie).build();
+    return Response.ok(toUserResponse(user)).cookie(cookie).build();
   }
 
-  @GET
-  @Path("/me")
-  public Response getCurrentUser(@CookieParam(GUEST_TOKEN_COOKIE) String guestToken) {
+  @Override
+  public Response getCurrentUser(String guestToken) {
     if (guestToken == null || guestToken.isEmpty()) {
       return Response.status(Response.Status.UNAUTHORIZED)
-          .entity("{\"error\": \"No guest token found\"}")
+          .entity(new ErrorResponse().error("No guest token found"))
           .build();
     }
 
     Optional<User> user = userService.findByGuestToken(guestToken);
     if (user.isEmpty()) {
       return Response.status(Response.Status.UNAUTHORIZED)
-          .entity("{\"error\": \"Invalid guest token\"}")
+          .entity(new ErrorResponse().error("Invalid guest token"))
           .build();
     }
 
-    return Response.ok(UserResponse.from(user.get())).build();
+    return Response.ok(toUserResponse(user.get())).build();
+  }
+
+  private UserResponse toUserResponse(User user) {
+    return new UserResponse()
+        .id(user.getId())
+        .createdAt(user.getCreatedAt().atOffset(ZoneOffset.UTC));
   }
 }
