@@ -8,14 +8,14 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.util.Optional;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
- * JAX-RS filter for authenticating requests using JWT Bearer tokens. Automatically applied to
- * endpoints annotated with @Authenticated.
+ * JAX-RS filter for authenticating requests using guest token from cookies. Automatically applied
+ * to endpoints annotated with @Authenticated.
  */
 @Provider
 @Priority(Priorities.AUTHENTICATION)
@@ -47,9 +47,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     return false;
   }
 
-  @Inject UserService userService;
+  private static final String GUEST_TOKEN_COOKIE = "guest_token";
 
-  @Inject JsonWebToken jwt;
+  @Inject UserService userService;
 
   @Override
   public void filter(ContainerRequestContext requestContext) {
@@ -58,15 +58,14 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
 
-    // Get Authorization header
-    String authHeader = requestContext.getHeaderString("Authorization");
+    Cookie cookie = requestContext.getCookies().get(GUEST_TOKEN_COOKIE);
 
     // Get path to customize error messages
     String path = requestContext.getUriInfo().getPath();
     boolean isAuthEndpoint = path.startsWith("/api/auth/");
 
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-      String errorMessage = isAuthEndpoint ? "No JWT token found" : "Authentication required";
+    if (cookie == null || cookie.getValue() == null || cookie.getValue().isEmpty()) {
+      String errorMessage = isAuthEndpoint ? "No guest token found" : "Authentication required";
       requestContext.abortWith(
           Response.status(Response.Status.UNAUTHORIZED)
               .entity(new ErrorResponse(errorMessage))
@@ -74,33 +73,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
 
-    // JWT validation is automatically done by Quarkus SmallRye JWT
-    // If we reach here and jwt is available, it means the token is valid
-    if (jwt == null || jwt.getSubject() == null) {
-      String errorMessage = isAuthEndpoint ? "Invalid JWT token" : "Authentication required";
-      requestContext.abortWith(
-          Response.status(Response.Status.UNAUTHORIZED)
-              .entity(new ErrorResponse(errorMessage))
-              .build());
-      return;
-    }
-
-    // Get user from JWT subject (user ID)
-    Long userId;
-    try {
-      userId = Long.parseLong(jwt.getSubject());
-    } catch (NumberFormatException e) {
-      requestContext.abortWith(
-          Response.status(Response.Status.UNAUTHORIZED)
-              .entity(new ErrorResponse("Invalid token format"))
-              .build());
-      return;
-    }
-
-    Optional<User> user = userService.findById(userId);
+    String guestToken = cookie.getValue();
+    Optional<User> user = userService.findByGuestToken(guestToken);
 
     if (user.isEmpty()) {
-      String errorMessage = isAuthEndpoint ? "Invalid JWT token" : "Authentication required";
+      String errorMessage = isAuthEndpoint ? "Invalid guest token" : "Authentication required";
       requestContext.abortWith(
           Response.status(Response.Status.UNAUTHORIZED)
               .entity(new ErrorResponse(errorMessage))

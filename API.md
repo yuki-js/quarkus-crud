@@ -1,17 +1,6 @@
-# JWT-Based Authentication API Documentation
+# Guest User Authentication API Documentation
 
-This API provides secure JWT-based authentication for both guest users and registered users, with CRUD operations for rooms.
-
-## Authentication Overview
-
-The API uses **JWT (JSON Web Token)** with RSA-2048 signature for secure, stateless authentication. All authenticated endpoints require a Bearer token in the `Authorization` header.
-
-### Security Features
-- **Cryptographically signed JWT tokens** using RSA-2048 key pair
-- **Secure password hashing** with SHA-256 and random salt
-- **Role-based access control** (guest, user roles)
-- **Token expiration** (24 hours by default)
-- **Standards-compliant** Bearer token authentication (RFC 6750)
+This API provides anonymous guest user authentication using cookies and CRUD operations for rooms.
 
 ## Database Setup
 
@@ -29,7 +18,7 @@ docker run --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=quarkus_
 ### Authentication Endpoints
 
 #### Create Guest User
-Creates an anonymous guest user and returns a JWT token.
+Creates an anonymous guest user and sets a cookie with the guest token.
 
 **Endpoint:** `POST /api/auth/guest`
 
@@ -41,25 +30,16 @@ Creates an anonymous guest user and returns a JWT token.
 }
 ```
 
-**Headers Returned:** 
-- `Authorization: Bearer <JWT_TOKEN>`
+**Note:** The guest token is NOT included in the response for security reasons. It is only available in the HttpOnly cookie.
 
-**JWT Token Claims:**
-- `sub`: User ID (subject)
-- `upn`: User principal name (guest_{userId} for guest users)
-- `iss`: Token issuer (https://quarkus-crud.example.com)
-- `exp`: Expiration timestamp
-- `groups`: User roles (["guest"] for guest users)
+**Cookie Set:** `guest_token` (HttpOnly, Max-Age: 1 year)
 
 #### Get Current User
-Retrieves the current user information from the JWT token.
+Retrieves the current user information from the guest token cookie.
 
 **Endpoint:** `GET /api/auth/me`
 
-**Headers Required:** 
-```
-Authorization: Bearer <JWT_TOKEN>
-```
+**Headers Required:** Cookie with `guest_token`
 
 **Response:**
 ```json
@@ -69,7 +49,7 @@ Authorization: Bearer <JWT_TOKEN>
 }
 ```
 
-**Note:** JWT tokens provide stateless authentication and include user identity in the token itself.
+**Note:** The guest token is NOT included in the response for security reasons. It is stored only in the HttpOnly cookie.
 
 ### Room Endpoints
 
@@ -78,10 +58,7 @@ Creates a new room for the authenticated user.
 
 **Endpoint:** `POST /api/rooms`
 
-**Headers Required:** 
-```
-Authorization: Bearer <JWT_TOKEN>
-```
+**Headers Required:** Cookie with `guest_token`
 
 **Request Body:**
 ```json
@@ -141,10 +118,7 @@ Retrieves all rooms created by the authenticated user.
 
 **Endpoint:** `GET /api/rooms/my`
 
-**Headers Required:** 
-```
-Authorization: Bearer <JWT_TOKEN>
-```
+**Headers Required:** Cookie with `guest_token`
 
 **Response:**
 ```json
@@ -164,10 +138,7 @@ Updates an existing room (only the owner can update).
 
 **Endpoint:** `PUT /api/rooms/{id}`
 
-**Headers Required:** 
-```
-Authorization: Bearer <JWT_TOKEN>
-```
+**Headers Required:** Cookie with `guest_token`
 
 **Request Body:**
 ```json
@@ -193,10 +164,7 @@ Deletes a room (only the owner can delete).
 
 **Endpoint:** `DELETE /api/rooms/{id}`
 
-**Headers Required:** 
-```
-Authorization: Bearer <JWT_TOKEN>
-```
+**Headers Required:** Cookie with `guest_token`
 
 **Response:** 204 No Content
 

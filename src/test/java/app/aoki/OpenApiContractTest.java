@@ -20,7 +20,7 @@ import org.junit.jupiter.api.*;
 public class OpenApiContractTest {
 
   private static OpenApiValidationFilter validationFilter;
-  private static String jwtToken;
+  private static String guestToken;
   private static Long testRoomId;
 
   @BeforeAll
@@ -34,8 +34,9 @@ public class OpenApiContractTest {
     // Read the spec file content
     String specContent = new String(specUrl.openStream().readAllBytes(), StandardCharsets.UTF_8);
 
-    // Create validator with security validation disabled for JWT Bearer auth
-    // Some OpenAPI validators may not properly recognize Authorization headers in all cases
+    // Create validator with security validation disabled for cookie auth
+    // The API uses HttpOnly cookies which RestAssured doesn't expose in a way the validator
+    // recognizes
     OpenApiInteractionValidator validator =
         OpenApiInteractionValidator.createForInlineApiSpecification(specContent)
             .withLevelResolver(
@@ -63,8 +64,8 @@ public class OpenApiContractTest {
             .extract()
             .response();
 
-    jwtToken = response.getHeader("Authorization").substring(7);
-    Assertions.assertNotNull(jwtToken, "JWT token should be set in Authorization header");
+    guestToken = response.getCookie("guest_token");
+    Assertions.assertNotNull(guestToken, "Guest token cookie should be set");
   }
 
   @Test
@@ -73,7 +74,7 @@ public class OpenApiContractTest {
     // GET /api/auth/me should conform to OpenAPI spec
     given()
         .filter(validationFilter)
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .when()
         .get("/api/auth/me")
         .then()
@@ -94,7 +95,7 @@ public class OpenApiContractTest {
     var response =
         given()
             .filter(validationFilter)
-            .header("Authorization", "Bearer " + jwtToken)
+            .cookie("guest_token", guestToken)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"Contract Test Room\",\"description\":\"Testing OpenAPI contract\"}")
             .when()
@@ -121,7 +122,7 @@ public class OpenApiContractTest {
     // GET /api/rooms/my should conform to OpenAPI spec
     given()
         .filter(validationFilter)
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .when()
         .get("/api/rooms/my")
         .then()
@@ -134,7 +135,7 @@ public class OpenApiContractTest {
     // PUT /api/rooms/{id} should conform to OpenAPI spec
     given()
         .filter(validationFilter)
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .contentType(ContentType.JSON)
         .body(
             "{\"name\":\"Updated Contract Test Room\",\"description\":\"Updated via contract"
@@ -151,7 +152,7 @@ public class OpenApiContractTest {
     // DELETE /api/rooms/{id} should conform to OpenAPI spec
     given()
         .filter(validationFilter)
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .when()
         .delete("/api/rooms/" + testRoomId)
         .then()

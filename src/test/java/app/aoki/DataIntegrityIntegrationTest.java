@@ -19,21 +19,21 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataIntegrityIntegrationTest {
 
-  private static String jwtToken;
+  private static String guestToken;
 
   @Test
   @Order(0)
   public void setup() {
     // Create a guest user for testing
     Response response = given().contentType(ContentType.JSON).post("/api/auth/guest");
-    jwtToken = response.getHeader("Authorization").substring(7);
+    guestToken = response.getCookie("guest_token");
   }
 
   @Test
   @Order(1)
   public void testCreateRoomWithSpecialCharacters() {
     given()
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .contentType(ContentType.JSON)
         .body(
             "{\"name\":\"Room @#$% with & special chars\",\"description\":\"Testing special chars\"}")
@@ -50,7 +50,7 @@ public class DataIntegrityIntegrationTest {
     // Create a room first
     Response createResponse =
         given()
-            .header("Authorization", "Bearer " + jwtToken)
+            .cookie("guest_token", guestToken)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"Room for Null Test\",\"description\":\"Initial description\"}")
             .post("/api/rooms");
@@ -58,7 +58,7 @@ public class DataIntegrityIntegrationTest {
 
     // Update with null description
     given()
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .contentType(ContentType.JSON)
         .body("{\"name\":\"Room with Null Description\",\"description\":null}")
         .when()
@@ -74,7 +74,7 @@ public class DataIntegrityIntegrationTest {
     // Create first room
     Response room1 =
         given()
-            .header("Authorization", "Bearer " + jwtToken)
+            .cookie("guest_token", guestToken)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"Living Room\",\"description\":\"First room\"}")
             .post("/api/rooms")
@@ -87,7 +87,7 @@ public class DataIntegrityIntegrationTest {
     // Create second room
     Response room2 =
         given()
-            .header("Authorization", "Bearer " + jwtToken)
+            .cookie("guest_token", guestToken)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"Bedroom\",\"description\":\"Second room\"}")
             .post("/api/rooms")
@@ -100,7 +100,7 @@ public class DataIntegrityIntegrationTest {
     // Create third room
     Response room3 =
         given()
-            .header("Authorization", "Bearer " + jwtToken)
+            .cookie("guest_token", guestToken)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"Kitchen\",\"description\":\"Third room\"}")
             .post("/api/rooms")
@@ -112,7 +112,7 @@ public class DataIntegrityIntegrationTest {
 
     // Verify all rooms are in my rooms
     given()
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .when()
         .get("/api/rooms/my")
         .then()
@@ -126,7 +126,7 @@ public class DataIntegrityIntegrationTest {
   @Test
   public void testRoomNameWithEmojisAndUnicode() {
     given()
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .contentType(ContentType.JSON)
         .body("{\"name\":\"Room 🏠 with Unicode 日本語\",\"description\":\"Testing unicode support\"}")
         .when()
@@ -140,7 +140,7 @@ public class DataIntegrityIntegrationTest {
   public void testLongRoomName() {
     String longName = "A".repeat(250); // Test with 250 characters
     given()
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .contentType(ContentType.JSON)
         .body("{\"name\":\"" + longName + "\",\"description\":\"Testing long name\"}")
         .when()
@@ -152,7 +152,7 @@ public class DataIntegrityIntegrationTest {
   @Test
   public void testEmptyRoomName() {
     given()
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestToken)
         .contentType(ContentType.JSON)
         .body("{\"name\":\"\",\"description\":\"Empty name test\"}")
         .when()

@@ -14,13 +14,13 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Integration tests for authentication functionality. Tests the complete authentication flow
- * including guest user creation and JWT token validation.
+ * including guest user creation and validation.
  */
 @QuarkusTest
 @TestMethodOrder(OrderAnnotation.class)
 public class AuthenticationIntegrationTest {
 
-  private static String jwtToken;
+  private static String guestTokenCookie;
 
   @Test
   @Order(1)
@@ -34,24 +34,20 @@ public class AuthenticationIntegrationTest {
             .statusCode(anyOf(is(200), is(201)))
             .body("id", notNullValue())
             .body("createdAt", notNullValue())
-            .header("Authorization", notNullValue())
             .extract()
             .response();
 
-    // Extract JWT token from Authorization header
-    String authHeader = response.getHeader("Authorization");
-    assertNotNull(authHeader, "Authorization header should be present");
-    assertTrue(
-        authHeader.startsWith("Bearer "), "Authorization header should start with 'Bearer '");
-    jwtToken = authHeader.substring(7); // Remove "Bearer " prefix
-    assertFalse(jwtToken.isEmpty(), "JWT token should not be empty");
+    // Extract guest token cookie for subsequent tests
+    guestTokenCookie = response.getCookie("guest_token");
+    assertNotNull(guestTokenCookie, "Guest token cookie should be set");
+    assertFalse(guestTokenCookie.isEmpty(), "Guest token cookie should not be empty");
   }
 
   @Test
   @Order(2)
   public void testGetCurrentUserWithValidToken() {
     given()
-        .header("Authorization", "Bearer " + jwtToken)
+        .cookie("guest_token", guestTokenCookie)
         .when()
         .get("/api/auth/me")
         .then()
@@ -68,18 +64,19 @@ public class AuthenticationIntegrationTest {
         .get("/api/auth/me")
         .then()
         .statusCode(401)
-        .body("error", equalTo("No JWT token found"));
+        .body("error", equalTo("No guest token found"));
   }
 
   @Test
   @Order(4)
   public void testGetCurrentUserWithInvalidToken() {
     given()
-        .header("Authorization", "Bearer invalid-token-12345")
+        .cookie("guest_token", "invalid-token-12345")
         .when()
         .get("/api/auth/me")
         .then()
-        .statusCode(401);
+        .statusCode(401)
+        .body("error", equalTo("Invalid guest token"));
   }
 
   @Test
@@ -94,11 +91,10 @@ public class AuthenticationIntegrationTest {
             .then()
             .statusCode(anyOf(is(200), is(201)))
             .body("id", notNullValue())
-            .header("Authorization", notNullValue())
             .extract()
             .response();
 
-    String token1 = response1.getHeader("Authorization").substring(7);
+    String token1 = response1.getCookie("guest_token");
     Long userId1 = response1.jsonPath().getLong("id");
 
     // Create second guest user
@@ -110,15 +106,14 @@ public class AuthenticationIntegrationTest {
             .then()
             .statusCode(anyOf(is(200), is(201)))
             .body("id", notNullValue())
-            .header("Authorization", notNullValue())
             .extract()
             .response();
 
-    String token2 = response2.getHeader("Authorization").substring(7);
+    String token2 = response2.getCookie("guest_token");
     Long userId2 = response2.jsonPath().getLong("id");
 
     // Verify tokens are different
-    assertNotEquals(token1, token2, "JWT tokens should be unique");
+    assertNotEquals(token1, token2, "Guest tokens should be unique");
 
     // Verify user IDs are different
     assertNotEquals(userId1, userId2, "User IDs should be unique");
