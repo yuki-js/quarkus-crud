@@ -88,11 +88,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
 
-    // Get user from JWT subject (user ID)
-    Long userId;
-    try {
-      userId = Long.parseLong(jwt.getSubject());
-    } catch (NumberFormatException e) {
+    // Get user from JWT subject (UUID)
+    String userUuid = jwt.getSubject();
+    if (userUuid == null || userUuid.isEmpty()) {
       requestContext.abortWith(
           Response.status(Response.Status.UNAUTHORIZED)
               .entity(new ErrorResponse("Invalid token format"))
@@ -100,7 +98,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
 
-    Optional<User> user = userService.findById(userId);
+    // Look up user by UUID (stored in guestToken field for guest users)
+    Optional<User> user = userService.findByGuestToken(userUuid);
 
     if (user.isEmpty()) {
       String errorMessage = isAuthEndpoint ? "Invalid JWT token" : "Authentication required";

@@ -24,7 +24,7 @@ public class AuthenticationApiImpl implements AuthenticationApi {
   @Override
   public Response createGuestUser() {
     User user = userService.createGuestUser();
-    String token = guestJwtService.generateGuestToken(user.getId());
+    String token = guestJwtService.generateGuestToken(user.getGuestToken());
 
     return Response.ok(toUserResponse(user)).header("Authorization", "Bearer " + token).build();
   }
