@@ -20,7 +20,7 @@ import org.junit.jupiter.api.*;
 public class OpenApiContractTest {
 
   private static OpenApiValidationFilter validationFilter;
-  private static String guestToken;
+  private static String jwtToken;
   private static Long testRoomId;
 
   @BeforeAll
@@ -64,8 +64,8 @@ public class OpenApiContractTest {
             .extract()
             .response();
 
-    guestToken = response.getCookie("guest_token");
-    Assertions.assertNotNull(guestToken, "Guest token cookie should be set");
+    jwtToken = response.getHeader("Authorization").substring(7);
+    Assertions.assertNotNull(jwtToken, "JWT token should be set in Authorization header");
   }
 
   @Test
@@ -74,7 +74,7 @@ public class OpenApiContractTest {
     // GET /api/auth/me should conform to OpenAPI spec
     given()
         .filter(validationFilter)
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/auth/me")
         .then()
@@ -95,7 +95,7 @@ public class OpenApiContractTest {
     var response =
         given()
             .filter(validationFilter)
-            .cookie("guest_token", guestToken)
+            .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"Contract Test Room\",\"description\":\"Testing OpenAPI contract\"}")
             .when()
@@ -122,7 +122,7 @@ public class OpenApiContractTest {
     // GET /api/rooms/my should conform to OpenAPI spec
     given()
         .filter(validationFilter)
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/rooms/my")
         .then()
@@ -135,7 +135,7 @@ public class OpenApiContractTest {
     // PUT /api/rooms/{id} should conform to OpenAPI spec
     given()
         .filter(validationFilter)
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
         .body(
             "{\"name\":\"Updated Contract Test Room\",\"description\":\"Updated via contract"
@@ -152,7 +152,7 @@ public class OpenApiContractTest {
     // DELETE /api/rooms/{id} should conform to OpenAPI spec
     given()
         .filter(validationFilter)
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .when()
         .delete("/api/rooms/" + testRoomId)
         .then()

@@ -28,15 +28,15 @@ public class AuthorizationIntegrationTest {
   public void setup() {
     // Create two different guest users for testing authorization
     Response user1Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
-    user1Token = user1Response.getCookie("guest_token");
+    user1Token = user1Response.getHeader("Authorization").substring(7);
 
     Response user2Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
-    user2Token = user2Response.getCookie("guest_token");
+    user2Token = user2Response.getHeader("Authorization").substring(7);
 
     // User 1 creates a room
     Response roomResponse =
         given()
-            .cookie("guest_token", user1Token)
+            .header("Authorization", "Bearer " + user1Token)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"User 1 Room\",\"description\":\"Owned by user 1\"}")
             .post("/api/rooms");
@@ -47,7 +47,7 @@ public class AuthorizationIntegrationTest {
   @Order(1)
   public void testUserCannotUpdateAnotherUsersRoom() {
     given()
-        .cookie("guest_token", user2Token)
+        .header("Authorization", "Bearer " + user2Token)
         .contentType(ContentType.JSON)
         .body("{\"name\":\"Hacked Room\",\"description\":\"Should fail\"}")
         .when()
@@ -61,7 +61,7 @@ public class AuthorizationIntegrationTest {
   @Order(2)
   public void testUserCannotDeleteAnotherUsersRoom() {
     given()
-        .cookie("guest_token", user2Token)
+        .header("Authorization", "Bearer " + user2Token)
         .when()
         .delete("/api/rooms/" + user1RoomId)
         .then()
@@ -73,7 +73,7 @@ public class AuthorizationIntegrationTest {
   @Order(3)
   public void testUserCanUpdateOwnRoom() {
     given()
-        .cookie("guest_token", user1Token)
+        .header("Authorization", "Bearer " + user1Token)
         .contentType(ContentType.JSON)
         .body("{\"name\":\"Updated by Owner\",\"description\":\"Owner update\"}")
         .when()
@@ -87,7 +87,7 @@ public class AuthorizationIntegrationTest {
   @Order(4)
   public void testUserCanDeleteOwnRoom() {
     given()
-        .cookie("guest_token", user1Token)
+        .header("Authorization", "Bearer " + user1Token)
         .when()
         .delete("/api/rooms/" + user1RoomId)
         .then()
@@ -100,7 +100,7 @@ public class AuthorizationIntegrationTest {
     // User 1 creates a room
     Response room1Response =
         given()
-            .cookie("guest_token", user1Token)
+            .header("Authorization", "Bearer " + user1Token)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"User 1 Private Room\",\"description\":\"Private\"}")
             .post("/api/rooms");
@@ -109,7 +109,7 @@ public class AuthorizationIntegrationTest {
     // User 2 creates a room
     Response room2Response =
         given()
-            .cookie("guest_token", user2Token)
+            .header("Authorization", "Bearer " + user2Token)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"User 2 Private Room\",\"description\":\"Private\"}")
             .post("/api/rooms");
@@ -117,7 +117,7 @@ public class AuthorizationIntegrationTest {
 
     // User 1 should only see their own room in /my
     given()
-        .cookie("guest_token", user1Token)
+        .header("Authorization", "Bearer " + user1Token)
         .when()
         .get("/api/rooms/my")
         .then()
@@ -127,7 +127,7 @@ public class AuthorizationIntegrationTest {
 
     // User 2 should only see their own room in /my
     given()
-        .cookie("guest_token", user2Token)
+        .header("Authorization", "Bearer " + user2Token)
         .when()
         .get("/api/rooms/my")
         .then()
