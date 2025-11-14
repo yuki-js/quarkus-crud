@@ -41,7 +41,8 @@ public class AuthenticationIntegrationTest {
     // Extract JWT token from Authorization header
     String authHeader = response.getHeader("Authorization");
     assertNotNull(authHeader, "Authorization header should be present");
-    assertTrue(authHeader.startsWith("Bearer "), "Authorization header should start with 'Bearer '");
+    assertTrue(
+        authHeader.startsWith("Bearer "), "Authorization header should start with 'Bearer '");
     jwtToken = authHeader.substring(7); // Remove "Bearer " prefix
     assertFalse(jwtToken.isEmpty(), "JWT token should not be empty");
   }

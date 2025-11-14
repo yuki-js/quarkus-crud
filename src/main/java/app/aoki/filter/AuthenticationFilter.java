@@ -112,4 +112,3 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     AuthenticatedUser.setUser(user.get());
   }
 }
-
