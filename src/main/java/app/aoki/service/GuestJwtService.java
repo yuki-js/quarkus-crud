@@ -31,7 +31,7 @@ public class GuestJwtService {
    */
   public String generateGuestToken(String userUuid) {
     return Jwt.issuer(issuer)
-        .upn("guest_" + userUuid) // User principal name
+        .upn(userUuid) // User principal name - plain UUID for consistency
         .subject(userUuid) // UUID as subject (same format for all users)
         .groups("guest") // Guest role
         .expiresIn(tokenLifespan)

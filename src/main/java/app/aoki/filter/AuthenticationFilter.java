@@ -1,7 +1,7 @@
 package app.aoki.filter;
 
 import app.aoki.entity.User;
-import app.aoki.service.UserService;
+import app.aoki.service.AuthenticationService;
 import app.aoki.support.ErrorResponse;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -17,8 +17,8 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
  * JAX-RS filter for authenticating requests using JWT Bearer tokens. Automatically applied to
  * endpoints annotated with @Authenticated.
  *
- * <p>This filter validates JWT tokens issued for guest users. For real user authentication, the
- * system can be extended to accept tokens from external authentication providers.
+ * <p>This filter delegates authentication logic to AuthenticationService, maintaining separation of
+ * concerns between filter and service layers.
  */
 @Provider
 @Priority(Priorities.AUTHENTICATION)
@@ -50,7 +50,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     return false;
   }
 
-  @Inject UserService userService;
+  @Inject AuthenticationService authenticationService;
 
   @Inject JsonWebToken jwt;
 
@@ -68,7 +68,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     String path = requestContext.getUriInfo().getPath();
     boolean isAuthEndpoint = path.startsWith("/api/auth/");
 
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    if (!authenticationService.hasBearerToken(authHeader)) {
       String errorMessage = isAuthEndpoint ? "No JWT token found" : "Authentication required";
       requestContext.abortWith(
           Response.status(Response.Status.UNAUTHORIZED)
@@ -78,28 +78,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     // JWT validation is automatically done by Quarkus SmallRye JWT
-    // If we reach here and jwt is available, it means the token is valid
-    if (jwt == null || jwt.getSubject() == null) {
-      String errorMessage = isAuthEndpoint ? "Invalid JWT token" : "Authentication required";
-      requestContext.abortWith(
-          Response.status(Response.Status.UNAUTHORIZED)
-              .entity(new ErrorResponse(errorMessage))
-              .build());
-      return;
-    }
-
-    // Get user from JWT subject (UUID)
-    String userUuid = jwt.getSubject();
-    if (userUuid == null || userUuid.isEmpty()) {
-      requestContext.abortWith(
-          Response.status(Response.Status.UNAUTHORIZED)
-              .entity(new ErrorResponse("Invalid token format"))
-              .build());
-      return;
-    }
-
-    // Look up user by UUID (stored in guestToken field for guest users)
-    Optional<User> user = userService.findByGuestToken(userUuid);
+    // Delegate authentication logic to service layer
+    Optional<User> user = authenticationService.authenticateFromJwt(jwt);
 
     if (user.isEmpty()) {
       String errorMessage = isAuthEndpoint ? "Invalid JWT token" : "Authentication required";
