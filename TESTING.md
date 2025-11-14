@@ -6,7 +6,7 @@ This document describes the testing strategy for the Quarkus CRUD application.
 
 The project includes comprehensive integration and end-to-end tests covering:
 
-- **Authentication Flow**: Guest user creation and authentication via cookies
+- **Authentication Flow**: JWT-based authentication with RSA-signed tokens
 - **Room CRUD Operations**: Create, Read, Update, Delete operations
 - **Authorization**: Access control ensuring users can only modify their own resources
 - **Database Integration**: PostgreSQL with Flyway migrations and MyBatis mappers
@@ -23,11 +23,12 @@ All tests are written in Java using JUnit 5 and REST Assured, organized by funct
 Basic smoke test verifying application startup.
 
 #### 2. AuthenticationIntegrationTest
-Tests authentication functionality:
+Tests JWT authentication functionality:
 - Create guest user
+- JWT token generation and validation
 - Get current user with valid/invalid tokens
 - Multiple guest user creation
-- Cookie handling
+- Bearer token handling
 
 #### 3. RoomCrudIntegrationTest
 Tests complete CRUD operations for rooms:
