@@ -146,13 +146,31 @@ kubectl create configmap backend-config \
 
 ### Secrets
 
-Store sensitive configuration:
+#### JWT keys (ES256)
 
+- Generate private key:
 ```bash
-kubectl create secret generic backend-secrets \
-  --namespace=quarkus-crud \
-  --from-file=private-key.pem=src/main/resources/keys/private-key.pem \
-  --from-file=public-key.pem=src/main/resources/keys/public-key.pem
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out privateKey.pem
+```
+
+- Create Secret (private key only):
+```bash
+kubectl -n quarkus-crud create secret generic jwt-keys \
+  --from-file=privateKey.pem=./privateKey.pem
+```
+
+- Public key derivation at startup (initContainer):
+  - Derives `/keys/publicKey.pem` from `/keys-src/privateKey.pem`
+  - Runtime reads `/keys`:
+```properties
+mp.jwt.verify.publickey.location=/keys/publicKey.pem
+smallrye.jwt.sign.key.location=/keys/privateKey.pem
+```
+
+- Optional（initContainerを使わない場合）: 公開鍵を ConfigMap にインライン指定
+```properties
+# manifests/application.properties
+mp.jwt.verify.publickey=-----BEGIN PUBLIC KEY-----\n...your-key...\n-----END PUBLIC KEY-----
 ```
 
 ## Ingress Setup (Optional)

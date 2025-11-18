@@ -25,6 +25,22 @@ spec:
     spec:
       imagePullSecrets:
         - name: github-registry-secret
+      initContainers:
+        - name: derive-jwt-public-key
+          image: bitnami/openssl:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              set -e;
+              cp /keys-src/privateKey.pem /keys/privateKey.pem;
+              openssl pkey -in /keys/privateKey.pem -pubout -out /keys/publicKey.pem;
+              ls -l /keys;
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /keys-src
+              readOnly: true
+            - name: keys
+              mountPath: /keys
       containers:
         - name: backend
           image: ghcr.io/yuki-js/quarkus-crud:latest-native
@@ -37,9 +53,19 @@ spec:
           env:
             - name: QUARKUS_CONFIG_LOCATIONS
               value: /deployments/config/application.properties
+            - name: MP_JWT_VERIFY_PUBLICKEY_LOCATION
+              value: /keys/publicKey.pem
+            - name: SMALLRYE_JWT_SIGN_KEY_LOCATION
+              value: /keys/privateKey.pem
           volumeMounts:
             - name: config
               mountPath: /deployments/config
+              readOnly: true
+            - name: jwt-keys
+              mountPath: /keys-src
+              readOnly: true
+            - name: keys
+              mountPath: /keys
               readOnly: true
           resources:
             requests:
@@ -82,6 +108,12 @@ spec:
         - name: config
           configMap:
             name: backend-config
+        - name: jwt-keys
+          secret:
+            secretName: jwt-keys
+            optional: true
+        - name: keys
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

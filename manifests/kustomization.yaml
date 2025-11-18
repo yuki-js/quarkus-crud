@@ -6,6 +6,7 @@ namespace: quarkus-crud
 resources:
   - backend.yaml
   - common-secret.yaml
+  - jwt-keys.yaml
   - ingress.yaml
 
 configMapGenerator:
