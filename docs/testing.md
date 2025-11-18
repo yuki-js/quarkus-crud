@@ -8,6 +8,7 @@ The project uses a comprehensive testing strategy with multiple test types:
 2. **Integration Tests**: Test component interactions with real database
 3. **Contract Tests**: Validate API responses against OpenAPI specification
 4. **Application Startup Tests**: Verify application boots correctly
+5. **External Server Tests**: Test against deployed production servers
 
 ## Running Tests
 
@@ -16,6 +17,28 @@ The project uses a comprehensive testing strategy with multiple test types:
 ```bash
 ./gradlew test
 ```
+
+This runs both internal tests (with local Quarkus server) and external tests (against production server).
+
+### Internal Tests Only
+
+To run only tests that use the local Quarkus test server:
+
+```bash
+./gradlew test --tests "*" --exclude-tests "*ExternalServer*"
+```
+
+Or simply run with PostgreSQL stopped (external tests will run, internal tests requiring DB will be skipped).
+
+### External Server Tests
+
+To test against the production server:
+
+```bash
+./gradlew test --tests "*ExternalServer*"
+```
+
+See [External Testing Guide](./external-testing.md) for more details.
 
 ### Specific Test Class
 

@@ -58,6 +58,7 @@ docker run -d --name quarkus-postgres \
 - [API Documentation](./api.md) - Detailed API endpoints and usage
 - [Development Guide](./development.md) - Setup and development workflow
 - [Testing Guide](./testing.md) - Testing strategy and running tests
+- [External Testing Guide](./external-testing.md) - Testing against production servers
 - [Deployment Guide](./deployment.md) - Kubernetes deployment instructions
 
 ## Project Structure
