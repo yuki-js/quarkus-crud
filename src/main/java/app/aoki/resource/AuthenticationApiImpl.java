@@ -24,8 +24,8 @@ public class AuthenticationApiImpl implements AuthenticationApi {
   @Override
   public Response createGuestUser() {
     // Create a new user with anonymous authentication
-    User user = userService.createUser();
-    String token = jwtService.generateAnonymousToken(user.getAuthIdentifier());
+    User user = userService.createAnonymousUser();
+    String token = jwtService.generateAnonymousToken(user);
 
     return Response.ok(toUserResponse(user)).header("Authorization", "Bearer " + token).build();
   }

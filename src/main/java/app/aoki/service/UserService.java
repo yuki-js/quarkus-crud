@@ -1,5 +1,6 @@
 package app.aoki.service;
 
+import app.aoki.entity.AuthenticationProvider;
 import app.aoki.entity.User;
 import app.aoki.mapper.UserMapper;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -10,10 +11,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Service for managing users.
+ * Service for managing users across all authentication providers.
  *
- * <p>All users are treated equally regardless of authentication method. This service handles user
- * lifecycle operations including creation, retrieval, update, and deletion.
+ * <p>This service handles user lifecycle operations for users authenticated through different
+ * providers (anonymous, external OIDC, etc.). All users are treated equally with provider-specific
+ * logic abstracted.
  */
 @ApplicationScoped
 public class UserService {
@@ -23,15 +25,52 @@ public class UserService {
   /**
    * Creates a new user with anonymous authentication.
    *
-   * <p>Generates a unique authentication identifier (UUID) for the user. This identifier is used
-   * for JWT token generation and user lookup.
+   * <p>Generates a unique authentication identifier (UUID) for the user. This identifier serves as
+   * both the internal reference and the JWT subject for anonymous users.
    *
    * @return the created user
    */
   @Transactional
-  public User createUser() {
+  public User createAnonymousUser() {
     User user = new User();
     user.setAuthIdentifier(UUID.randomUUID().toString());
+    user.setAuthProvider(AuthenticationProvider.ANONYMOUS);
+    user.setExternalSubject(null); // Anonymous users don't have external subjects
+    user.setCreatedAt(LocalDateTime.now());
+    user.setUpdatedAt(LocalDateTime.now());
+    userMapper.insert(user);
+    return user;
+  }
+
+  /**
+   * Creates or retrieves a user from an external authentication provider.
+   *
+   * <p>If a user with the given provider and external subject already exists, returns that user.
+   * Otherwise, creates a new user. This enables seamless integration with external OIDC providers.
+   *
+   * @param provider the authentication provider
+   * @param externalSubject the subject from the external provider
+   * @return the user (existing or newly created)
+   */
+  @Transactional
+  public User getOrCreateExternalUser(AuthenticationProvider provider, String externalSubject) {
+    if (provider == AuthenticationProvider.ANONYMOUS) {
+      throw new IllegalArgumentException("Use createAnonymousUser() for anonymous authentication");
+    }
+
+    // Check if user already exists
+    Optional<User> existingUser =
+        userMapper.findByProviderAndExternalSubject(provider, externalSubject);
+    if (existingUser.isPresent()) {
+      return existingUser.get();
+    }
+
+    // Create new user for external provider
+    User user = new User();
+    user.setAuthIdentifier(
+        UUID.randomUUID().toString()); // Internal reference even for external users
+    user.setAuthProvider(provider);
+    user.setExternalSubject(externalSubject);
     user.setCreatedAt(LocalDateTime.now());
     user.setUpdatedAt(LocalDateTime.now());
     userMapper.insert(user);
@@ -49,16 +88,29 @@ public class UserService {
   }
 
   /**
-   * Finds a user by their authentication identifier.
+   * Finds a user by their internal authentication identifier.
    *
-   * <p>The authentication identifier is a UUID used for both anonymous authentication and as a
-   * reference for external authentication providers.
+   * <p>The authentication identifier is an internal UUID used for all users regardless of provider.
    *
    * @param authIdentifier the authentication identifier
    * @return an Optional containing the user if found
    */
   public Optional<User> findByAuthIdentifier(String authIdentifier) {
     return userMapper.findByAuthIdentifier(authIdentifier);
+  }
+
+  /**
+   * Finds a user by their external provider and subject.
+   *
+   * <p>Used to look up users authenticated via external providers (e.g., OIDC).
+   *
+   * @param provider the authentication provider
+   * @param externalSubject the external subject identifier
+   * @return an Optional containing the user if found
+   */
+  public Optional<User> findByProviderAndExternalSubject(
+      AuthenticationProvider provider, String externalSubject) {
+    return userMapper.findByProviderAndExternalSubject(provider, externalSubject);
   }
 
   /**
