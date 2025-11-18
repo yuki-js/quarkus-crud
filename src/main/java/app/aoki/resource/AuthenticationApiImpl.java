@@ -5,7 +5,7 @@ import app.aoki.filter.Authenticated;
 import app.aoki.filter.AuthenticatedUser;
 import app.aoki.generated.api.AuthenticationApi;
 import app.aoki.generated.model.UserResponse;
-import app.aoki.service.GuestJwtService;
+import app.aoki.service.JwtService;
 import app.aoki.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -18,13 +18,14 @@ import java.time.ZoneOffset;
 public class AuthenticationApiImpl implements AuthenticationApi {
 
   @Inject UserService userService;
-  @Inject GuestJwtService guestJwtService;
+  @Inject JwtService jwtService;
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
   public Response createGuestUser() {
-    User user = userService.createGuestUser();
-    String token = guestJwtService.generateGuestToken(user.getGuestToken());
+    // Create a new user with anonymous authentication
+    User user = userService.createUser();
+    String token = jwtService.generateAnonymousToken(user.getAuthIdentifier());
 
     return Response.ok(toUserResponse(user)).header("Authorization", "Bearer " + token).build();
   }

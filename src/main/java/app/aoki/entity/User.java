@@ -2,17 +2,23 @@ package app.aoki.entity;
 
 import java.time.LocalDateTime;
 
+/**
+ * User entity representing all users in the system.
+ *
+ * <p>Users are equal regardless of authentication method. The authentication identifier is used for
+ * anonymous authentication and as a reference for external authentication providers.
+ */
 public class User {
   private Long id;
-  private String guestToken;
+  private String authIdentifier;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
   public User() {}
 
-  public User(Long id, String guestToken, LocalDateTime createdAt, LocalDateTime updatedAt) {
+  public User(Long id, String authIdentifier, LocalDateTime createdAt, LocalDateTime updatedAt) {
     this.id = id;
-    this.guestToken = guestToken;
+    this.authIdentifier = authIdentifier;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -25,12 +31,12 @@ public class User {
     this.id = id;
   }
 
-  public String getGuestToken() {
-    return guestToken;
+  public String getAuthIdentifier() {
+    return authIdentifier;
   }
 
-  public void setGuestToken(String guestToken) {
-    this.guestToken = guestToken;
+  public void setAuthIdentifier(String authIdentifier) {
+    this.authIdentifier = authIdentifier;
   }
 
   public LocalDateTime getCreatedAt() {

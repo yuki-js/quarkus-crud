@@ -10,7 +10,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
  * Service for handling authentication logic.
  *
  * <p>This service centralizes authentication operations, separating business logic from the filter
- * layer. It handles JWT token validation and user lookup.
+ * layer. It handles JWT token validation and user lookup for all authentication methods.
  */
 @ApplicationScoped
 public class AuthenticationService {
@@ -18,7 +18,10 @@ public class AuthenticationService {
   @Inject UserService userService;
 
   /**
-   * Authenticate a user from a JWT token.
+   * Authenticates a user from a JWT token.
+   *
+   * <p>Extracts the user's authentication identifier from the JWT subject and looks up the
+   * corresponding user. Works for all authentication methods (anonymous, external providers, etc.).
    *
    * @param jwt the validated JWT token
    * @return the authenticated user, or empty if user not found
@@ -28,17 +31,17 @@ public class AuthenticationService {
       return Optional.empty();
     }
 
-    String userUuid = jwt.getSubject();
-    if (userUuid == null || userUuid.isEmpty()) {
+    String authIdentifier = jwt.getSubject();
+    if (authIdentifier == null || authIdentifier.isEmpty()) {
       return Optional.empty();
     }
 
-    // Look up user by UUID (stored in guestToken field for guest users)
-    return userService.findByGuestToken(userUuid);
+    // Look up user by their authentication identifier
+    return userService.findByAuthIdentifier(authIdentifier);
   }
 
   /**
-   * Check if a request has a valid Bearer token in the Authorization header.
+   * Checks if a request has a valid Bearer token in the Authorization header.
    *
    * @param authHeader the Authorization header value
    * @return true if the header contains a Bearer token
