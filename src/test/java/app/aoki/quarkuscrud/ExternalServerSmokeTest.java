@@ -28,7 +28,8 @@ public class ExternalServerSmokeTest {
     // Configure RestAssured to use external server
     TestServerConfig.configureForExternalServer();
 
-    System.out.println("Testing against external server: " + TestServerConfig.getExternalServerUrl());
+    System.out.println(
+        "Testing against external server: " + TestServerConfig.getExternalServerUrl());
   }
 
   @AfterAll
@@ -135,10 +136,6 @@ public class ExternalServerSmokeTest {
   @Test
   @Order(5)
   public void testSwaggerUIEndpoint() {
-    given()
-        .when()
-        .get("/swagger-ui")
-        .then()
-        .statusCode(anyOf(is(200), is(301), is(302)));
+    given().when().get("/swagger-ui").then().statusCode(anyOf(is(200), is(301), is(302)));
   }
 }

@@ -24,12 +24,11 @@ import io.restassured.config.SSLConfig;
 public class TestServerConfig {
 
   public static final String EXTERNAL_URL_PROPERTY = "test.external.url";
-  public static final String DEFAULT_EXTERNAL_URL =
-      "https://quarkus-crud.ouchiserver.aokiapp.com";
+  public static final String DEFAULT_EXTERNAL_URL = "https://quarkus-crud.ouchiserver.aokiapp.com";
 
   /**
-   * Configures RestAssured for testing against an internal Quarkus test server. This is the
-   * default configuration used with @QuarkusTest.
+   * Configures RestAssured for testing against an internal Quarkus test server. This is the default
+   * configuration used with @QuarkusTest.
    */
   public static void configureForInternalServer() {
     // When using @QuarkusTest, RestAssured is automatically configured
@@ -110,9 +109,7 @@ public class TestServerConfig {
     return System.getProperty(EXTERNAL_URL_PROPERTY, DEFAULT_EXTERNAL_URL);
   }
 
-  /**
-   * Resets RestAssured to its default configuration.
-   */
+  /** Resets RestAssured to its default configuration. */
   public static void reset() {
     RestAssured.reset();
   }
