@@ -27,7 +27,7 @@ spec:
         - name: github-registry-secret
       initContainers:
         - name: derive-jwt-public-key
-          image: bitnami/openssl:latest
+          image: instrumentisto/openssl:latest
           command: ["/bin/sh", "-c"]
           args:
             - >
