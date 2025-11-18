@@ -62,9 +62,6 @@ java {
 
 test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
-    // Don't set JDBC URL system property - let Dev Services configure it
-    // In CI, set QUARKUS_DATASOURCE_JDBC_URL environment variable
-    systemProperties.remove("quarkus.datasource.jdbc.url")
 }
 compileJava {
     options.encoding = 'UTF-8'
