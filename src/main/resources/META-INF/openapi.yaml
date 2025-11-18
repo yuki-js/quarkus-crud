@@ -63,6 +63,7 @@ paths:
               example:
                 id: 1
                 createdAt: 2025-10-29 18:00:00
+      security: []
   /api/auth/me:
     get:
       tags:
@@ -71,8 +72,6 @@ paths:
       description: Retrieves the current user information from the JWT token in Authorization
         header
       operationId: getCurrentUser
-      security:
-      - bearerAuth: []
       responses:
         '200':
           description: OK
@@ -105,8 +104,6 @@ paths:
       summary: Create a room
       description: Creates a new room for the authenticated user
       operationId: createRoom
-      security:
-      - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -170,6 +167,7 @@ paths:
                 description: A sample room
                 userId: 1
                 createdAt: 2025-10-29 18:00:00
+      security: []
   /api/rooms/{id}:
     get:
       tags:
@@ -207,14 +205,13 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: Room not found
+      security: []
     put:
       tags:
       - Rooms
       summary: Update a room
       description: Updates an existing room (only the owner can update)
       operationId: updateRoom
-      security:
-      - bearerAuth: []
       parameters:
       - name: id
         in: path
@@ -285,8 +282,6 @@ paths:
       summary: Delete a room
       description: Deletes a room (only the owner can delete)
       operationId: deleteRoom
-      security:
-      - bearerAuth: []
       parameters:
       - name: id
         in: path
@@ -339,8 +334,6 @@ paths:
       summary: Get my rooms
       description: Retrieves all rooms created by the authenticated user
       operationId: getMyRooms
-      security:
-      - bearerAuth: []
       responses:
         '200':
           description: OK
@@ -426,14 +419,32 @@ paths:
                   service:
                     type: string
                     example: quarkus-crud
+      security: []
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT Bearer token authentication. Include the token in the Authorization
-        header with Bearer scheme.
+      description: 'JWT Bearer token authentication.
+
+
+        Obtain a token by calling POST /api/auth/guest, which returns the token in
+        the Authorization response header.
+
+
+        Include the token in subsequent requests:
+
+        Authorization: Bearer {token}
+
+
+        The token is a signed JWT containing:
+
+        - sub: User''s authentication identifier
+
+        - groups: Authentication provider (e.g., "anonymous")
+
+        - exp: Token expiration time'
   schemas:
     UserResponse:
       description: User information response
@@ -577,3 +588,5 @@ components:
       format: date-time
       type: string
       example: 2022-03-10 12:15:50
+security:
+- bearerAuth: []
