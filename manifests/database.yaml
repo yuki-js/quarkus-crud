@@ -8,9 +8,8 @@ metadata:
     app: quarkus-crud
     component: database
     name: quarkus-crud-db
-    environment: production
 spec:
   name: quarkus_crud
-  owner: postgres
+  owner: quarkus-crud
   cluster:
-    name: postgres
+    name: pg-cluster

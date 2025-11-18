@@ -30,19 +30,12 @@ spec:
           image: ghcr.io/yuki-js/quarkus-crud:latest-native
           ports:
             - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: common-secret
           env:
-            - name: QUARKUS_DATASOURCE_JDBC_URL
-              value: jdbc:postgresql://postgres-rw:5432/quarkus_crud
-            - name: QUARKUS_DATASOURCE_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: database-secret
-                  key: username
-            - name: QUARKUS_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: database-secret
-                  key: password
+            - name: QUARKUS_CONFIG_LOCATIONS
+              value: /deployments/config/application.properties
           volumeMounts:
             - name: config
               mountPath: /deployments/config
