@@ -17,7 +17,7 @@ import org.junit.jupiter.api.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class RoomCrudIntegrationTest {
 
-  private static String guestToken;
+  private static String jwtToken;
   private static Long roomId;
 
   @Test
@@ -25,7 +25,7 @@ public class RoomCrudIntegrationTest {
   public void setup() {
     // Create a guest user for testing
     Response response = given().contentType(ContentType.JSON).post("/api/auth/guest");
-    guestToken = response.getCookie("guest_token");
+    jwtToken = response.getHeader("Authorization").substring(7);
   }
 
   @Test
@@ -46,7 +46,7 @@ public class RoomCrudIntegrationTest {
   public void testCreateRoomWithAuthentication() {
     Response response =
         given()
-            .cookie("guest_token", guestToken)
+            .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
             .body("{\"name\":\"Test Room\",\"description\":\"Test Description\"}")
             .when()
@@ -106,7 +106,7 @@ public class RoomCrudIntegrationTest {
   @Order(6)
   public void testGetMyRooms() {
     given()
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/rooms/my")
         .then()
@@ -129,7 +129,7 @@ public class RoomCrudIntegrationTest {
   @Order(8)
   public void testUpdateRoom() {
     given()
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
         .body("{\"name\":\"Updated Room\",\"description\":\"Updated Description\"}")
         .when()
@@ -158,7 +158,7 @@ public class RoomCrudIntegrationTest {
   @Order(10)
   public void testUpdateNonExistentRoom() {
     given()
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
         .body("{\"name\":\"Ghost Room\",\"description\":\"Ghost Description\"}")
         .when()
@@ -183,7 +183,7 @@ public class RoomCrudIntegrationTest {
   @Order(12)
   public void testDeleteRoom() {
     given()
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .when()
         .delete("/api/rooms/" + roomId)
         .then()
@@ -197,7 +197,7 @@ public class RoomCrudIntegrationTest {
   @Order(13)
   public void testDeleteNonExistentRoom() {
     given()
-        .cookie("guest_token", guestToken)
+        .header("Authorization", "Bearer " + jwtToken)
         .when()
         .delete("/api/rooms/999999")
         .then()

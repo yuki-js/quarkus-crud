@@ -30,6 +30,10 @@ dependencies {
     // Health checks
     implementation 'io.quarkus:quarkus-smallrye-health'
     
+    // JWT authentication for guest users
+    implementation 'io.quarkus:quarkus-smallrye-jwt'
+    implementation 'io.quarkus:quarkus-smallrye-jwt-build'
+    
     // Swagger annotations for generated API code
     implementation 'io.swagger:swagger-annotations:1.6.14'
     
