@@ -5,15 +5,15 @@
 ### Required Software
 
 - **Java 21**: OpenJDK Temurin distribution recommended
-- **PostgreSQL 15+**: Database server
+- **Docker**: For running Dev Services (automatic PostgreSQL container management)
 - **Gradle**: Build tool (wrapper included in project)
-- **Docker**: For running PostgreSQL and building containers (optional)
 
 ### Optional Tools
 
 - **Node.js 22+**: For OpenAPI validation with Spectral CLI
 - **kubectl**: For Kubernetes deployment
 - **curl or httpie**: For API testing
+- **PostgreSQL client**: For manual database inspection (psql)
 
 ## Project Setup
 
@@ -24,9 +24,42 @@ git clone https://github.com/yuki-js/quarkus-crud.git
 cd quarkus-crud
 ```
 
-### 2. Start PostgreSQL
+### 2. Run the Application in Dev Mode
 
-Using Docker:
+**🎉 New: Automatic PostgreSQL with Dev Services!**
+
+No need to manually start PostgreSQL! Quarkus Dev Services will automatically:
+- Start a PostgreSQL 15 container
+- Configure database connection
+- Run Flyway migrations
+- Keep the container running between sessions
+
+Simply run:
+```bash
+./gradlew quarkusDev
+```
+
+The application will start on http://localhost:8080
+
+### 3. Access the Quarkus Dev UI
+
+**🎨 Enhanced Developer Experience with Dev UI**
+
+Open your browser to: **http://localhost:8080/q/dev-ui**
+
+The Dev UI provides:
+- 📊 **Configuration Editor**: View and modify configuration properties
+- 🗄️ **Database Tools**: Inspect PostgreSQL tables, run queries
+- 📝 **Swagger UI**: Test API endpoints interactively
+- 🔍 **Health Checks**: Monitor application health
+- 📈 **Metrics**: View application metrics
+- 🔐 **Security Info**: JWT configuration and authentication details
+- 🐳 **Dev Services**: Manage the automatic PostgreSQL container
+
+### Alternative: Manual PostgreSQL Setup (for production-like testing)
+
+If you need to test with an external PostgreSQL instance:
+
 ```bash
 docker run -d --name quarkus-postgres \
   -e POSTGRES_PASSWORD=postgres \
@@ -35,19 +68,86 @@ docker run -d --name quarkus-postgres \
   postgres:15-alpine
 ```
 
-Or use an existing PostgreSQL installation and create the database:
-```sql
-CREATE DATABASE quarkus_crud;
-```
-
-### 3. Run the Application
-
-Development mode with live reload:
+Then disable Dev Services:
 ```bash
-./gradlew quarkusDev
+./gradlew quarkusDev -Dquarkus.devservices.enabled=false
 ```
 
-The application will start on http://localhost:8080
+## Quarkus Dev UI Features
+
+### Overview
+
+The Quarkus Dev UI is your command center for development. Access it at **http://localhost:8080/q/dev-ui** when running in dev mode.
+
+### Key Features
+
+#### 1. Configuration Editor
+- View all configuration properties
+- See which values are from defaults vs. custom configuration
+- Override properties at runtime without restarting
+
+#### 2. Continuous Testing
+- Run tests automatically on code changes
+- View test results in real-time
+- Filter and search test results
+
+#### 3. OpenAPI / Swagger UI
+- Interactive API documentation at `/q/dev-ui/io.quarkus.quarkus-smallrye-openapi/swagger-ui`
+- Test endpoints directly from the browser
+- View request/response schemas
+- Try authentication flows
+
+#### 4. Dev Services Dashboard
+- See status of auto-started containers (PostgreSQL)
+- View container logs
+- Container connection details
+- Restart or stop containers
+
+#### 5. Database Tools
+- View database schema
+- Browse tables and data
+- Run SQL queries
+- Monitor Flyway migrations
+
+#### 6. Health Checks
+- View liveness, readiness, and startup probes
+- See individual health check status
+- Debug health check failures
+
+#### 7. Build Info
+- View build time, Git commit info
+- Application version and dependencies
+- JVM and Quarkus version information
+
+### Dev Mode Keyboard Shortcuts
+
+When running `./gradlew quarkusDev`, use these shortcuts in the terminal:
+
+- **`r`**: Force restart the application
+- **`h`**: Display help
+- **`s`**: Force restart and clear caches
+- **`e`**: Edit command line args
+- **`w`**: Open Dev UI in browser
+
+### Live Reload
+
+Code changes are automatically detected and the application reloads:
+- Java source files
+- Configuration files (application.properties)
+- Static resources
+- OpenAPI specification
+
+No need to restart manually!
+
+### Testing in Dev Mode
+
+Run continuous testing alongside dev mode:
+
+```bash
+./gradlew quarkusDev --tests
+```
+
+Or press `r` in the terminal and then `t` to toggle continuous testing.
 
 ## Development Workflow
 
@@ -211,10 +311,37 @@ Start in debug mode:
 
 Connect debugger to port 5005.
 
+### Using Dev UI for Debugging
+
+The Dev UI provides excellent debugging capabilities:
+
+1. **Configuration Issues**: Check the Configuration page to see all active properties
+2. **Database Issues**: Use the Database Tools to inspect schema and data
+3. **API Issues**: Test endpoints directly in Swagger UI with various inputs
+4. **Health Issues**: Monitor health checks in real-time
+5. **Container Issues**: View Dev Services logs and connection details
+
 ### Database Debugging
+
+**Option 1: Using Dev UI** (Recommended)
+- Open Dev UI at http://localhost:8080/q/dev-ui
+- Navigate to Dev Services → PostgreSQL
+- View connection details and logs
+- Use database tools to run queries
+
+**Option 2: Direct PostgreSQL Access**
+
+When using Dev Services, find the container name:
+```bash
+docker ps | grep postgres
+```
 
 Access PostgreSQL:
 ```bash
+# Dev Services container (name will vary)
+docker exec -it <container-name> psql -U quarkus -d default
+
+# Or if using manual PostgreSQL:
 docker exec -it quarkus-postgres psql -U postgres -d quarkus_crud
 ```
 

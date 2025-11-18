@@ -29,32 +29,47 @@ This application provides a RESTful API for managing rooms with the following ke
 ### Prerequisites
 
 - Java 21 (Temurin distribution recommended)
-- PostgreSQL 15+
+- Docker (for Dev Services - automatic PostgreSQL container)
 - Gradle (wrapper included)
 
-### Running Locally
+### Running Locally with Dev UI
 
-1. Start PostgreSQL:
+**🎉 No manual PostgreSQL setup required!**
+
+1. Start the application in dev mode:
 ```bash
+./gradlew quarkusDev
+```
+
+Quarkus automatically:
+- Starts a PostgreSQL container via Dev Services
+- Runs database migrations
+- Enables live reload
+
+2. Access the application:
+- **Dev UI**: http://localhost:8080/q/dev-ui (⭐ Start here!)
+- API: http://localhost:8080/api
+- Swagger UI: http://localhost:8080/q/swagger-ui
+- Health Check: http://localhost:8080/healthz
+
+### Alternative: Manual PostgreSQL Setup
+
+For production-like testing:
+```bash
+# Start PostgreSQL
 docker run -d --name quarkus-postgres \
   -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=quarkus_crud \
   -p 5432:5432 \
   postgres:15-alpine
-```
 
-2. Build and run the application:
-```bash
-./gradlew quarkusDev
+# Disable Dev Services
+./gradlew quarkusDev -Dquarkus.devservices.enabled=false
 ```
-
-3. Access the application:
-- API: http://localhost:8080/api
-- Swagger UI: http://localhost:8080/q/swagger-ui
-- Health Check: http://localhost:8080/healthz
 
 ## Documentation
 
+- [Dev UI Guide](./dev-ui-guide.md) - **⭐ NEW!** Comprehensive guide to Quarkus Dev UI features
 - [API Documentation](./api.md) - Detailed API endpoints and usage
 - [Development Guide](./development.md) - Setup and development workflow
 - [Testing Guide](./testing.md) - Testing strategy and running tests
