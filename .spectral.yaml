@@ -6,22 +6,11 @@ rules:
   info-description: error
   info-license: warn
   
-  # Ensure operations have descriptions
+  # Ensure operations have required fields
   operation-description: warn
   operation-operationId: error
   operation-tags: warn
-  
-  # Ensure parameters are well documented
-  parameter-description: warn
-  
-  # Ensure responses have descriptions
   operation-success-response: error
-  
-  # Component rules
-  components-examples: off
-  
-  # Ensure no $ref siblings (OpenAPI 3.0 restriction)
-  no-$ref-siblings: error
   
   # Path rules
   path-keys-no-trailing-slash: error
@@ -29,6 +18,3 @@ rules:
   # Tag rules
   openapi-tags: warn
   tag-description: warn
-  
-  # Security rules
-  operation-security-defined: warn

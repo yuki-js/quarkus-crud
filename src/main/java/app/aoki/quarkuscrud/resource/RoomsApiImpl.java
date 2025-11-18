@@ -28,7 +28,7 @@ public class RoomsApiImpl implements RoomsApi {
 
   @Override
   @Authenticated
-  public Response createRoom(CreateRoomRequest createRoomRequest, String guestToken) {
+  public Response createRoom(CreateRoomRequest createRoomRequest) {
     User user = authenticatedUser.get();
     Room room =
         roomService.createRoom(
@@ -38,7 +38,7 @@ public class RoomsApiImpl implements RoomsApi {
 
   @Override
   @Authenticated
-  public Response deleteRoom(Long id, String guestToken) {
+  public Response deleteRoom(Long id) {
     User user = authenticatedUser.get();
 
     Optional<Room> existingRoom = roomService.findById(id);
@@ -68,7 +68,7 @@ public class RoomsApiImpl implements RoomsApi {
 
   @Override
   @Authenticated
-  public Response getMyRooms(String guestToken) {
+  public Response getMyRooms() {
     User user = authenticatedUser.get();
     List<RoomResponse> rooms =
         roomService.findByUserId(user.getId()).stream()
@@ -90,7 +90,7 @@ public class RoomsApiImpl implements RoomsApi {
 
   @Override
   @Authenticated
-  public Response updateRoom(Long id, UpdateRoomRequest updateRoomRequest, String guestToken) {
+  public Response updateRoom(Long id, UpdateRoomRequest updateRoomRequest) {
     User user = authenticatedUser.get();
 
     Optional<Room> existingRoom = roomService.findById(id);

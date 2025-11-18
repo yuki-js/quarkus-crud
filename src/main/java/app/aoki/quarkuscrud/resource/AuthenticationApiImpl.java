@@ -32,7 +32,7 @@ public class AuthenticationApiImpl implements AuthenticationApi {
 
   @Override
   @Authenticated
-  public Response getCurrentUser(String guestToken) {
+  public Response getCurrentUser() {
     User user = authenticatedUser.get();
     return Response.ok(toUserResponse(user)).build();
   }

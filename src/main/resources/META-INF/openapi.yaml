@@ -1,10 +1,20 @@
----
 openapi: 3.0.3
 info:
   title: Quarkus CRUD API
-  description: |
-    Guest User Authentication API with CRUD operations for rooms.
-    This API provides anonymous guest user authentication using cookies and real-time updates via Server-Sent Events.
+  description: 'Guest User Authentication API with CRUD operations for rooms.
+
+    This API provides anonymous guest user authentication using JWT Bearer tokens
+    and real-time updates via Server-Sent Events.
+
+
+    Authentication flow:
+
+    1. Call POST /api/auth/guest to create a guest user
+
+    2. Extract the JWT token from the Authorization response header
+
+    3. Include the token in subsequent requests using the Authorization header with
+    Bearer scheme'
   version: 0.0.1
   contact:
     name: API Support
@@ -23,70 +33,71 @@ tags:
   description: Room CRUD operations
 - name: Live
   description: Real-time updates via Server-Sent Events
+- name: Health
+  description: Health check endpoints
 paths:
   /api/auth/guest:
     post:
       tags:
       - Authentication
       summary: Create a guest user
-      description: Creates an anonymous guest user and sets a cookie with the guest
-        token
+      description: 'Creates an anonymous guest user and returns a JWT token in the
+        Authorization header.
+
+        The token should be included in subsequent requests using the Authorization
+        header with Bearer scheme.'
       operationId: createGuestUser
       responses:
-        "200":
-          description: OK
+        '200':
+          description: Guest user created successfully
           headers:
-            Set-Cookie:
-              description: HttpOnly cookie containing the guest token
+            Authorization:
+              description: JWT Bearer token for authentication
               schema:
                 type: string
-                example: guest_token=<token>; Path=/; Max-Age=31536000; HttpOnly
+                example: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: '#/components/schemas/UserResponse'
               example:
                 id: 1
-                createdAt: 2025-10-29T18:00:00
+                createdAt: 2025-10-29 18:00:00
   /api/auth/me:
     get:
       tags:
       - Authentication
       summary: Get current user
-      description: Retrieves the current user information from the guest token cookie
+      description: Retrieves the current user information from the JWT token in Authorization
+        header
       operationId: getCurrentUser
       security:
-      - cookieAuth: []
+      - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: '#/components/schemas/UserResponse'
               example:
                 id: 1
-                createdAt: 2025-10-29T18:00:00
-        "401":
+                createdAt: 2025-10-29 18:00:00
+        '401':
           description: Unauthorized - No guest token found or invalid token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 noToken:
                   summary: No token provided
                   value:
-                    error: No guest token found
+                    error: No JWT token found
                 invalidToken:
                   summary: Invalid token
                   value:
-                    error: Invalid guest token
-      parameters:
-      - name: guest_token
-        in: cookie
-        schema:
-          type: string
+                    error: Invalid JWT token
   /api/rooms:
     post:
       tags:
@@ -95,35 +106,35 @@ paths:
       description: Creates a new room for the authenticated user
       operationId: createRoom
       security:
-      - cookieAuth: []
+      - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateRoomRequest"
+              $ref: '#/components/schemas/CreateRoomRequest'
             example:
               name: My Room
               description: A sample room
       responses:
-        "201":
+        '201':
           description: Room created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RoomResponse"
+                $ref: '#/components/schemas/RoomResponse'
               example:
                 id: 1
                 name: My Room
                 description: A sample room
                 userId: 1
-                createdAt: 2025-10-29T18:00:00
-        "401":
+                createdAt: 2025-10-29 18:00:00
+        '401':
           description: Unauthorized - Authentication required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 authRequired:
                   summary: No authentication provided
@@ -133,15 +144,11 @@ paths:
                   summary: Invalid authentication
                   value:
                     error: Invalid authentication
-        "200":
+        '200':
           description: OK
-        "400":
+        '400':
           description: Bad Request
-      parameters:
-      - name: guest_token
-        in: cookie
-        schema:
-          type: string
+      parameters: []
     get:
       tags:
       - Rooms
@@ -149,20 +156,20 @@ paths:
       description: Retrieves all rooms in the system
       operationId: getAllRooms
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/RoomResponse"
+                  $ref: '#/components/schemas/RoomResponse'
               example:
               - id: 1
                 name: My Room
                 description: A sample room
                 userId: 1
-                createdAt: 2025-10-29T18:00:00
+                createdAt: 2025-10-29 18:00:00
   /api/rooms/{id}:
     get:
       tags:
@@ -180,24 +187,24 @@ paths:
           minimum: 1
           type: integer
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RoomResponse"
+                $ref: '#/components/schemas/RoomResponse'
               example:
                 id: 1
                 name: My Room
                 description: A sample room
                 userId: 1
-                createdAt: 2025-10-29T18:00:00
-        "404":
+                createdAt: 2025-10-29 18:00:00
+        '404':
           description: Room not found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: Room not found
     put:
@@ -207,7 +214,7 @@ paths:
       description: Updates an existing room (only the owner can update)
       operationId: updateRoom
       security:
-      - cookieAuth: []
+      - bearerAuth: []
       parameters:
       - name: id
         in: path
@@ -217,38 +224,34 @@ paths:
           format: int64
           minimum: 1
           type: integer
-      - name: guest_token
-        in: cookie
-        schema:
-          type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateRoomRequest"
+              $ref: '#/components/schemas/UpdateRoomRequest'
             example:
               name: Updated Room
               description: Updated description
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RoomResponse"
+                $ref: '#/components/schemas/RoomResponse'
               example:
                 id: 1
                 name: Updated Room
                 description: Updated description
                 userId: 1
-                createdAt: 2025-10-29T18:00:00
-        "401":
+                createdAt: 2025-10-29 18:00:00
+        '401':
           description: Unauthorized - Authentication required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 authRequired:
                   summary: No authentication provided
@@ -258,23 +261,23 @@ paths:
                   summary: Invalid authentication
                   value:
                     error: Invalid authentication
-        "403":
+        '403':
           description: Forbidden - User does not have permission to update this room
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: You don't have permission to update this room
-        "404":
+        '404':
           description: Room not found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: Room not found
-        "400":
+        '400':
           description: Bad Request
     delete:
       tags:
@@ -283,7 +286,7 @@ paths:
       description: Deletes a room (only the owner can delete)
       operationId: deleteRoom
       security:
-      - cookieAuth: []
+      - bearerAuth: []
       parameters:
       - name: id
         in: path
@@ -293,19 +296,15 @@ paths:
           format: int64
           minimum: 1
           type: integer
-      - name: guest_token
-        in: cookie
-        schema:
-          type: string
       responses:
-        "204":
+        '204':
           description: Room deleted successfully
-        "401":
+        '401':
           description: Unauthorized - Authentication required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 authRequired:
                   summary: No authentication provided
@@ -315,23 +314,23 @@ paths:
                   summary: Invalid authentication
                   value:
                     error: Invalid authentication
-        "403":
+        '403':
           description: Forbidden - User does not have permission to delete this room
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: You don't have permission to delete this room
-        "404":
+        '404':
           description: Room not found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: Room not found
-        "200":
+        '200':
           description: OK
   /api/rooms/my:
     get:
@@ -341,28 +340,28 @@ paths:
       description: Retrieves all rooms created by the authenticated user
       operationId: getMyRooms
       security:
-      - cookieAuth: []
+      - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/RoomResponse"
+                  $ref: '#/components/schemas/RoomResponse'
               example:
               - id: 1
                 name: My Room
                 description: A sample room
                 userId: 1
-                createdAt: 2025-10-29T18:00:00
-        "401":
+                createdAt: 2025-10-29 18:00:00
+        '401':
           description: Unauthorized - Authentication required
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 authRequired:
                   summary: No authentication provided
@@ -372,11 +371,7 @@ paths:
                   summary: Invalid authentication
                   value:
                     error: Invalid authentication
-      parameters:
-      - name: guest_token
-        in: cookie
-        schema:
-          type: string
+      parameters: []
   /api/live/rooms:
     get:
       tags:
@@ -388,37 +383,60 @@ paths:
         \ are sent as they occur.\n"
       operationId: streamRoomEvents
       responses:
-        "200":
+        '200':
           description: OK
           content:
             text/event-stream:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/RoomEventResponse"
-                allOf:
-                - $ref: "#/components/schemas/RoomEventResponse"
-              example: |
-                data: {"eventType":"ROOM_CREATED","roomId":1,"name":"My Room","description":"A sample room","userId":1,"timestamp":"2025-10-30T12:00:00"}
+                type: string
+              example: 'data: {"eventType":"ROOM_CREATED","roomId":1,"name":"My Room","description":"A
+                sample room","userId":1,"timestamp":"2025-10-30T12:00:00"}'
   /healthz:
     get:
-      responses:
-        "200":
-          description: OK
-      summary: Health
+      operationId: getHealthStatus
+      summary: Health check endpoint
+      description: Legacy health check endpoint for backward compatibility. For detailed
+        health checks, use /q/health endpoints.
       tags:
-      - Health Resource
+      - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  service:
+                    type: string
+                    example: quarkus-crud
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: DOWN
+                  service:
+                    type: string
+                    example: quarkus-crud
 components:
   securitySchemes:
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: guest_token
-      description: Guest authentication token stored in HttpOnly cookie
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token authentication. Include the token in the Authorization
+        header with Bearer scheme.
   schemas:
     UserResponse:
-      description: User information response. Note that guestToken is NOT included
-        for security - it's only in the cookie.
+      description: User information response
       required:
       - id
       - createdAt
@@ -433,7 +451,7 @@ components:
           format: date-time
           description: When the user was created
           type: string
-          example: 2025-10-29T18:00:00
+          example: 2025-10-29 18:00:00
     CreateRoomRequest:
       description: Request payload for creating a room
       required:
@@ -500,7 +518,7 @@ components:
           format: date-time
           description: When the room was created
           type: string
-          example: 2025-10-29T18:00:00
+          example: 2025-10-29 18:00:00
     RoomEventResponse:
       description: Room event for Server-Sent Events
       required:
@@ -543,8 +561,8 @@ components:
           description: When the event occurred
           type: string
           allOf:
-          - $ref: "#/components/schemas/LocalDateTime"
-          example: 2025-10-30T12:00:00
+          - $ref: '#/components/schemas/LocalDateTime'
+          example: 2025-10-30 12:00:00
     ErrorResponse:
       description: Error response format
       required:
@@ -558,4 +576,4 @@ components:
     LocalDateTime:
       format: date-time
       type: string
-      example: 2022-03-10T12:15:50
+      example: 2022-03-10 12:15:50
