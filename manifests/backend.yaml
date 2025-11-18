@@ -28,6 +28,7 @@ spec:
       containers:
         - name: backend
           image: ghcr.io/yuki-js/quarkus-crud:latest-native
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           envFrom:
