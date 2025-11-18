@@ -5,7 +5,6 @@ namespace: quarkus-crud
 
 resources:
   - backend.yaml
-  - database.yaml
   - common-secret.yaml
   - ingress.yaml
 
