@@ -23,7 +23,7 @@ jobs:
       - name: Set up Node.js (for Spectral / JS tools)
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Cache npm global modules (Spectral)
         uses: actions/cache@v4
@@ -65,17 +65,25 @@ jobs:
         run: |
           git lfs install --local
 
-      - name: Verify OpenAPI (pre-warm generator)
+      - name: Cache OpenAPI Generator CLI
+        id: cache-openapi-generator
+        uses: actions/cache@v4
+        with:
+          path: ~/openapi-generator-cli.jar
+          key: ${{ runner.os }}-openapi-generator-7.10.0
+
+      - name: Download OpenAPI Generator CLI
+        if: steps.cache-openapi-generator.outputs.cache-hit != 'true'
         run: |
-          # Download OpenAPI Generator CLI to cache location for Copilot agent to reuse
-          mkdir -p .github/tools
-          if [ ! -f .github/tools/openapi-generator-cli.jar ]; then
-            wget -q https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar -O .github/tools/openapi-generator-cli.jar
-          fi
+          wget -q https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar -O ~/openapi-generator-cli.jar
+
+      - name: Verify OpenAPI Generator
+        run: |
+          java -jar ~/openapi-generator-cli.jar version || true
 
       - name: List prepared artifacts
         run: |
           echo "Prepared tools:"
-          java -jar .github/tools/openapi-generator-cli.jar version || true
+          java -jar ~/openapi-generator-cli.jar version || true
           spectral --version || true
           ./gradlew -v || true
