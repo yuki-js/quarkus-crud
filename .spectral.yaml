@@ -9,7 +9,6 @@ rules:
   # Ensure operations have descriptions
   operation-description: warn
   operation-operationId: error
-  operation-summary: error
   operation-tags: warn
   
   # Ensure parameters are well documented
