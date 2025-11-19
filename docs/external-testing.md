@@ -21,30 +21,38 @@ These tests use the `TestServerConfig` utility class to configure RestAssured to
 
 ### Current Status
 
-The external server at `https://quarkus-crud.ouchiserver.aokiapp.com` has the following status:
+**Root Cause Identified:** JWT authentication fails because the production server has a configuration mismatch:
+
+- ✅ Token generation uses issuer: `https://quarkus-crud.ouchiserver.aokiapp.com`
+- ❌ Token verification expects issuer: `https://quarkus-crud.example.com`
+
+**Evidence:**
+1. Local testing confirms the application code works correctly
+2. JWT tokens are generated successfully on production
+3. Tokens fail validation because issuer mismatch (401 errors)
+
+**Fix Required:** Update production server configuration to use the correct issuer for verification:
+
+```properties
+# Current (wrong) - verification expects example.com
+mp.jwt.verify.issuer=https://quarkus-crud.example.com
+
+# Should be (correct) - match the generation issuer  
+mp.jwt.verify.issuer=https://quarkus-crud.ouchiserver.aokiapp.com
+```
+
+Both configuration properties must match:
+```properties
+mp.jwt.verify.issuer=https://quarkus-crud.ouchiserver.aokiapp.com
+smallrye.jwt.new-token.issuer=https://quarkus-crud.ouchiserver.aokiapp.com
+```
+
+The external server at `https://quarkus-crud.ouchiserver.aokiapp.com` status:
 - ✅ Health check (`/healthz`)
 - ✅ Guest user creation (`/api/auth/guest`) - JWT tokens are generated
 - ✅ OpenAPI spec (`/openapi`)
 - ✅ Swagger UI (`/swagger-ui`)
-
-**Current Issue: JWT Authentication Failure**
-- ❌ Authenticated endpoints return 401 errors
-- Generated JWT tokens are not being validated correctly by the server
-- Tests correctly fail when authentication doesn't work (expecting 200, getting 401)
-
-**Likely causes:**
-1. JWT issuer mismatch between token generation and verification
-2. Public/private key mismatch on the server
-3. JWT verification configuration needs to match the domain `https://quarkus-crud.ouchiserver.aokiapp.com`
-
-**To fix:** Update production server configuration to ensure:
-```properties
-mp.jwt.verify.issuer=https://quarkus-crud.ouchiserver.aokiapp.com
-smallrye.jwt.new-token.issuer=https://quarkus-crud.ouchiserver.aokiapp.com
-# Ensure public/private keys match
-mp.jwt.verify.publickey.location=/keys/publicKey.pem
-smallrye.jwt.sign.key.location=/keys/privateKey.pem
-```
+- ❌ Authenticated endpoints (401) - JWT verification issuer mismatch
 
 ## Running Tests Against External Server
 
@@ -252,18 +260,43 @@ If tests timeout, check:
 2. Firewall rules allow outbound HTTPS
 3. Server is running and healthy
 
-### Authentication Failures
+### Authentication Failures (JWT Issuer Mismatch)
 
-External server tests create guest users and use JWT tokens for authentication. If authenticated endpoints return 401:
+**Problem:** Authenticated endpoints return 401 despite valid JWT tokens.
 
-1. **Check JWT token generation** - Verify guest user creation returns a valid JWT token in the Authorization header
-2. **Verify JWT issuer configuration** - The token issuer must match the verification issuer:
+**Diagnosis Steps:**
+
+1. **Check JWT token generation** - Verify guest user creation returns a valid JWT token:
    ```bash
-   # Decode the JWT to check issuer
-   echo "TOKEN_HERE" | cut -d'.' -f2 | base64 -d | jq .
+   curl -X POST https://your-server.com/api/auth/guest -H "Content-Type: application/json"
+   # Should return: Authorization: Bearer <token>
    ```
-3. **Check public/private key pair** - Ensure keys match between signing and verification
-4. **Verify server JWT configuration** - Check `mp.jwt.verify.issuer` matches the actual domain
+
+2. **Decode the JWT to check issuer**:
+   ```bash
+   TOKEN="your_token_here"
+   echo "$TOKEN" | cut -d'.' -f2 | base64 -d | jq .
+   # Check the "iss" field
+   ```
+
+3. **Test locally** - Run the application locally to verify code works:
+   ```bash
+   docker run -d -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=quarkus_crud -p 5432:5432 postgres:15-alpine
+   ./gradlew quarkusDev
+   # Test authentication on http://localhost:8080
+   ```
+
+4. **Compare issuers** - If local works but production fails, compare JWT issuers:
+   - Local token issuer vs production token issuer
+   - Production issuer in generated tokens vs `mp.jwt.verify.issuer` config
+
+**Common Issue:** Token generation issuer doesn't match verification issuer.
+
+**Solution:** Ensure both properties match on production server:
+```properties
+mp.jwt.verify.issuer=https://your-actual-domain.com
+smallrye.jwt.new-token.issuer=https://your-actual-domain.com
+```
 
 **Important:** Tests now correctly **fail** when authentication doesn't work (expecting 200, getting 401). This is intentional - tests should reveal server configuration issues, not hide them.
 
