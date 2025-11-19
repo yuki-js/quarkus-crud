@@ -1,16 +1,21 @@
 openapi: 3.0.3
 info:
   title: Quarkus CRUD API
-  description: |
-    Guest User Authentication API for new data model.
-    
-    This API provides anonymous guest user authentication using JWT Bearer tokens.
-    
+  description: "Guest User Authentication API with CRUD operations for events (quiz events).
+
+    This API provides anonymous guest user authentication using JWT Bearer tokens
+    and real-time updates via Server-Sent Events.
+
+
     Authentication flow:
+
     1. Call POST /api/auth/guest to create a guest user
+
     2. Extract the JWT token from the Authorization response header
-    3. Include the token in subsequent requests using the Authorization header with Bearer scheme
-  version: 0.1.0
+
+    3. Include the token in subsequent requests using the Authorization header with
+    Bearer scheme"
+  version: 0.2.0
   contact:
     name: API Support
   license:
@@ -24,6 +29,10 @@ servers:
 tags:
   - name: Authentication
     description: Guest user authentication operations
+  - name: Events
+    description: Event CRUD operations
+  - name: Live
+    description: Real-time updates via Server-Sent Events
   - name: Health
     description: Health check endpoints
 paths:
@@ -32,13 +41,15 @@ paths:
       tags:
         - Authentication
       summary: Create a guest user
-      description: |
-        Creates an anonymous guest user and returns a JWT token in the Authorization header.
-        
-        The token should be included in subsequent requests using the Authorization header with Bearer scheme.
+      description:
+        "Creates an anonymous guest user and returns a JWT token in the
+        Authorization header.
+
+        The token should be included in subsequent requests using the Authorization
+        header with Bearer scheme."
       operationId: createGuestUser
       responses:
-        '200':
+        "200":
           description: Guest user created successfully
           headers:
             Authorization:
@@ -49,34 +60,36 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserResponse'
+                $ref: "#/components/schemas/UserResponse"
               example:
                 id: 1
-                createdAt: '2025-10-29T18:00:00'
+                createdAt: 2025-10-29 18:00:00
       security: []
   /api/auth/me:
     get:
       tags:
         - Authentication
       summary: Get current user
-      description: Retrieves the current user information from the JWT token in Authorization header
+      description:
+        Retrieves the current user information from the JWT token in Authorization
+        header
       operationId: getCurrentUser
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserResponse'
+                $ref: "#/components/schemas/UserResponse"
               example:
                 id: 1
-                createdAt: '2025-10-29T18:00:00'
-        '401':
+                createdAt: 2025-10-29 18:00:00
+        "401":
           description: Unauthorized - No guest token found or invalid token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
               examples:
                 noToken:
                   summary: No token provided
@@ -86,16 +99,307 @@ paths:
                   summary: Invalid token
                   value:
                     error: Invalid JWT token
-  /health:
+  /api/events:
+    post:
+      tags:
+        - Events
+      summary: Create a event
+      description: Creates a new event for the authenticated user
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventRequest"
+            example:
+              name: My Event
+              description: A sample event
+      responses:
+        "201":
+          description: Event created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventResponse"
+              example:
+                id: 1
+                name: My Event
+                description: A sample event
+                initiatorUserId: 1
+                createdAt: 2025-10-29 18:00:00
+        "401":
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                authRequired:
+                  summary: No authentication provided
+                  value:
+                    error: Authentication required
+                invalidAuth:
+                  summary: Invalid authentication
+                  value:
+                    error: Invalid authentication
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+      parameters: []
     get:
       tags:
-        - Health
-      summary: Health check endpoint
-      description: Returns the health status of the application
-      operationId: getHealthStatus
+        - Events
+      summary: Get all events
+      description: Retrieves all events in the system
+      operationId: getAllEvents
       responses:
-        '200':
-          description: Application is healthy
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventResponse"
+              example:
+                - id: 1
+                  name: My Event
+                  description: A sample event
+                  initiatorUserId: 1
+                  createdAt: 2025-10-29 18:00:00
+      security: []
+  /api/events/{id}:
+    get:
+      tags:
+        - Events
+      summary: Get event by ID
+      description: Retrieves a specific event by ID
+      operationId: getEventById
+      parameters:
+        - name: id
+          in: path
+          description: Event ID
+          required: true
+          schema:
+            format: int64
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventResponse"
+              example:
+                id: 1
+                name: My Event
+                description: A sample event
+                initiatorUserId: 1
+                createdAt: 2025-10-29 18:00:00
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Event not found
+      security: []
+    put:
+      tags:
+        - Events
+      summary: Update a event
+      description: Updates an existing event (only the owner can update)
+      operationId: updateEvent
+      parameters:
+        - name: id
+          in: path
+          description: Event ID
+          required: true
+          schema:
+            format: int64
+            minimum: 1
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEventRequest"
+            example:
+              name: Updated Event
+              description: Updated description
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventResponse"
+              example:
+                id: 1
+                name: Updated Event
+                description: Updated description
+                initiatorUserId: 1
+                createdAt: 2025-10-29 18:00:00
+        "401":
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                authRequired:
+                  summary: No authentication provided
+                  value:
+                    error: Authentication required
+                invalidAuth:
+                  summary: Invalid authentication
+                  value:
+                    error: Invalid authentication
+        "403":
+          description: Forbidden - User does not have permission to update this event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: You don't have permission to update this event
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Event not found
+        "400":
+          description: Bad Request
+    delete:
+      tags:
+        - Events
+      summary: Delete a event
+      description: Deletes a event (only the owner can delete)
+      operationId: deleteEvent
+      parameters:
+        - name: id
+          in: path
+          description: Event ID
+          required: true
+          schema:
+            format: int64
+            minimum: 1
+            type: integer
+      responses:
+        "204":
+          description: Event deleted successfully
+        "401":
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                authRequired:
+                  summary: No authentication provided
+                  value:
+                    error: Authentication required
+                invalidAuth:
+                  summary: Invalid authentication
+                  value:
+                    error: Invalid authentication
+        "403":
+          description: Forbidden - User does not have permission to delete this event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: You don't have permission to delete this event
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Event not found
+        "200":
+          description: OK
+  /api/events/my:
+    get:
+      tags:
+        - Events
+      summary: Get my events
+      description: Retrieves all events created by the authenticated user
+      operationId: getMyEvents
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventResponse"
+              example:
+                - id: 1
+                  name: My Event
+                  description: A sample event
+                  initiatorUserId: 1
+                  createdAt: 2025-10-29 18:00:00
+        "401":
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                authRequired:
+                  summary: No authentication provided
+                  value:
+                    error: Authentication required
+                invalidAuth:
+                  summary: Invalid authentication
+                  value:
+                    error: Invalid authentication
+      parameters: []
+  /api/live/events:
+    get:
+      tags:
+        - Live
+      summary: Subscribe to live event updates
+      description:
+        "Subscribe to real-time event updates via Server-Sent Events. \n\
+        Clients can subscribe to this endpoint to receive live notifications when\
+        \ events are created, updated, or deleted.\nThe connection stays open and events\
+        \ are sent as they occur.\n"
+      operationId: streamEventEvents
+      responses:
+        "200":
+          description: OK
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example:
+                'data: {"eventType":"EVENT_CREATED","eventId":1,"name":"My Event","description":"A
+                sample event","initiatorUserId":1,"timestamp":"2025-10-30T12:00:00"}'
+  /healthz:
+    get:
+      operationId: getHealthStatus
+      summary: Health check endpoint
+      description:
+        Legacy health check endpoint for backward compatibility. For detailed
+        health checks, use /q/health endpoints.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Service is healthy
           content:
             application/json:
               schema:
@@ -104,8 +408,11 @@ paths:
                   status:
                     type: string
                     example: UP
-        '503':
-          description: Application is unhealthy
+                  service:
+                    type: string
+                    example: quarkus-crud
+        "503":
+          description: Service is unhealthy
           content:
             application/json:
               schema:
@@ -114,36 +421,205 @@ paths:
                   status:
                     type: string
                     example: DOWN
+                  service:
+                    type: string
+                    example: quarkus-crud
       security: []
 components:
-  schemas:
-    UserResponse:
-      type: object
-      required:
-        - id
-        - createdAt
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: Unique identifier for the user
-        createdAt:
-          type: string
-          format: date-time
-          description: Timestamp when the user was created
-    ErrorResponse:
-      type: object
-      required:
-        - error
-      properties:
-        error:
-          type: string
-          description: Error message describing what went wrong
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT token obtained from /api/auth/guest
+      description: 'JWT Bearer token authentication.
+
+
+        Obtain a token by calling POST /api/auth/guest, which returns the token in
+        the Authorization response header.
+
+
+        Include the token in subsequent requests:
+
+        Authorization: Bearer {token}
+
+
+        The token is a signed JWT containing:
+
+        - sub: User''s authentication identifier
+
+        - groups: Authentication provider (e.g., "anonymous")
+
+        - exp: Token expiration time'
+  schemas:
+    UserResponse:
+      description: User information response
+      required:
+        - id
+        - createdAt
+      type: object
+      properties:
+        id:
+          format: int64
+          description: User ID
+          type: integer
+          example: 1
+        createdAt:
+          format: date-time
+          description: When the user was created
+          type: string
+          example: 2025-10-29 18:00:00
+    CreateEventRequest:
+      description: Request payload for creating a event
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          description: Event name
+          maxLength: 255
+          minLength: 1
+          type: string
+          example: My Event
+        description:
+          description: Event description (can be null)
+          type: string
+          nullable: true
+          example: A sample event
+    UpdateEventRequest:
+      description: Request payload for updating a event
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          description: Updated event name
+          maxLength: 255
+          minLength: 1
+          type: string
+          example: Updated Event
+        description:
+          description: Updated event description (can be null)
+          type: string
+          nullable: true
+          example: Updated description
+    EventResponse:
+      description: Event information response
+      required:
+        - id
+        - name
+        - initiatorUserId
+        - status
+        - expiresAt
+        - createdAt
+        - updatedAt
+      type: object
+      properties:
+        id:
+          format: int64
+          description: Event ID
+          type: integer
+          example: 1
+        name:
+          description: Event name
+          type: string
+          example: My Event
+        description:
+          description: Event description (can be null)
+          type: string
+          nullable: true
+          example: A sample event
+        initiatorUserId:
+          format: int64
+          description: ID of the user who created the event
+          type: integer
+          example: 1
+        status:
+          description: Event status
+          type: string
+          enum:
+            - created
+            - active
+            - ended
+            - expired
+            - deleted
+          example: created
+        expiresAt:
+          format: date-time
+          description: When the event expires
+          type: string
+          example: 2025-11-05 18:00:00
+        createdAt:
+          format: date-time
+          description: When the event was created
+          type: string
+          example: 2025-10-29 18:00:00
+        updatedAt:
+          format: date-time
+          description: When the event was last updated
+          type: string
+          example: 2025-10-29 18:00:00
+        createdAt:
+          format: date-time
+          description: When the event was created
+          type: string
+          example: 2025-10-29 18:00:00
+    EventEventResponse:
+      description: Event event for Server-Sent Events
+      required:
+        - eventType
+        - eventId
+        - name
+        - description
+        - initiatorUserId
+        - timestamp
+      type: object
+      properties:
+        eventType:
+          description: Type of event
+          enum:
+            - EVENT_CREATED
+            - EVENT_UPDATED
+            - EVENT_DELETED
+          type: string
+          example: EVENT_CREATED
+        eventId:
+          format: int64
+          description: Event ID
+          type: integer
+          example: 1
+        name:
+          description: Event name
+          type: string
+          example: My Event
+        description:
+          description: Event description
+          type: string
+          example: A sample event
+        initiatorUserId:
+          format: int64
+          description: ID of the user who owns the event
+          type: integer
+          example: 1
+        timestamp:
+          format: date-time
+          description: When the event occurred
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/LocalDateTime"
+          example: 2025-10-30 12:00:00
+    ErrorResponse:
+      description: Error response format
+      required:
+        - error
+      type: object
+      properties:
+        error:
+          description: Error message
+          type: string
+          example: Authentication required
+    LocalDateTime:
+      format: date-time
+      type: string
+      example: 2022-03-10 12:15:50
 security:
   - bearerAuth: []
