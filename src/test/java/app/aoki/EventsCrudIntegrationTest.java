@@ -25,8 +25,7 @@ public class EventsCrudIntegrationTest {
 
   @Test
   @Order(0)
-
-  public static void setup() {
+  public void setup() {
     // Create a guest user for testing
     Response response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     jwtToken = response.getHeader("Authorization").substring(7);

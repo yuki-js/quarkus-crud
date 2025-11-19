@@ -2,6 +2,7 @@ package app.aoki;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -30,16 +31,19 @@ public class EventAuthorizationIntegrationTest {
 
   @Test
   @Order(0)
-
-  public static void setup() {
+  public void setup() {
     // Create two different guest users for testing authorization
     Response user1Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     user1Token = user1Response.getHeader("Authorization").substring(7);
     user1Id = user1Response.jsonPath().getLong("id");
+    assertNotNull(user1Token, "User 1 token should not be null");
+    assertNotNull(user1Id, "User 1 ID should not be null");
 
     Response user2Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     user2Token = user2Response.getHeader("Authorization").substring(7);
     user2Id = user2Response.jsonPath().getLong("id");
+    assertNotNull(user2Token, "User 2 token should not be null");
+    assertNotNull(user2Id, "User 2 ID should not be null");
 
     // User 1 creates an event
     Response eventResponse =
