@@ -162,23 +162,3 @@ COMMENT ON TABLE event_attendees IS 'Quiz event participants';
 -- Unique constraint: one attendance record per user per event
 CREATE UNIQUE INDEX idx_event_attendees_event_user ON event_attendees(event_id, attendee_user_id);
 CREATE INDEX idx_event_attendees_user ON event_attendees(attendee_user_id);
-
--- ============================================================
--- TEMPORARY: Rooms table
--- This is kept for backward compatibility during migration
--- TODO: Migrate to Event entity
--- ============================================================
-CREATE TABLE rooms (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    user_id BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_rooms_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE rooms IS 'TEMPORARY: Rooms table for backward compatibility - will be migrated to events';
-
-CREATE INDEX idx_rooms_user_id ON rooms(user_id);
-CREATE INDEX idx_rooms_created_at ON rooms(created_at DESC);
