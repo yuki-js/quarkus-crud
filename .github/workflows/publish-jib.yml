@@ -249,6 +249,14 @@ jobs:
           - 5432:5432
     
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js for E2E tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
@@ -310,13 +318,41 @@ jobs:
             -e QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://host.docker.internal:5432/quarkus_crud \
             ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native
           echo "Waiting for application to start (native starts faster)..."
-          sleep 10
+          for i in {1..60}; do
+            if curl -sSf http://localhost:8080/healthz >/dev/null 2>&1; then
+              echo "Application is ready!"
+              break
+            fi
+            sleep 5
+          done
           echo "Checking container status..."
           docker ps -a
           docker logs native-test
           echo "Testing health endpoint..."
           curl -f http://localhost:8080/healthz || (echo "Health check failed!" && docker logs native-test && exit 1)
           echo "Health check passed!"
+          
+          echo ""
+          echo "=== Running Full E2E Tests for Native Image ==="
+          echo ""
+          
+          # Run bash/curl E2E tests
+          echo "Running bash/curl E2E tests..."
+          BASE_URL=http://localhost:8080 ./scripts/e2e.sh
+          
+          # Run TypeScript E2E tests
+          echo ""
+          echo "Running TypeScript E2E tests..."
+          cd e2e
+          ./generate-client.sh
+          npm ci
+          BASE_URL=http://localhost:8080 npm test
+          cd ..
+          
+          echo ""
+          echo "=== All E2E Tests Passed for Native Image ==="
+          echo ""
+          
           echo "Stopping container..."
           docker stop native-test || true
           docker rm native-test || true
@@ -333,13 +369,40 @@ jobs:
             -e QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://host.docker.internal:5432/quarkus_crud \
             ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug
           echo "Waiting for application to start..."
-          sleep 10
+          for i in {1..60}; do
+            if curl -sSf http://localhost:8080/healthz >/dev/null 2>&1; then
+              echo "Application is ready!"
+              break
+            fi
+            sleep 5
+          done
           echo "Checking container status..."
           docker ps -a
           docker logs native-debug-test
           echo "Testing health endpoint..."
           curl -f http://localhost:8080/healthz || (echo "Health check failed!" && docker logs native-debug-test && exit 1)
           echo "Health check passed!"
+          
+          echo ""
+          echo "=== Running Full E2E Tests for Native Debug Image ==="
+          echo ""
+          
+          # Run bash/curl E2E tests
+          echo "Running bash/curl E2E tests..."
+          BASE_URL=http://localhost:8080 ./scripts/e2e.sh
+          
+          # Run TypeScript E2E tests
+          echo ""
+          echo "Running TypeScript E2E tests..."
+          cd e2e
+          # Client already generated, just run tests
+          BASE_URL=http://localhost:8080 npm test
+          cd ..
+          
+          echo ""
+          echo "=== All E2E Tests Passed for Native Debug Image ==="
+          echo ""
+          
           echo "Stopping container..."
           docker stop native-debug-test || true
           docker rm native-debug-test || true
@@ -347,8 +410,13 @@ jobs:
       - name: Summary
         run: |
           echo "✅ All 4 image variants verified successfully!"
+          echo ""
           echo "Images pulled and launched:"
-          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm"
-          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug"
-          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native"
-          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug"
+          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm (health check only)"
+          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug (health check only)"
+          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native (full E2E tests)"
+          echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug (full E2E tests)"
+          echo ""
+          echo "Native images passed comprehensive E2E tests including:"
+          echo "  ✓ Bash/curl E2E tests (16 test scenarios)"
+          echo "  ✓ TypeScript E2E tests with OpenAPI client (17 test scenarios)"
