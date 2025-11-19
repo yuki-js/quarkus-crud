@@ -1,7 +1,9 @@
 package app.aoki.quarkuscrud.entity;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.LocalDateTime;
 
+@RegisterForReflection
 public class Room {
   private Long id;
   private String name;

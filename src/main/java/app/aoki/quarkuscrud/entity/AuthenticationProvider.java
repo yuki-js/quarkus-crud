@@ -1,11 +1,14 @@
 package app.aoki.quarkuscrud.entity;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 /**
  * Authentication provider types supported by the system.
  *
  * <p>This enum defines the different authentication methods available. Each provider type may have
  * different authentication flows and user management strategies.
  */
+@RegisterForReflection
 public enum AuthenticationProvider {
   /**
    * Anonymous authentication - users created locally without credentials.

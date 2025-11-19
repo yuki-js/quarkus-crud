@@ -1,5 +1,6 @@
 package app.aoki.quarkuscrud.entity;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.LocalDateTime;
 
 /**
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
  * <p>For external provider users: externalSubject contains the provider's subject, authIdentifier
  * is an internal reference
  */
+@RegisterForReflection
 public class User {
   private Long id;
   private String authIdentifier;
