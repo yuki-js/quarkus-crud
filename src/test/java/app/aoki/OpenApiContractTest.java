@@ -17,6 +17,7 @@ import org.junit.jupiter.api.*;
  */
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class OpenApiContractTest {
 
   private static OpenApiValidationFilter validationFilter;
