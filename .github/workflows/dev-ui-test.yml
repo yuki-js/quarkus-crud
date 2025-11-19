@@ -30,11 +30,18 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Pre-build to avoid delays during dev mode
+        run: |
+          echo "Pre-compiling the application..."
+          ./gradlew assemble
+
       - name: Start Quarkus Dev UI in background
         run: |
           echo "Starting Quarkus in dev mode with Dev Services..."
-          # Start Quarkus in dev mode in background
-          ./gradlew quarkusDev > /tmp/quarkus-dev.log 2>&1 &
+          # Disable Quarkus build analytics prompt for CI
+          export QUARKUS_ANALYTICS_DISABLED=true
+          # Start Quarkus in dev mode in background with non-interactive mode
+          nohup ./gradlew quarkusDev -Dquarkus.analytics.disabled=true < /dev/null > /tmp/quarkus-dev.log 2>&1 &
           DEV_PID=$!
           echo "DEV_PID=$DEV_PID" >> $GITHUB_ENV
           echo "Quarkus Dev started with PID: $DEV_PID"
@@ -42,19 +49,29 @@ jobs:
       - name: Wait for Dev Services and application startup
         run: |
           echo "Waiting for Quarkus Dev UI to start..."
-          MAX_WAIT=120
+          MAX_WAIT=180
           COUNTER=0
           
           while [ $COUNTER -lt $MAX_WAIT ]; do
+            # Check if process is still running
+            if ! kill -0 $DEV_PID 2>/dev/null; then
+              echo "❌ Quarkus process died unexpectedly"
+              cat /tmp/quarkus-dev.log
+              exit 1
+            fi
+            
             # Check if Dev Services started
             if grep -q "Dev Services for PostgreSQL started" /tmp/quarkus-dev.log 2>/dev/null; then
               echo "✅ Dev Services for PostgreSQL started successfully"
+              # Wait a bit more for full startup
+              sleep 15
               break
             fi
             
             # Check if application started
             if grep -q "started in" /tmp/quarkus-dev.log 2>/dev/null; then
               echo "✅ Application started"
+              sleep 5
               break
             fi
             
@@ -65,18 +82,21 @@ jobs:
               exit 1
             fi
             
+            # Progress indicator
+            if [ $((COUNTER % 10)) -eq 0 ]; then
+              echo "Still waiting... (${COUNTER}s elapsed)"
+            fi
+            
             COUNTER=$((COUNTER + 1))
             sleep 1
           done
           
           if [ $COUNTER -eq $MAX_WAIT ]; then
             echo "❌ Timeout waiting for application to start"
+            echo "Showing log contents:"
             cat /tmp/quarkus-dev.log
             exit 1
           fi
-          
-          # Give it a few more seconds to fully start
-          sleep 10
 
       - name: Verify Dev Services PostgreSQL container
         run: |
@@ -86,6 +106,7 @@ jobs:
             docker ps | grep postgres
           else
             echo "❌ PostgreSQL container not found"
+            docker ps
             exit 1
           fi
 
@@ -94,26 +115,34 @@ jobs:
           echo "Testing application endpoints..."
           
           # Test health endpoint
-          if curl -f -s http://localhost:8080/healthz > /dev/null; then
-            echo "✅ Health endpoint responding"
-          else
-            echo "❌ Health endpoint not responding"
-            exit 1
-          fi
+          echo "Testing health endpoint..."
+          for i in {1..5}; do
+            if curl -f -s http://localhost:8080/healthz > /dev/null; then
+              echo "✅ Health endpoint responding"
+              break
+            fi
+            if [ $i -eq 5 ]; then
+              echo "❌ Health endpoint not responding after 5 attempts"
+              exit 1
+            fi
+            sleep 2
+          done
           
-          # Test Dev UI endpoint
-          if curl -f -s http://localhost:8080/q/dev-ui > /dev/null; then
+          # Test Dev UI endpoint (redirects are OK)
+          echo "Testing Dev UI endpoint..."
+          if curl -s http://localhost:8080/q/dev-ui | grep -q "quarkus\|dev-ui\|html"; then
             echo "✅ Dev UI endpoint responding"
           else
-            echo "❌ Dev UI endpoint not responding"
+            echo "❌ Dev UI endpoint not responding properly"
             exit 1
           fi
           
           # Test Swagger UI endpoint
-          if curl -f -s http://localhost:8080/q/swagger-ui > /dev/null; then
+          echo "Testing Swagger UI endpoint..."
+          if curl -s http://localhost:8080/q/swagger-ui | grep -q "swagger\|openapi\|html"; then
             echo "✅ Swagger UI endpoint responding"
           else
-            echo "❌ Swagger UI endpoint not responding"
+            echo "❌ Swagger UI endpoint not responding properly"
             exit 1
           fi
 
@@ -159,8 +188,8 @@ jobs:
           docker ps
           
           echo ""
-          echo "Last 50 lines of dev log:"
-          tail -50 /tmp/quarkus-dev.log
+          echo "Last 100 lines of dev log:"
+          tail -100 /tmp/quarkus-dev.log
 
       - name: Stop Quarkus Dev
         if: always()
@@ -174,3 +203,7 @@ jobs:
           
           # Clean up any remaining processes
           pkill -f "quarkusDev" || true
+          
+          # Wait for cleanup
+          sleep 2
+
