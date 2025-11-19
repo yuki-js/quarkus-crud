@@ -1,0 +1,176 @@
+## GitHub Actions workflow to verify Quarkus Dev UI starts successfully with Dev Services
+
+name: Dev UI Verification
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  dev-ui-startup:
+    name: Verify Dev UI Starts with Dev Services
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Start Quarkus Dev UI in background
+        run: |
+          echo "Starting Quarkus in dev mode with Dev Services..."
+          # Start Quarkus in dev mode in background
+          ./gradlew quarkusDev > /tmp/quarkus-dev.log 2>&1 &
+          DEV_PID=$!
+          echo "DEV_PID=$DEV_PID" >> $GITHUB_ENV
+          echo "Quarkus Dev started with PID: $DEV_PID"
+
+      - name: Wait for Dev Services and application startup
+        run: |
+          echo "Waiting for Quarkus Dev UI to start..."
+          MAX_WAIT=120
+          COUNTER=0
+          
+          while [ $COUNTER -lt $MAX_WAIT ]; do
+            # Check if Dev Services started
+            if grep -q "Dev Services for PostgreSQL started" /tmp/quarkus-dev.log 2>/dev/null; then
+              echo "✅ Dev Services for PostgreSQL started successfully"
+              break
+            fi
+            
+            # Check if application started
+            if grep -q "started in" /tmp/quarkus-dev.log 2>/dev/null; then
+              echo "✅ Application started"
+              break
+            fi
+            
+            # Check for errors
+            if grep -q "BUILD FAILED" /tmp/quarkus-dev.log 2>/dev/null; then
+              echo "❌ Build failed"
+              cat /tmp/quarkus-dev.log
+              exit 1
+            fi
+            
+            COUNTER=$((COUNTER + 1))
+            sleep 1
+          done
+          
+          if [ $COUNTER -eq $MAX_WAIT ]; then
+            echo "❌ Timeout waiting for application to start"
+            cat /tmp/quarkus-dev.log
+            exit 1
+          fi
+          
+          # Give it a few more seconds to fully start
+          sleep 10
+
+      - name: Verify Dev Services PostgreSQL container
+        run: |
+          echo "Checking for Dev Services PostgreSQL container..."
+          if docker ps | grep -q postgres; then
+            echo "✅ PostgreSQL container is running via Dev Services"
+            docker ps | grep postgres
+          else
+            echo "❌ PostgreSQL container not found"
+            exit 1
+          fi
+
+      - name: Verify application is responding
+        run: |
+          echo "Testing application endpoints..."
+          
+          # Test health endpoint
+          if curl -f -s http://localhost:8080/healthz > /dev/null; then
+            echo "✅ Health endpoint responding"
+          else
+            echo "❌ Health endpoint not responding"
+            exit 1
+          fi
+          
+          # Test Dev UI endpoint
+          if curl -f -s http://localhost:8080/q/dev-ui > /dev/null; then
+            echo "✅ Dev UI endpoint responding"
+          else
+            echo "❌ Dev UI endpoint not responding"
+            exit 1
+          fi
+          
+          # Test Swagger UI endpoint
+          if curl -f -s http://localhost:8080/q/swagger-ui > /dev/null; then
+            echo "✅ Swagger UI endpoint responding"
+          else
+            echo "❌ Swagger UI endpoint not responding"
+            exit 1
+          fi
+
+      - name: Verify Dev Services details in logs
+        run: |
+          echo "Extracting Dev Services information from logs..."
+          
+          if grep -q "Dev Services for PostgreSQL started" /tmp/quarkus-dev.log; then
+            echo "✅ Dev Services confirmation found in logs"
+          fi
+          
+          if grep -q "Container postgres:15-alpine started" /tmp/quarkus-dev.log; then
+            echo "✅ PostgreSQL 15 Alpine container started"
+          fi
+          
+          if grep -q "Dev Services for default datasource (postgresql) started" /tmp/quarkus-dev.log; then
+            echo "✅ Datasource Dev Services started"
+          fi
+          
+          if grep -q "Profile dev activated" /tmp/quarkus-dev.log; then
+            echo "✅ Dev profile activated"
+          fi
+          
+          if grep -q "Live Coding activated" /tmp/quarkus-dev.log; then
+            echo "✅ Live Coding activated"
+          fi
+
+      - name: Display startup summary
+        if: always()
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "Dev UI Startup Verification Summary"
+          echo "=========================================="
+          echo ""
+          
+          echo "Key log entries:"
+          echo ""
+          grep -E "(Dev Services|Container postgres|started in|Profile dev|Live Coding)" /tmp/quarkus-dev.log || echo "No matching entries found"
+          
+          echo ""
+          echo "Running containers:"
+          docker ps
+          
+          echo ""
+          echo "Last 50 lines of dev log:"
+          tail -50 /tmp/quarkus-dev.log
+
+      - name: Stop Quarkus Dev
+        if: always()
+        run: |
+          if [ -n "$DEV_PID" ]; then
+            echo "Stopping Quarkus Dev (PID: $DEV_PID)..."
+            kill $DEV_PID 2>/dev/null || true
+            sleep 2
+            kill -9 $DEV_PID 2>/dev/null || true
+          fi
+          
+          # Clean up any remaining processes
+          pkill -f "quarkusDev" || true
