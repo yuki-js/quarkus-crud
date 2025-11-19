@@ -21,7 +21,7 @@ public interface AuthnProviderMapper {
 
   @Insert(
       "INSERT INTO authn_providers (user_id, auth_method, auth_identifier, external_subject, created_at, updated_at) "
-          + "VALUES (#{userId}, #{authMethod, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, #{authIdentifier}, #{externalSubject}, #{createdAt}, #{updatedAt})")
+          + "VALUES (#{userId}, #{authMethod, jdbcType=VARCHAR}, #{authIdentifier}, #{externalSubject}, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(AuthnProvider authnProvider);
 
@@ -32,11 +32,7 @@ public interface AuthnProviderMapper {
       value = {
         @Result(property = "id", column = "id", id = true),
         @Result(property = "userId", column = "user_id"),
-        @Result(
-            property = "authMethod",
-            column = "auth_method",
-            javaType = AuthMethod.class,
-            typeHandler = EnumTypeHandler.class),
+        @Result(property = "authMethod", column = "auth_method"),
         @Result(property = "authIdentifier", column = "auth_identifier"),
         @Result(property = "externalSubject", column = "external_subject"),
         @Result(property = "createdAt", column = "created_at"),
@@ -56,14 +52,14 @@ public interface AuthnProviderMapper {
 
   @Select(
       "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at, updated_at FROM authn_providers "
-          + "WHERE auth_method = #{authMethod, typeHandler=org.apache.ibatis.type.EnumTypeHandler} "
+          + "WHERE auth_method = #{authMethod, jdbcType=VARCHAR} "
           + "AND external_subject = #{externalSubject}")
   @ResultMap("authnProviderResultMap")
   Optional<AuthnProvider> findByMethodAndExternalSubject(
       @Param("authMethod") AuthMethod authMethod, @Param("externalSubject") String externalSubject);
 
   @Update(
-      "UPDATE authn_providers SET user_id = #{userId}, auth_method = #{authMethod, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, "
+      "UPDATE authn_providers SET user_id = #{userId}, auth_method = #{authMethod, jdbcType=VARCHAR}, "
           + "auth_identifier = #{authIdentifier}, external_subject = #{externalSubject}, updated_at = #{updatedAt} WHERE id = #{id}")
   void update(AuthnProvider authnProvider);
 
