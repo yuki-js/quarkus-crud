@@ -56,14 +56,14 @@ public final class OpenApiCompiler {
     if (messages != null && !messages.isEmpty()) {
       messages.forEach(message -> System.err.println("OpenAPI parse message: " + message));
       if (parseResult.getOpenAPI() == null) {
-        System.exit(1);
+        throw new IOException("Failed to parse OpenAPI specification: " + String.join(", ", messages));
       }
     }
 
     OpenAPI openAPI = parseResult.getOpenAPI();
     if (openAPI == null) {
       System.err.println("OpenAPI parse result did not contain a specification.");
-      System.exit(1);
+      throw new IOException("OpenAPI parse result did not contain a specification.");
     }
 
     new ResolverFully().resolveFully(openAPI);
