@@ -49,6 +49,9 @@ dependencies {
     
     // Dev UI extensions - enhances the Quarkus Dev UI with additional features
     implementation 'io.quarkus:quarkus-info'
+
+    compileOnly 'io.swagger.parser.v3:swagger-parser-v3:2.1.22'
+    compileOnly 'io.swagger.core.v3:swagger-core:2.1.22'
 }
 
 group = 'app.aoki.quarkuscrud'
@@ -213,15 +216,52 @@ tasks.withType(Checkstyle) {
         html.required = true
         xml.required = false
     }
+    
+    // Ignore generated sources under build/
+    exclude { fileTreeElement ->
+        fileTreeElement.file.toPath().startsWith(buildDir.toPath())
+    }
 }
 
 // OpenAPI Generator configuration
 configurations {
     openApiGenerator
+    openApiCompiler
 }
 
 dependencies {
     openApiGenerator 'org.openapitools:openapi-generator-cli:7.10.0'
+    openApiCompiler 'io.swagger.parser.v3:swagger-parser-v3:2.1.22'
+    openApiCompiler 'io.swagger.core.v3:swagger-core:2.1.22'
+}
+
+def openApiCompilerClassesDir = file("$buildDir/openapi-compiler/classes")
+
+task compileOpenApiCompiler(type: JavaCompile) {
+    description = 'Compile OpenApiCompiler utility.'
+    source = file('src/main/java/app/aoki/quarkuscrud/openapi/OpenApiCompiler.java')
+    classpath = configurations.openApiCompiler
+    destinationDirectory = openApiCompilerClassesDir
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+
+task compileOpenApi(type: JavaExec) {
+    group = 'openapi'
+    description = 'Compile modular OpenAPI sources in openapi/ into META-INF/openapi.yaml'
+
+    dependsOn compileOpenApiCompiler
+
+    classpath = files(openApiCompilerClassesDir) + configurations.openApiCompiler
+    mainClass = 'app.aoki.quarkuscrud.openapi.OpenApiCompiler'
+
+    def inputSpec = file('openapi/openapi.yaml')
+    def outputSpec = file('src/main/resources/META-INF/openapi.yaml')
+
+    inputs.file(inputSpec)
+    outputs.file(outputSpec)
+
+    args inputSpec.absolutePath, outputSpec.absolutePath
 }
 
 task generateOpenApiModels(type: JavaExec) {
@@ -268,6 +308,8 @@ task generateOpenApiModels(type: JavaExec) {
     }
 }
 
+generateOpenApiModels.dependsOn compileOpenApi
+
 // Add generated sources to source sets
 sourceSets {
     main {
@@ -290,4 +332,8 @@ compileJava.dependsOn generateOpenApiModels
     tasks.matching { it.name == taskName }.configureEach {
         dependsOn generateOpenApiModels
     }
+}
+
+tasks.named('processResources') {
+    dependsOn compileOpenApi
 }
