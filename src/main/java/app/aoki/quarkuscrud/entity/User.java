@@ -4,40 +4,35 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.LocalDateTime;
 
 /**
- * User entity representing all users in the system.
+ * User entity representing basic user information.
  *
- * <p>Users are equal regardless of authentication method. The system supports multiple
- * authentication providers (anonymous, external OIDC, etc.) with a unified user model.
- *
- * <p>For anonymous users: authIdentifier is the primary identifier, externalSubject is null
- *
- * <p>For external provider users: externalSubject contains the provider's subject, authIdentifier
- * is an internal reference
+ * <p>This entity handles only the fundamental user information. Authentication details are stored
+ * in the AuthnProvider entity.
  */
 @RegisterForReflection
 public class User {
   private Long id;
-  private String authIdentifier;
-  private AuthenticationProvider authProvider;
-  private String externalSubject;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+  private UserLifecycleStatus lifecycleStatus;
+  private Long currentProfileCardRevision;
+  private String meta; // JSONB stored as String
 
   public User() {}
 
   public User(
       Long id,
-      String authIdentifier,
-      AuthenticationProvider authProvider,
-      String externalSubject,
       LocalDateTime createdAt,
-      LocalDateTime updatedAt) {
+      LocalDateTime updatedAt,
+      UserLifecycleStatus lifecycleStatus,
+      Long currentProfileCardRevision,
+      String meta) {
     this.id = id;
-    this.authIdentifier = authIdentifier;
-    this.authProvider = authProvider;
-    this.externalSubject = externalSubject;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
+    this.lifecycleStatus = lifecycleStatus;
+    this.currentProfileCardRevision = currentProfileCardRevision;
+    this.meta = meta;
   }
 
   public Long getId() {
@@ -46,30 +41,6 @@ public class User {
 
   public void setId(Long id) {
     this.id = id;
-  }
-
-  public String getAuthIdentifier() {
-    return authIdentifier;
-  }
-
-  public void setAuthIdentifier(String authIdentifier) {
-    this.authIdentifier = authIdentifier;
-  }
-
-  public AuthenticationProvider getAuthProvider() {
-    return authProvider;
-  }
-
-  public void setAuthProvider(AuthenticationProvider authProvider) {
-    this.authProvider = authProvider;
-  }
-
-  public String getExternalSubject() {
-    return externalSubject;
-  }
-
-  public void setExternalSubject(String externalSubject) {
-    this.externalSubject = externalSubject;
   }
 
   public LocalDateTime getCreatedAt() {
@@ -88,15 +59,27 @@ public class User {
     this.updatedAt = updatedAt;
   }
 
-  /**
-   * Get the effective subject for JWT claims.
-   *
-   * <p>For anonymous users, returns authIdentifier. For external provider users, returns
-   * externalSubject.
-   *
-   * @return the subject to use in JWT tokens
-   */
-  public String getEffectiveSubject() {
-    return authProvider == AuthenticationProvider.ANONYMOUS ? authIdentifier : externalSubject;
+  public UserLifecycleStatus getLifecycleStatus() {
+    return lifecycleStatus;
+  }
+
+  public void setLifecycleStatus(UserLifecycleStatus lifecycleStatus) {
+    this.lifecycleStatus = lifecycleStatus;
+  }
+
+  public Long getCurrentProfileCardRevision() {
+    return currentProfileCardRevision;
+  }
+
+  public void setCurrentProfileCardRevision(Long currentProfileCardRevision) {
+    this.currentProfileCardRevision = currentProfileCardRevision;
+  }
+
+  public String getMeta() {
+    return meta;
+  }
+
+  public void setMeta(String meta) {
+    this.meta = meta;
   }
 }
