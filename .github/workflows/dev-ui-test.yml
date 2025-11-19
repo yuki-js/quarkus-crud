@@ -40,8 +40,8 @@ jobs:
           echo "Starting Quarkus in dev mode with Dev Services..."
           # Disable Quarkus build analytics prompt for CI
           export QUARKUS_ANALYTICS_DISABLED=true
-          # Start Quarkus in dev mode in background with non-interactive mode
-          nohup ./gradlew quarkusDev -Dquarkus.analytics.disabled=true < /dev/null > /tmp/quarkus-dev.log 2>&1 &
+          # Start Quarkus in dev mode in background with setsid for proper detachment
+          setsid ./gradlew quarkusDev -Dquarkus.analytics.disabled=true >> /tmp/quarkus-dev.log 2>&1 < /dev/null &
           DEV_PID=$!
           echo "DEV_PID=$DEV_PID" >> $GITHUB_ENV
           echo "Quarkus Dev started with PID: $DEV_PID"
