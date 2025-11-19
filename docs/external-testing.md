@@ -23,15 +23,28 @@ These tests use the `TestServerConfig` utility class to configure RestAssured to
 
 The external server at `https://quarkus-crud.ouchiserver.aokiapp.com` has the following status:
 - ✅ Health check (`/healthz`)
-- ✅ Guest user creation (`/api/auth/guest`)
+- ✅ Guest user creation (`/api/auth/guest`) - JWT tokens are generated
 - ✅ OpenAPI spec (`/openapi`)
 - ✅ Swagger UI (`/swagger-ui`)
 
-Some endpoints may return 401 or 500 errors due to JWT configuration:
-- ⚠️ Current user info (`/api/auth/me`) - May return 401/500
-- ⚠️ Room endpoints (`/api/rooms/*`) - May return 401/500
+**Current Issue: JWT Authentication Failure**
+- ❌ Authenticated endpoints return 401 errors
+- Generated JWT tokens are not being validated correctly by the server
+- Tests correctly fail when authentication doesn't work (expecting 200, getting 401)
 
-The tests handle these error cases gracefully and will pass even when the server returns these errors, allowing for progressive server fixes while maintaining test coverage.
+**Likely causes:**
+1. JWT issuer mismatch between token generation and verification
+2. Public/private key mismatch on the server
+3. JWT verification configuration needs to match the domain `https://quarkus-crud.ouchiserver.aokiapp.com`
+
+**To fix:** Update production server configuration to ensure:
+```properties
+mp.jwt.verify.issuer=https://quarkus-crud.ouchiserver.aokiapp.com
+smallrye.jwt.new-token.issuer=https://quarkus-crud.ouchiserver.aokiapp.com
+# Ensure public/private keys match
+mp.jwt.verify.publickey.location=/keys/publicKey.pem
+smallrye.jwt.sign.key.location=/keys/privateKey.pem
+```
 
 ## Running Tests Against External Server
 
@@ -241,10 +254,18 @@ If tests timeout, check:
 
 ### Authentication Failures
 
-External server tests create guest users for testing. If authentication fails:
-1. Verify the external server authentication is working
-2. Check JWT token configuration matches
-3. Ensure guest user creation endpoint is available
+External server tests create guest users and use JWT tokens for authentication. If authenticated endpoints return 401:
+
+1. **Check JWT token generation** - Verify guest user creation returns a valid JWT token in the Authorization header
+2. **Verify JWT issuer configuration** - The token issuer must match the verification issuer:
+   ```bash
+   # Decode the JWT to check issuer
+   echo "TOKEN_HERE" | cut -d'.' -f2 | base64 -d | jq .
+   ```
+3. **Check public/private key pair** - Ensure keys match between signing and verification
+4. **Verify server JWT configuration** - Check `mp.jwt.verify.issuer` matches the actual domain
+
+**Important:** Tests now correctly **fail** when authentication doesn't work (expecting 200, getting 401). This is intentional - tests should reveal server configuration issues, not hide them.
 
 ### Test Data Conflicts
 
