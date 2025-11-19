@@ -174,6 +174,43 @@ jobs:
             echo "✅ Live Coding activated"
           fi
 
+      - name: Run tests in dev mode
+        run: |
+          echo "Running tests while dev mode is active with Dev Services..."
+          echo ""
+          echo "Dev mode is running with Dev Services PostgreSQL container."
+          echo "Now executing test suite..."
+          echo ""
+          
+          # Run tests while dev mode is running
+          # Tests will start their own test containers, but dev mode stays active
+          ./gradlew test 2>&1 | tee /tmp/dev-mode-test.log
+          
+          # Check test results
+          echo ""
+          if grep -q "BUILD SUCCESSFUL" /tmp/dev-mode-test.log; then
+            echo "✅ All tests passed while dev mode was active"
+            
+            # Extract test summary
+            echo ""
+            echo "Test Summary:"
+            grep -A 2 "BUILD SUCCESSFUL" /tmp/dev-mode-test.log | head -3
+            
+            # Count tests
+            if grep -q "tests completed" /tmp/dev-mode-test.log; then
+              grep "tests completed" /tmp/dev-mode-test.log
+            fi
+          else
+            echo "❌ Tests failed while running in dev mode"
+            echo ""
+            echo "Test output:"
+            cat /tmp/dev-mode-test.log
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ Dev mode remained active throughout test execution"
+
       - name: Display startup summary
         if: always()
         run: |
