@@ -4,38 +4,38 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for AuthenticationProvider enum. */
+/** Unit tests for AuthenticationMethod enum. */
 public class AuthenticationProviderTest {
 
   @Test
-  public void testAnonymousProvider() {
-    assertEquals("anonymous", AuthenticationProvider.ANONYMOUS.getValue());
+  public void testAnonymousMethod() {
+    assertEquals("anonymous", AuthenticationMethod.ANONYMOUS.getValue());
   }
 
   @Test
-  public void testOidcProvider() {
-    assertEquals("oidc", AuthenticationProvider.OIDC.getValue());
+  public void testOidcMethod() {
+    assertEquals("oidc", AuthenticationMethod.OIDC.getValue());
   }
 
   @Test
   public void testFromValueAnonymous() {
-    AuthenticationProvider provider = AuthenticationProvider.fromValue("anonymous");
-    assertEquals(AuthenticationProvider.ANONYMOUS, provider);
+    AuthenticationMethod method = AuthenticationMethod.fromValue("anonymous");
+    assertEquals(AuthenticationMethod.ANONYMOUS, method);
   }
 
   @Test
   public void testFromValueOidc() {
-    AuthenticationProvider provider = AuthenticationProvider.fromValue("oidc");
-    assertEquals(AuthenticationProvider.OIDC, provider);
+    AuthenticationMethod method = AuthenticationMethod.fromValue("oidc");
+    assertEquals(AuthenticationMethod.OIDC, method);
   }
 
   @Test
   public void testFromValueInvalid() {
-    assertThrows(IllegalArgumentException.class, () -> AuthenticationProvider.fromValue("invalid"));
+    assertThrows(IllegalArgumentException.class, () -> AuthenticationMethod.fromValue("invalid"));
   }
 
   @Test
   public void testFromValueNull() {
-    assertThrows(IllegalArgumentException.class, () -> AuthenticationProvider.fromValue(null));
+    assertThrows(IllegalArgumentException.class, () -> AuthenticationMethod.fromValue(null));
   }
 }

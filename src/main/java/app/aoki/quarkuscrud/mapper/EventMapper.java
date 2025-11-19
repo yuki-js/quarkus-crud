@@ -26,8 +26,9 @@ public interface EventMapper {
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(Event event);
 
-  @Select("SELECT id, initiator_user_id, status, meta, expires_at, created_at, updated_at FROM"
-      + " events WHERE id = #{id}")
+  @Select(
+      "SELECT id, initiator_user_id, status, meta, expires_at, created_at, updated_at FROM"
+          + " events WHERE id = #{id}")
   @Results(
       id = "eventResultMap",
       value = {
@@ -45,13 +46,15 @@ public interface EventMapper {
       })
   Optional<Event> findById(@Param("id") Long id);
 
-  @Select("SELECT id, initiator_user_id, status, meta, expires_at, created_at, updated_at FROM"
-      + " events WHERE initiator_user_id = #{initiatorUserId}")
+  @Select(
+      "SELECT id, initiator_user_id, status, meta, expires_at, created_at, updated_at FROM"
+          + " events WHERE initiator_user_id = #{initiatorUserId}")
   @ResultMap("eventResultMap")
   List<Event> findByInitiatorUserId(@Param("initiatorUserId") Long initiatorUserId);
 
-  @Select("SELECT id, initiator_user_id, status, meta, expires_at, created_at, updated_at FROM"
-      + " events ORDER BY created_at DESC")
+  @Select(
+      "SELECT id, initiator_user_id, status, meta, expires_at, created_at, updated_at FROM"
+          + " events ORDER BY created_at DESC")
   @ResultMap("eventResultMap")
   List<Event> findAll();
 

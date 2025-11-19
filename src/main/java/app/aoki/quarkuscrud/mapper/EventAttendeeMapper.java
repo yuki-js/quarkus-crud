@@ -21,8 +21,9 @@ public interface EventAttendeeMapper {
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(EventAttendee eventAttendee);
 
-  @Select("SELECT id, event_id, attendee_user_id, created_at, updated_at, meta FROM"
-      + " event_attendees WHERE id = #{id}")
+  @Select(
+      "SELECT id, event_id, attendee_user_id, created_at, updated_at, meta FROM"
+          + " event_attendees WHERE id = #{id}")
   @Results(
       id = "eventAttendeeResultMap",
       value = {
@@ -35,18 +36,21 @@ public interface EventAttendeeMapper {
       })
   Optional<EventAttendee> findById(@Param("id") Long id);
 
-  @Select("SELECT id, event_id, attendee_user_id, created_at, updated_at, meta FROM"
-      + " event_attendees WHERE event_id = #{eventId}")
+  @Select(
+      "SELECT id, event_id, attendee_user_id, created_at, updated_at, meta FROM"
+          + " event_attendees WHERE event_id = #{eventId}")
   @ResultMap("eventAttendeeResultMap")
   List<EventAttendee> findByEventId(@Param("eventId") Long eventId);
 
-  @Select("SELECT id, event_id, attendee_user_id, created_at, updated_at, meta FROM"
-      + " event_attendees WHERE attendee_user_id = #{attendeeUserId}")
+  @Select(
+      "SELECT id, event_id, attendee_user_id, created_at, updated_at, meta FROM"
+          + " event_attendees WHERE attendee_user_id = #{attendeeUserId}")
   @ResultMap("eventAttendeeResultMap")
   List<EventAttendee> findByAttendeeUserId(@Param("attendeeUserId") Long attendeeUserId);
 
-  @Select("SELECT id, event_id, attendee_user_id, created_at, updated_at, meta FROM"
-      + " event_attendees WHERE event_id = #{eventId} AND attendee_user_id = #{attendeeUserId}")
+  @Select(
+      "SELECT id, event_id, attendee_user_id, created_at, updated_at, meta FROM"
+          + " event_attendees WHERE event_id = #{eventId} AND attendee_user_id = #{attendeeUserId}")
   @ResultMap("eventAttendeeResultMap")
   Optional<EventAttendee> findByEventIdAndAttendeeUserId(
       @Param("eventId") Long eventId, @Param("attendeeUserId") Long attendeeUserId);

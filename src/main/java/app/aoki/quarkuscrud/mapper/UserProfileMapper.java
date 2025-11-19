@@ -23,8 +23,9 @@ public interface UserProfileMapper {
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(UserProfile userProfile);
 
-  @Select("SELECT id, user_id, profile_data, created_at, updated_at, revision_meta FROM"
-      + " user_profiles WHERE id = #{id}")
+  @Select(
+      "SELECT id, user_id, profile_data, created_at, updated_at, revision_meta FROM"
+          + " user_profiles WHERE id = #{id}")
   @Results(
       id = "userProfileResultMap",
       value = {
@@ -37,13 +38,15 @@ public interface UserProfileMapper {
       })
   Optional<UserProfile> findById(@Param("id") Long id);
 
-  @Select("SELECT id, user_id, profile_data, created_at, updated_at, revision_meta FROM"
-      + " user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC")
+  @Select(
+      "SELECT id, user_id, profile_data, created_at, updated_at, revision_meta FROM"
+          + " user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC")
   @ResultMap("userProfileResultMap")
   List<UserProfile> findByUserId(@Param("userId") Long userId);
 
-  @Select("SELECT id, user_id, profile_data, created_at, updated_at, revision_meta FROM"
-      + " user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC LIMIT 1")
+  @Select(
+      "SELECT id, user_id, profile_data, created_at, updated_at, revision_meta FROM"
+          + " user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC LIMIT 1")
   @ResultMap("userProfileResultMap")
   Optional<UserProfile> findLatestByUserId(@Param("userId") Long userId);
 

@@ -21,8 +21,9 @@ public interface FriendshipMapper {
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(Friendship friendship);
 
-  @Select("SELECT id, sender_user_id, recipient_user_id, created_at, updated_at FROM friendships"
-      + " WHERE id = #{id}")
+  @Select(
+      "SELECT id, sender_user_id, recipient_user_id, created_at, updated_at FROM friendships"
+          + " WHERE id = #{id}")
   @Results(
       id = "friendshipResultMap",
       value = {
@@ -34,18 +35,21 @@ public interface FriendshipMapper {
       })
   Optional<Friendship> findById(@Param("id") Long id);
 
-  @Select("SELECT id, sender_user_id, recipient_user_id, created_at, updated_at FROM friendships"
-      + " WHERE sender_user_id = #{senderUserId}")
+  @Select(
+      "SELECT id, sender_user_id, recipient_user_id, created_at, updated_at FROM friendships"
+          + " WHERE sender_user_id = #{senderUserId}")
   @ResultMap("friendshipResultMap")
   List<Friendship> findBySenderUserId(@Param("senderUserId") Long senderUserId);
 
-  @Select("SELECT id, sender_user_id, recipient_user_id, created_at, updated_at FROM friendships"
-      + " WHERE recipient_user_id = #{recipientUserId}")
+  @Select(
+      "SELECT id, sender_user_id, recipient_user_id, created_at, updated_at FROM friendships"
+          + " WHERE recipient_user_id = #{recipientUserId}")
   @ResultMap("friendshipResultMap")
   List<Friendship> findByRecipientUserId(@Param("recipientUserId") Long recipientUserId);
 
-  @Select("SELECT id, sender_user_id, recipient_user_id, created_at, updated_at FROM friendships"
-      + " WHERE sender_user_id = #{senderUserId} AND recipient_user_id = #{recipientUserId}")
+  @Select(
+      "SELECT id, sender_user_id, recipient_user_id, created_at, updated_at FROM friendships"
+          + " WHERE sender_user_id = #{senderUserId} AND recipient_user_id = #{recipientUserId}")
   @ResultMap("friendshipResultMap")
   Optional<Friendship> findBySenderAndRecipient(
       @Param("senderUserId") Long senderUserId, @Param("recipientUserId") Long recipientUserId);

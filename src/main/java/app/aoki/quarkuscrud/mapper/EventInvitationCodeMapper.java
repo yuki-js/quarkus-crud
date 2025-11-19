@@ -21,8 +21,9 @@ public interface EventInvitationCodeMapper {
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(EventInvitationCode eventInvitationCode);
 
-  @Select("SELECT id, event_id, invitation_code, created_at, updated_at FROM"
-      + " event_invitation_codes WHERE id = #{id}")
+  @Select(
+      "SELECT id, event_id, invitation_code, created_at, updated_at FROM"
+          + " event_invitation_codes WHERE id = #{id}")
   @Results(
       id = "eventInvitationCodeResultMap",
       value = {
@@ -34,13 +35,15 @@ public interface EventInvitationCodeMapper {
       })
   Optional<EventInvitationCode> findById(@Param("id") Long id);
 
-  @Select("SELECT id, event_id, invitation_code, created_at, updated_at FROM"
-      + " event_invitation_codes WHERE event_id = #{eventId}")
+  @Select(
+      "SELECT id, event_id, invitation_code, created_at, updated_at FROM"
+          + " event_invitation_codes WHERE event_id = #{eventId}")
   @ResultMap("eventInvitationCodeResultMap")
   List<EventInvitationCode> findByEventId(@Param("eventId") Long eventId);
 
-  @Select("SELECT id, event_id, invitation_code, created_at, updated_at FROM"
-      + " event_invitation_codes WHERE invitation_code = #{invitationCode}")
+  @Select(
+      "SELECT id, event_id, invitation_code, created_at, updated_at FROM"
+          + " event_invitation_codes WHERE invitation_code = #{invitationCode}")
   @ResultMap("eventInvitationCodeResultMap")
   Optional<EventInvitationCode> findByInvitationCode(
       @Param("invitationCode") String invitationCode);

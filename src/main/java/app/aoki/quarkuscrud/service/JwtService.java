@@ -1,20 +1,20 @@
 package app.aoki.quarkuscrud.service;
 
-import app.aoki.quarkuscrud.entity.AuthenticationProvider;
+import app.aoki.quarkuscrud.entity.AuthenticationMethod;
+import app.aoki.quarkuscrud.entity.AuthnProvider;
 import app.aoki.quarkuscrud.entity.User;
 import io.smallrye.jwt.algorithm.SignatureAlgorithm;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Service for generating JWT tokens for internally-authenticated users.
  *
- * <p>This service handles JWT token generation for users authenticated by this service (currently
- * anonymous users). When users are authenticated by external providers (OIDC), this service is NOT
- * used - those tokens come directly from the external provider.
- *
- * <p>This design ensures minimal code changes when integrating external authentication providers.
+ * <p>This service handles JWT token generation for users authenticated by this service. When users
+ * are authenticated by external providers (OIDC), this service is NOT used - those tokens come
+ * directly from the external provider.
  */
 @ApplicationScoped
 public class JwtService {
@@ -25,17 +25,17 @@ public class JwtService {
   @ConfigProperty(name = "smallrye.jwt.new-token.lifespan")
   Long tokenLifespan;
 
+  @Inject UserService userService;
+
   /**
    * Generates a JWT token for a user with internal authentication.
    *
-   * <p>The token structure uses the user's effective subject (which depends on authentication
-   * provider):
+   * <p>The token structure uses the authentication provider's effective subject:
    *
    * <ul>
-   *   <li>Subject (sub): User's effective subject (authIdentifier for anonymous, externalSubject
-   *       for others)
+   *   <li>Subject (sub): AuthnProvider's effective subject
    *   <li>User Principal Name (upn): Same as subject for consistency
-   *   <li>Groups: Authentication provider value (e.g., "anonymous")
+   *   <li>Groups: Authentication method value (e.g., "anonymous")
    *   <li>Expiration: Configurable lifespan
    * </ul>
    *
@@ -43,13 +43,18 @@ public class JwtService {
    * @return the signed JWT token
    */
   public String generateToken(User user) {
-    String subject = user.getEffectiveSubject();
-    String group = user.getAuthProvider().getValue();
+    AuthnProvider authnProvider =
+        userService
+            .getPrimaryAuthnProvider(user.getId())
+            .orElseThrow(() -> new IllegalStateException("User has no authentication provider"));
+
+    String subject = authnProvider.getEffectiveSubject();
+    String group = authnProvider.getAuthMethod().getValue();
 
     return Jwt.issuer(issuer)
         .upn(subject) // User principal name - effective subject
         .subject(subject) // Subject - effective subject
-        .groups(group) // Authentication provider as group
+        .groups(group) // Authentication method as group
         .expiresIn(tokenLifespan)
         .jws()
         .algorithm(SignatureAlgorithm.ES256) // ECDSA with SHA-256
@@ -65,7 +70,12 @@ public class JwtService {
    * @return the signed JWT token
    */
   public String generateAnonymousToken(User user) {
-    if (user.getAuthProvider() != AuthenticationProvider.ANONYMOUS) {
+    AuthnProvider authnProvider =
+        userService
+            .getPrimaryAuthnProvider(user.getId())
+            .orElseThrow(() -> new IllegalStateException("User has no authentication provider"));
+
+    if (authnProvider.getAuthMethod() != AuthenticationMethod.ANONYMOUS) {
       throw new IllegalArgumentException("User is not authenticated anonymously");
     }
     return generateToken(user);

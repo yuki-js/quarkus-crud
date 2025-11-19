@@ -27,8 +27,9 @@ public interface AuthnProviderMapper {
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(AuthnProvider authnProvider);
 
-  @Select("SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at,"
-      + " updated_at FROM authn_providers WHERE id = #{id}")
+  @Select(
+      "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at,"
+          + " updated_at FROM authn_providers WHERE id = #{id}")
   @Results(
       id = "authnProviderResultMap",
       value = {
@@ -46,20 +47,23 @@ public interface AuthnProviderMapper {
       })
   Optional<AuthnProvider> findById(@Param("id") Long id);
 
-  @Select("SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at,"
-      + " updated_at FROM authn_providers WHERE user_id = #{userId}")
+  @Select(
+      "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at,"
+          + " updated_at FROM authn_providers WHERE user_id = #{userId}")
   @ResultMap("authnProviderResultMap")
   List<AuthnProvider> findByUserId(@Param("userId") Long userId);
 
-  @Select("SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at,"
-      + " updated_at FROM authn_providers WHERE auth_identifier = #{authIdentifier}")
+  @Select(
+      "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at,"
+          + " updated_at FROM authn_providers WHERE auth_identifier = #{authIdentifier}")
   @ResultMap("authnProviderResultMap")
   Optional<AuthnProvider> findByAuthIdentifier(@Param("authIdentifier") String authIdentifier);
 
-  @Select("SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at,"
-      + " updated_at FROM authn_providers WHERE auth_method = #{authMethod,"
-      + " typeHandler=org.apache.ibatis.type.EnumTypeHandler} AND external_subject ="
-      + " #{externalSubject}")
+  @Select(
+      "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at,"
+          + " updated_at FROM authn_providers WHERE auth_method = #{authMethod,"
+          + " typeHandler=org.apache.ibatis.type.EnumTypeHandler} AND external_subject ="
+          + " #{externalSubject}")
   @ResultMap("authnProviderResultMap")
   Optional<AuthnProvider> findByMethodAndExternalSubject(
       @Param("authMethod") AuthenticationMethod authMethod,
