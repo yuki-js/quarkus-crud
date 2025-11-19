@@ -1,7 +1,10 @@
 package app.aoki.quarkuscrud.service;
 
-import app.aoki.quarkuscrud.entity.AuthenticationProvider;
+import app.aoki.quarkuscrud.entity.AccountLifecycle;
+import app.aoki.quarkuscrud.entity.AuthMethod;
+import app.aoki.quarkuscrud.entity.AuthnProvider;
 import app.aoki.quarkuscrud.entity.User;
+import app.aoki.quarkuscrud.mapper.AuthnProviderMapper;
 import app.aoki.quarkuscrud.mapper.UserMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -13,32 +16,44 @@ import java.util.UUID;
 /**
  * Service for managing users across all authentication providers.
  *
- * <p>This service handles user lifecycle operations for users authenticated through different
- * providers (anonymous, external OIDC, etc.). All users are treated equally with provider-specific
- * logic abstracted.
+ * <p>This service handles user lifecycle operations. Authentication information is managed
+ * separately in the AuthnProvider table.
  */
 @ApplicationScoped
 public class UserService {
 
   @Inject UserMapper userMapper;
+  @Inject AuthnProviderMapper authnProviderMapper;
 
   /**
    * Creates a new user with anonymous authentication.
    *
-   * <p>Generates a unique authentication identifier (UUID) for the user. This identifier serves as
-   * both the internal reference and the JWT subject for anonymous users.
+   * <p>Generates a unique authentication identifier (UUID) for the user. Creates both the User
+   * entity and the associated AuthnProvider record.
    *
    * @return the created user
    */
   @Transactional
   public User createAnonymousUser() {
+    // Create user entity
     User user = new User();
-    user.setAuthIdentifier(UUID.randomUUID().toString());
-    user.setAuthProvider(AuthenticationProvider.ANONYMOUS);
-    user.setExternalSubject(null); // Anonymous users don't have external subjects
+    user.setAccountLifecycle(AccountLifecycle.CREATED);
+    user.setCurrentProfileRevision(null);
+    user.setMeta(null);
     user.setCreatedAt(LocalDateTime.now());
     user.setUpdatedAt(LocalDateTime.now());
     userMapper.insert(user);
+
+    // Create authentication provider
+    AuthnProvider authnProvider = new AuthnProvider();
+    authnProvider.setUserId(user.getId());
+    authnProvider.setAuthMethod(AuthMethod.ANONYMOUS);
+    authnProvider.setAuthIdentifier(UUID.randomUUID().toString());
+    authnProvider.setExternalSubject(null);
+    authnProvider.setCreatedAt(LocalDateTime.now());
+    authnProvider.setUpdatedAt(LocalDateTime.now());
+    authnProviderMapper.insert(authnProvider);
+
     return user;
   }
 
@@ -46,34 +61,46 @@ public class UserService {
    * Creates or retrieves a user from an external authentication provider.
    *
    * <p>If a user with the given provider and external subject already exists, returns that user.
-   * Otherwise, creates a new user. This enables seamless integration with external OIDC providers.
+   * Otherwise, creates a new user.
    *
-   * @param provider the authentication provider
+   * @param authMethod the authentication method
    * @param externalSubject the subject from the external provider
    * @return the user (existing or newly created)
    */
   @Transactional
-  public User getOrCreateExternalUser(AuthenticationProvider provider, String externalSubject) {
-    if (provider == AuthenticationProvider.ANONYMOUS) {
+  public User getOrCreateExternalUser(AuthMethod authMethod, String externalSubject) {
+    if (authMethod == AuthMethod.ANONYMOUS) {
       throw new IllegalArgumentException("Use createAnonymousUser() for anonymous authentication");
     }
 
-    // Check if user already exists
-    Optional<User> existingUser =
-        userMapper.findByProviderAndExternalSubject(provider, externalSubject);
-    if (existingUser.isPresent()) {
-      return existingUser.get();
+    // Check if authentication provider already exists
+    Optional<AuthnProvider> existingAuthnProvider =
+        authnProviderMapper.findByMethodAndExternalSubject(authMethod, externalSubject);
+    if (existingAuthnProvider.isPresent()) {
+      // Return the associated user
+      return userMapper.findById(existingAuthnProvider.get().getUserId()).orElseThrow();
     }
 
-    // Create new user for external provider
+    // Create new user
     User user = new User();
-    user.setAuthIdentifier(
-        UUID.randomUUID().toString()); // Internal reference even for external users
-    user.setAuthProvider(provider);
-    user.setExternalSubject(externalSubject);
+    user.setAccountLifecycle(AccountLifecycle.CREATED);
+    user.setCurrentProfileRevision(null);
+    user.setMeta(null);
     user.setCreatedAt(LocalDateTime.now());
     user.setUpdatedAt(LocalDateTime.now());
     userMapper.insert(user);
+
+    // Create authentication provider
+    AuthnProvider authnProvider = new AuthnProvider();
+    authnProvider.setUserId(user.getId());
+    authnProvider.setAuthMethod(authMethod);
+    authnProvider.setAuthIdentifier(
+        UUID.randomUUID().toString()); // Internal reference for tracking
+    authnProvider.setExternalSubject(externalSubject);
+    authnProvider.setCreatedAt(LocalDateTime.now());
+    authnProvider.setUpdatedAt(LocalDateTime.now());
+    authnProviderMapper.insert(authnProvider);
+
     return user;
   }
 
@@ -90,27 +117,33 @@ public class UserService {
   /**
    * Finds a user by their internal authentication identifier.
    *
-   * <p>The authentication identifier is an internal UUID used for all users regardless of provider.
-   *
    * @param authIdentifier the authentication identifier
    * @return an Optional containing the user if found
    */
   public Optional<User> findByAuthIdentifier(String authIdentifier) {
-    return userMapper.findByAuthIdentifier(authIdentifier);
+    Optional<AuthnProvider> authnProvider =
+        authnProviderMapper.findByAuthIdentifier(authIdentifier);
+    if (authnProvider.isPresent()) {
+      return userMapper.findById(authnProvider.get().getUserId());
+    }
+    return Optional.empty();
   }
 
   /**
    * Finds a user by their external provider and subject.
    *
-   * <p>Used to look up users authenticated via external providers (e.g., OIDC).
-   *
-   * @param provider the authentication provider
+   * @param authMethod the authentication method
    * @param externalSubject the external subject identifier
    * @return an Optional containing the user if found
    */
-  public Optional<User> findByProviderAndExternalSubject(
-      AuthenticationProvider provider, String externalSubject) {
-    return userMapper.findByProviderAndExternalSubject(provider, externalSubject);
+  public Optional<User> findByMethodAndExternalSubject(
+      AuthMethod authMethod, String externalSubject) {
+    Optional<AuthnProvider> authnProvider =
+        authnProviderMapper.findByMethodAndExternalSubject(authMethod, externalSubject);
+    if (authnProvider.isPresent()) {
+      return userMapper.findById(authnProvider.get().getUserId());
+    }
+    return Optional.empty();
   }
 
   /**
@@ -127,8 +160,8 @@ public class UserService {
   /**
    * Deletes a user by ID.
    *
-   * <p>Note: All rooms owned by this user will be automatically deleted due to the ON DELETE
-   * CASCADE constraint on the rooms.user_id foreign key.
+   * <p>Note: All related entities (authentication providers, profiles, etc.) will be automatically
+   * deleted due to ON DELETE CASCADE constraints.
    *
    * @param id the user ID
    */
