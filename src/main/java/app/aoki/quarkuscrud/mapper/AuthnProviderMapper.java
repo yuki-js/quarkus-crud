@@ -14,14 +14,13 @@ import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.apache.ibatis.type.EnumTypeHandler;
 
 @Mapper
 public interface AuthnProviderMapper {
 
   @Insert(
       "INSERT INTO authn_providers (user_id, auth_method, auth_identifier, external_subject, created_at, updated_at) "
-          + "VALUES (#{userId}, #{authMethod, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, #{authIdentifier}, #{externalSubject}, #{createdAt}, #{updatedAt})")
+          + "VALUES (#{userId}, #{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler}, #{authIdentifier}, #{externalSubject}, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(AuthnProvider authnProvider);
 
@@ -36,7 +35,7 @@ public interface AuthnProviderMapper {
             property = "authMethod",
             column = "auth_method",
             javaType = AuthMethod.class,
-            typeHandler = EnumTypeHandler.class),
+            typeHandler = AuthMethodTypeHandler.class),
         @Result(property = "authIdentifier", column = "auth_identifier"),
         @Result(property = "externalSubject", column = "external_subject"),
         @Result(property = "createdAt", column = "created_at"),
@@ -56,14 +55,14 @@ public interface AuthnProviderMapper {
 
   @Select(
       "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at, updated_at FROM authn_providers "
-          + "WHERE auth_method = #{authMethod, typeHandler=org.apache.ibatis.type.EnumTypeHandler} "
+          + "WHERE auth_method = #{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler} "
           + "AND external_subject = #{externalSubject}")
   @ResultMap("authnProviderResultMap")
   Optional<AuthnProvider> findByMethodAndExternalSubject(
       @Param("authMethod") AuthMethod authMethod, @Param("externalSubject") String externalSubject);
 
   @Update(
-      "UPDATE authn_providers SET user_id = #{userId}, auth_method = #{authMethod, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, "
+      "UPDATE authn_providers SET user_id = #{userId}, auth_method = #{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler}, "
           + "auth_identifier = #{authIdentifier}, external_subject = #{externalSubject}, updated_at = #{updatedAt} WHERE id = #{id}")
   void update(AuthnProvider authnProvider);
 

@@ -66,7 +66,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     // Get path to customize error messages
     String path = requestContext.getUriInfo().getPath();
-    boolean isAuthEndpoint = path.startsWith("/api/auth/");
+    boolean isAuthEndpoint = path.startsWith("/api/auth/") || path.equals("/api/me");
 
     if (!authenticationService.hasBearerToken(authHeader)) {
       String errorMessage = isAuthEndpoint ? "No JWT token found" : "Authentication required";
