@@ -29,7 +29,8 @@ public class FriendshipService {
   @Transactional
   public Friendship createFriendship(Long senderId, Long recipientId) {
     // Check if friendship already exists
-    Optional<Friendship> existing = friendshipMapper.findBySenderAndRecipient(senderId, recipientId);
+    Optional<Friendship> existing =
+        friendshipMapper.findBySenderAndRecipient(senderId, recipientId);
     if (existing.isPresent()) {
       return existing.get();
     }

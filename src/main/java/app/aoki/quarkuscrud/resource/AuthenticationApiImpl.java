@@ -48,8 +48,7 @@ public class AuthenticationApiImpl implements AuthenticationApi {
     if (user.getMeta() != null) {
       try {
         @SuppressWarnings("unchecked")
-        Map<String, Object> metaMap =
-            objectMapper.readValue(user.getMeta(), Map.class);
+        Map<String, Object> metaMap = objectMapper.readValue(user.getMeta(), Map.class);
         response.setMeta(metaMap);
       } catch (JsonProcessingException e) {
         // If meta is not valid JSON, leave it null
@@ -65,6 +64,7 @@ public class AuthenticationApiImpl implements AuthenticationApi {
     if (lifecycle == null) {
       return null;
     }
-    return CreateGuestUser200Response.AccountLifecycleEnum.fromValue(lifecycle.name().toLowerCase());
+    return CreateGuestUser200Response.AccountLifecycleEnum.fromValue(
+        lifecycle.name().toLowerCase());
   }
 }

@@ -1,7 +1,6 @@
 package app.aoki.quarkuscrud.mapper;
 
 import app.aoki.quarkuscrud.entity.EventInvitationCode;
-import java.util.List;
 import java.util.Optional;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;

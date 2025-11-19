@@ -56,7 +56,8 @@ public final class OpenApiCompiler {
     if (messages != null && !messages.isEmpty()) {
       messages.forEach(message -> System.err.println("OpenAPI parse message: " + message));
       if (parseResult.getOpenAPI() == null) {
-        throw new IOException("Failed to parse OpenAPI specification: " + String.join(", ", messages));
+        throw new IOException(
+            "Failed to parse OpenAPI specification: " + String.join(", ", messages));
       }
     }
 

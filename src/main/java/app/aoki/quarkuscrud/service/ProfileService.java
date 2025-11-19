@@ -29,12 +29,15 @@ public class ProfileService {
    * @return the current profile, or empty if no profile exists
    */
   public Optional<UserProfile> getCurrentProfile(Long userId) {
-    return userMapper.findById(userId).flatMap(user -> {
-      if (user.getCurrentProfileRevision() == null) {
-        return Optional.empty();
-      }
-      return profileMapper.findById(user.getCurrentProfileRevision());
-    });
+    return userMapper
+        .findById(userId)
+        .flatMap(
+            user -> {
+              if (user.getCurrentProfileRevision() == null) {
+                return Optional.empty();
+              }
+              return profileMapper.findById(user.getCurrentProfileRevision());
+            });
   }
 
   /**

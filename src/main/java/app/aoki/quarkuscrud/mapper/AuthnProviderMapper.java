@@ -14,7 +14,6 @@ import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.apache.ibatis.type.EnumTypeHandler;
 
 @Mapper
 public interface AuthnProviderMapper {

@@ -46,9 +46,10 @@ public class EventsApiImpl implements EventsApi {
         metaJson = objectMapper.writeValueAsString(request.getMeta());
       }
 
-      LocalDateTime expiresAt = request.getExpiresAt() != null
-          ? request.getExpiresAt().toLocalDateTime()
-          : LocalDateTime.now().plusHours(24); // Default 24 hours
+      LocalDateTime expiresAt =
+          request.getExpiresAt() != null
+              ? request.getExpiresAt().toLocalDateTime()
+              : LocalDateTime.now().plusHours(24); // Default 24 hours
 
       Event event = eventService.createEvent(user.getId(), expiresAt, metaJson);
 

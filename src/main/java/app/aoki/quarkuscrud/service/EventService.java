@@ -89,11 +89,15 @@ public class EventService {
    * @return the event, or empty if not found or expired
    */
   public Optional<Event> findByInvitationCode(String code) {
-    return eventInvitationCodeMapper.findByInvitationCode(code).flatMap(invCode -> {
-      Optional<Event> event = eventMapper.findById(invCode.getEventId());
-      // Only return active events
-      return event.filter(e -> e.getStatus() == EventStatus.ACTIVE || e.getStatus() == EventStatus.CREATED);
-    });
+    return eventInvitationCodeMapper
+        .findByInvitationCode(code)
+        .flatMap(
+            invCode -> {
+              Optional<Event> event = eventMapper.findById(invCode.getEventId());
+              // Only return active events
+              return event.filter(
+                  e -> e.getStatus() == EventStatus.ACTIVE || e.getStatus() == EventStatus.CREATED);
+            });
   }
 
   /**
@@ -166,7 +170,8 @@ public class EventService {
    * @return the invitation code, or empty if not found
    */
   public Optional<String> getInvitationCode(Long eventId) {
-    return eventInvitationCodeMapper.findByEventId(eventId)
+    return eventInvitationCodeMapper
+        .findByEventId(eventId)
         .map(EventInvitationCode::getInvitationCode);
   }
 

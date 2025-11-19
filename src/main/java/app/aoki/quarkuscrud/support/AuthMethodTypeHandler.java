@@ -18,8 +18,8 @@ import org.apache.ibatis.type.MappedTypes;
 public class AuthMethodTypeHandler extends BaseTypeHandler<AuthMethod> {
 
   @Override
-  public void setNonNullParameter(PreparedStatement ps, int i, AuthMethod parameter, JdbcType jdbcType)
-      throws SQLException {
+  public void setNonNullParameter(
+      PreparedStatement ps, int i, AuthMethod parameter, JdbcType jdbcType) throws SQLException {
     ps.setString(i, parameter.name());
   }
 
