@@ -54,8 +54,7 @@ public interface FriendshipMapper {
   @Delete("DELETE FROM friendships WHERE id = #{id}")
   void deleteById(@Param("id") Long id);
 
-  @Delete(
-      "DELETE FROM friendships WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
+  @Delete("DELETE FROM friendships WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
   void deleteBySenderAndRecipient(
       @Param("senderId") Long senderId, @Param("recipientId") Long recipientId);
 }

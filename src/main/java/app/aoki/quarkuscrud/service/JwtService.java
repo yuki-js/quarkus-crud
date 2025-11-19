@@ -79,8 +79,7 @@ public class JwtService {
   public String generateAnonymousToken(User user) {
     // Get the user's authentication providers
     List<AuthnProvider> authnProviders = authnProviderMapper.findByUserId(user.getId());
-    if (authnProviders.isEmpty()
-        || authnProviders.get(0).getAuthMethod() != AuthMethod.ANONYMOUS) {
+    if (authnProviders.isEmpty() || authnProviders.get(0).getAuthMethod() != AuthMethod.ANONYMOUS) {
       throw new IllegalArgumentException("User is not authenticated anonymously");
     }
     return generateToken(user);

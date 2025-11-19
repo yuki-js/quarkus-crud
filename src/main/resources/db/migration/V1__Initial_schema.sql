@@ -158,18 +158,9 @@ CREATE INDEX idx_event_codes_event_id ON event_invitation_codes(event_id);
 CREATE INDEX idx_event_codes_code ON event_invitation_codes(invitation_code);
 
 -- Unique constraint: invitation code must be unique among non-expired/non-deleted events
--- This is enforced at the application level with exclusive locking when generating codes
--- Index to support fast lookups
-CREATE UNIQUE INDEX idx_event_codes_unique_active_code 
-    ON event_invitation_codes(invitation_code)
-    WHERE EXISTS (
-        SELECT 1 FROM events e 
-        WHERE e.id = event_invitation_codes.event_id 
-        AND e.status NOT IN ('expired', 'deleted')
-    );
-
--- Note: The unique constraint above is complex and may need application-level enforcement
--- Simplified version for initial implementation:
+-- Since PostgreSQL doesn't support subqueries in partial index predicates,
+-- we enforce uniqueness at the application level with exclusive locking.
+-- This index supports fast lookups by invitation code:
 CREATE UNIQUE INDEX idx_event_codes_event_code ON event_invitation_codes(event_id, invitation_code);
 
 -- ============================================================================

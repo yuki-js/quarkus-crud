@@ -20,11 +20,7 @@ public class Friendship {
   public Friendship() {}
 
   public Friendship(
-      Long id,
-      Long senderId,
-      Long recipientId,
-      LocalDateTime createdAt,
-      LocalDateTime updatedAt) {
+      Long id, Long senderId, Long recipientId, LocalDateTime createdAt, LocalDateTime updatedAt) {
     this.id = id;
     this.senderId = senderId;
     this.recipientId = recipientId;
