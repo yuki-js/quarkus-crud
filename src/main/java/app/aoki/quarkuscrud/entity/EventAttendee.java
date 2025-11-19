@@ -4,32 +4,31 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.LocalDateTime;
 
 /**
- * User entity representing all users in the system.
+ * Event attendee entity.
  *
- * <p>Users track account lifecycle, profile revisions, and flexible metadata. Authentication is
- * handled separately in the authn_providers table.
+ * <p>Represents a user's participation in an event. Each user can attend an event only once.
  */
 @RegisterForReflection
-public class User {
+public class EventAttendee {
   private Long id;
-  private AccountLifecycle accountLifecycle;
-  private Long currentProfileRevision;
+  private Long eventId;
+  private Long attendeeUserId;
   private String meta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
-  public User() {}
+  public EventAttendee() {}
 
-  public User(
+  public EventAttendee(
       Long id,
-      AccountLifecycle accountLifecycle,
-      Long currentProfileRevision,
+      Long eventId,
+      Long attendeeUserId,
       String meta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
-    this.accountLifecycle = accountLifecycle;
-    this.currentProfileRevision = currentProfileRevision;
+    this.eventId = eventId;
+    this.attendeeUserId = attendeeUserId;
     this.meta = meta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -43,20 +42,20 @@ public class User {
     this.id = id;
   }
 
-  public AccountLifecycle getAccountLifecycle() {
-    return accountLifecycle;
+  public Long getEventId() {
+    return eventId;
   }
 
-  public void setAccountLifecycle(AccountLifecycle accountLifecycle) {
-    this.accountLifecycle = accountLifecycle;
+  public void setEventId(Long eventId) {
+    this.eventId = eventId;
   }
 
-  public Long getCurrentProfileRevision() {
-    return currentProfileRevision;
+  public Long getAttendeeUserId() {
+    return attendeeUserId;
   }
 
-  public void setCurrentProfileRevision(Long currentProfileRevision) {
-    this.currentProfileRevision = currentProfileRevision;
+  public void setAttendeeUserId(Long attendeeUserId) {
+    this.attendeeUserId = attendeeUserId;
   }
 
   public String getMeta() {

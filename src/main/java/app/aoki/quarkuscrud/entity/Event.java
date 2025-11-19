@@ -4,33 +4,36 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.LocalDateTime;
 
 /**
- * User entity representing all users in the system.
+ * Event entity representing quiz events.
  *
- * <p>Users track account lifecycle, profile revisions, and flexible metadata. Authentication is
- * handled separately in the authn_providers table.
+ * <p>Events have a lifecycle (created, active, ended, expired, deleted) and are associated with an
+ * initiator user. Invitation codes are managed in a separate table for performance.
  */
 @RegisterForReflection
-public class User {
+public class Event {
   private Long id;
-  private AccountLifecycle accountLifecycle;
-  private Long currentProfileRevision;
+  private Long initiatorId;
+  private EventStatus status;
   private String meta;
+  private LocalDateTime expiresAt;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
-  public User() {}
+  public Event() {}
 
-  public User(
+  public Event(
       Long id,
-      AccountLifecycle accountLifecycle,
-      Long currentProfileRevision,
+      Long initiatorId,
+      EventStatus status,
       String meta,
+      LocalDateTime expiresAt,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
-    this.accountLifecycle = accountLifecycle;
-    this.currentProfileRevision = currentProfileRevision;
+    this.initiatorId = initiatorId;
+    this.status = status;
     this.meta = meta;
+    this.expiresAt = expiresAt;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -43,20 +46,20 @@ public class User {
     this.id = id;
   }
 
-  public AccountLifecycle getAccountLifecycle() {
-    return accountLifecycle;
+  public Long getInitiatorId() {
+    return initiatorId;
   }
 
-  public void setAccountLifecycle(AccountLifecycle accountLifecycle) {
-    this.accountLifecycle = accountLifecycle;
+  public void setInitiatorId(Long initiatorId) {
+    this.initiatorId = initiatorId;
   }
 
-  public Long getCurrentProfileRevision() {
-    return currentProfileRevision;
+  public EventStatus getStatus() {
+    return status;
   }
 
-  public void setCurrentProfileRevision(Long currentProfileRevision) {
-    this.currentProfileRevision = currentProfileRevision;
+  public void setStatus(EventStatus status) {
+    this.status = status;
   }
 
   public String getMeta() {
@@ -65,6 +68,14 @@ public class User {
 
   public void setMeta(String meta) {
     this.meta = meta;
+  }
+
+  public LocalDateTime getExpiresAt() {
+    return expiresAt;
+  }
+
+  public void setExpiresAt(LocalDateTime expiresAt) {
+    this.expiresAt = expiresAt;
   }
 
   public LocalDateTime getCreatedAt() {
