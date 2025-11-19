@@ -37,9 +37,9 @@ public interface EventInvitationCodeMapper {
   Optional<EventInvitationCode> findById(@Param("id") Long id);
 
   @Select(
-      "SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE event_id = #{eventId}")
+      "SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE event_id = #{eventId} LIMIT 1")
   @ResultMap("eventInvitationCodeResultMap")
-  List<EventInvitationCode> findByEventId(@Param("eventId") Long eventId);
+  Optional<EventInvitationCode> findByEventId(@Param("eventId") Long eventId);
 
   @Select(
       "SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE invitation_code = #{invitationCode}")
