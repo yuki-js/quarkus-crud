@@ -90,6 +90,8 @@ jobs:
 
       - name: Build and Test (includes contract tests)
         run: ./gradlew build
+        env:
+          QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://localhost:5432/quarkus_crud
 
       - name: Generate Test Evidence Summary
         if: always()
