@@ -53,7 +53,7 @@ public class AuthenticationIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .when()
-        .get("/api/auth/me")
+        .get("/api/me")
         .then()
         .statusCode(200)
         .body("id", notNullValue())
@@ -65,7 +65,7 @@ public class AuthenticationIntegrationTest {
   public void testGetCurrentUserWithoutToken() {
     given()
         .when()
-        .get("/api/auth/me")
+        .get("/api/me")
         .then()
         .statusCode(401)
         .body("error", equalTo("No JWT token found"));
@@ -77,7 +77,7 @@ public class AuthenticationIntegrationTest {
     given()
         .header("Authorization", "Bearer invalid-token-12345")
         .when()
-        .get("/api/auth/me")
+        .get("/api/me")
         .then()
         .statusCode(401);
   }

@@ -4,7 +4,7 @@ import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.AuthenticationApi;
-import app.aoki.quarkuscrud.generated.model.UserResponse;
+import app.aoki.quarkuscrud.generated.model.CreateGuestUser200Response;
 import app.aoki.quarkuscrud.service.JwtService;
 import app.aoki.quarkuscrud.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,7 +14,7 @@ import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 
 @ApplicationScoped
-@Path("/api/auth")
+@Path("/api")
 public class AuthenticationApiImpl implements AuthenticationApi {
 
   @Inject UserService userService;
@@ -37,9 +37,15 @@ public class AuthenticationApiImpl implements AuthenticationApi {
     return Response.ok(toUserResponse(user)).build();
   }
 
-  private UserResponse toUserResponse(User user) {
-    return new UserResponse()
-        .id(user.getId())
-        .createdAt(user.getCreatedAt().atOffset(ZoneOffset.UTC));
+  private CreateGuestUser200Response toUserResponse(User user) {
+    CreateGuestUser200Response response = new CreateGuestUser200Response();
+    response.setId(user.getId());
+    response.setCreatedAt(user.getCreatedAt().atOffset(ZoneOffset.UTC));
+    if (user.getAccountLifecycle() != null) {
+      response.setAccountLifecycle(
+          CreateGuestUser200Response.AccountLifecycleEnum.fromValue(
+              user.getAccountLifecycle().name().toLowerCase()));
+    }
+    return response;
   }
 }
