@@ -282,10 +282,12 @@ clean {
     delete 'build/generated-src'
 }
 
-// Make compileJava depend on generateOpenApiModels for automatic generation
+ // Make compileJava depend on generateOpenApiModels for automatic generation
 compileJava.dependsOn generateOpenApiModels
 
-// Make checkstyleMain depend on generateOpenApiModels to avoid implicit dependency
-tasks.named('checkstyleMain').configure {
-    dependsOn generateOpenApiModels
+// Ensure generateOpenApiModels runs before main lifecycle and containerization tasks
+['build', 'test', 'quarkusDev', 'quarkusBuild', 'jib', 'jibDockerBuild', "checkstyleMain"].each { taskName ->
+    tasks.matching { it.name == taskName }.configureEach {
+        dependsOn generateOpenApiModels
+    }
 }
