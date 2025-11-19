@@ -128,21 +128,25 @@ jobs:
             sleep 2
           done
           
-          # Test Dev UI endpoint (redirects are OK)
+          # Test Dev UI endpoint (follow redirects with -L)
           echo "Testing Dev UI endpoint..."
-          if curl -s http://localhost:8080/q/dev-ui | grep -q "quarkus\|dev-ui\|html"; then
+          if curl -s -L http://localhost:8080/q/dev-ui | grep -q "quarkus\|dev-ui\|html"; then
             echo "✅ Dev UI endpoint responding"
           else
             echo "❌ Dev UI endpoint not responding properly"
+            echo "Response was:"
+            curl -s -L http://localhost:8080/q/dev-ui | head -20
             exit 1
           fi
           
-          # Test Swagger UI endpoint
+          # Test Swagger UI endpoint (follow redirects with -L, path is /swagger-ui not /q/swagger-ui)
           echo "Testing Swagger UI endpoint..."
-          if curl -s http://localhost:8080/q/swagger-ui | grep -q "swagger\|openapi\|html"; then
+          if curl -s -L http://localhost:8080/swagger-ui | grep -q "swagger\|openapi\|html"; then
             echo "✅ Swagger UI endpoint responding"
           else
             echo "❌ Swagger UI endpoint not responding properly"
+            echo "Response was:"
+            curl -s -L http://localhost:8080/swagger-ui | head -20
             exit 1
           fi
 
