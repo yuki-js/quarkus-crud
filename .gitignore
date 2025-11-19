@@ -39,10 +39,3 @@ nb-configuration.xml
 /.quarkus/cli/plugins/
 # TLS Certificates
 .certs/
-
-# E2E generated client and dependencies
-e2e/generated-client/
-e2e/node_modules/
-e2e/dist/
-e2e/openapi-generator-cli.jar
-e2e/package-lock.json

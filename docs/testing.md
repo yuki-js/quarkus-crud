@@ -327,6 +327,108 @@ export default function () {
 }
 ```
 
+## End-to-End (E2E) Testing
+
+E2E tests validate the complete application from an external client perspective, without JVM dependencies.
+
+### Running E2E Tests
+
+E2E tests are bash-based and use curl to test the REST API.
+
+```bash
+# Run against local instance
+./gradlew e2eTest
+
+# Run against custom URL
+BASE_URL=https://quarkus-crud.ouchiserver.aokiapp.com ./gradlew e2eTest
+
+# Run script directly
+BASE_URL=http://localhost:8080 ./scripts/e2e.sh
+```
+
+### E2E Test Coverage
+
+The E2E test suite (`scripts/e2e.sh`) covers:
+
+✅ **Health Check**
+- Service availability
+- Health endpoint response
+
+✅ **Authentication & Authorization**
+- Guest user creation
+- JWT token extraction and usage
+- Authenticated vs unauthenticated requests
+- Authorization (401, 403 errors)
+
+✅ **Room CRUD Operations**
+- Create rooms (authenticated)
+- List all rooms (public)
+- Get room by ID
+- Update rooms (owner-only)
+- Delete rooms (owner-only)
+- Get my rooms (authenticated)
+
+✅ **Error Handling**
+- 400 Bad Request (validation)
+- 401 Unauthorized (no auth)
+- 403 Forbidden (insufficient permissions)
+- 404 Not Found (non-existent resources)
+
+✅ **Multi-User Scenarios**
+- Cross-user authorization
+- Owner-only operations enforcement
+
+### Prerequisites for E2E Tests
+
+- Running application (local or remote)
+- `curl` command-line tool
+- `sed`, `grep` (POSIX-compliant shell utilities)
+
+### Local E2E Testing
+
+```bash
+# 1. Start PostgreSQL
+docker run --name quarkus-crud-postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=quarkus_crud \
+  -p 5432:5432 -d postgres:15-alpine
+
+# 2. Start application in dev mode
+./gradlew quarkusDev
+
+# 3. In another terminal, run E2E tests
+./gradlew e2eTest
+```
+
+### Production E2E Testing
+
+Test against deployed production instance:
+
+```bash
+BASE_URL=https://quarkus-crud.ouchiserver.aokiapp.com ./gradlew e2eTest
+```
+
+**Note**: Production tests create and clean up test data, they don't modify existing data.
+
+### E2E Test Structure
+
+The E2E test script:
+- Uses POSIX-compliant shell syntax
+- Stores responses in temporary files
+- Validates HTTP status codes
+- Checks response content
+- Cleans up test data
+- Exits with code 0 (success) or 1 (failure)
+
+### CI/CD Integration
+
+E2E tests run in CI for native images:
+
+- **JVM variants**: Health check only (fast feedback)
+- **Native variants**: Full E2E test suite
+
+See `.github/workflows/publish-jib.yml` for details.
+
 ## Troubleshooting
 
 ### Tests Fail Due to Database
@@ -348,4 +450,23 @@ quarkus.http.test-port=8081
 Enable test retry:
 ```properties
 quarkus.test.retry=3
+```
+
+### E2E Tests Fail
+
+Check application is running:
+```bash
+curl http://localhost:8080/healthz
+```
+
+Check logs for errors:
+```bash
+# Dev mode logs
+# or
+docker logs <container-name>
+```
+
+Verify BASE_URL is correct:
+```bash
+echo $BASE_URL
 ```

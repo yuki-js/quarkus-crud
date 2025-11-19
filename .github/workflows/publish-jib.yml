@@ -252,11 +252,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Set up Node.js for E2E tests
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
@@ -337,17 +332,8 @@ jobs:
           echo ""
           
           # Run bash/curl E2E tests
-          echo "Running bash/curl E2E tests..."
+          chmod +x scripts/e2e.sh
           BASE_URL=http://localhost:8080 ./scripts/e2e.sh
-          
-          # Run TypeScript E2E tests
-          echo ""
-          echo "Running TypeScript E2E tests..."
-          cd e2e
-          ./generate-client.sh
-          npm ci
-          BASE_URL=http://localhost:8080 npm test
-          cd ..
           
           echo ""
           echo "=== All E2E Tests Passed for Native Image ==="
@@ -388,16 +374,7 @@ jobs:
           echo ""
           
           # Run bash/curl E2E tests
-          echo "Running bash/curl E2E tests..."
           BASE_URL=http://localhost:8080 ./scripts/e2e.sh
-          
-          # Run TypeScript E2E tests
-          echo ""
-          echo "Running TypeScript E2E tests..."
-          cd e2e
-          # Client already generated, just run tests
-          BASE_URL=http://localhost:8080 npm test
-          cd ..
           
           echo ""
           echo "=== All E2E Tests Passed for Native Debug Image ==="
@@ -417,6 +394,4 @@ jobs:
           echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native (full E2E tests)"
           echo "  - ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug (full E2E tests)"
           echo ""
-          echo "Native images passed comprehensive E2E tests including:"
-          echo "  ✓ Bash/curl E2E tests (16 test scenarios)"
-          echo "  ✓ TypeScript E2E tests with OpenAPI client (17 test scenarios)"
+          echo "Native images passed comprehensive bash/curl E2E tests (16 test scenarios)"

@@ -282,3 +282,27 @@ compileJava.dependsOn generateOpenApiModels
 tasks.named('checkstyleMain').configure {
     dependsOn generateOpenApiModels
 }
+
+// E2E Testing
+task e2eTest(type: Exec) {
+    group = 'verification'
+    description = 'Run end-to-end tests using bash/curl script. Set BASE_URL environment variable to test against different deployments.'
+    
+    commandLine 'bash', 'scripts/e2e.sh'
+    
+    // Pass BASE_URL from environment if set
+    if (System.getenv('BASE_URL')) {
+        environment 'BASE_URL', System.getenv('BASE_URL')
+    } else {
+        environment 'BASE_URL', 'http://localhost:8080'
+    }
+    
+    // Ensure script is executable
+    doFirst {
+        if (!file('scripts/e2e.sh').canExecute()) {
+            exec {
+                commandLine 'chmod', '+x', 'scripts/e2e.sh'
+            }
+        }
+    }
+}
