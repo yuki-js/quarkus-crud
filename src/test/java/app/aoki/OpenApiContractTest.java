@@ -27,8 +27,7 @@ public class OpenApiContractTest {
   @BeforeAll
   public static void setupValidationFilter() throws IOException {
     // Create validation filter using the OpenAPI spec from resources
-    URL specUrl =
-        OpenApiContractTest.class.getClassLoader().getResource("META-INF/openapi.yaml");
+    URL specUrl = OpenApiContractTest.class.getClassLoader().getResource("META-INF/openapi.yaml");
     if (specUrl == null) {
       throw new IllegalStateException("OpenAPI spec file not found");
     }

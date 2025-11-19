@@ -93,8 +93,7 @@ public class ProfileCrudIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body(
-            "{\"displayName\":\"Test 日本語 @#$%\",\"bio\":\"Bio with émojis 🎉 and ünïçödé\"}")
+        .body("{\"displayName\":\"Test 日本語 @#$%\",\"bio\":\"Bio with émojis 🎉 and ünïçödé\"}")
         .when()
         .put("/api/me/profile")
         .then()

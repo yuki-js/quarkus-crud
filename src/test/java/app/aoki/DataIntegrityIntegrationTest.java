@@ -53,8 +53,7 @@ public class DataIntegrityIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body(
-            "{\"displayName\":\"ユーザー 名前\",\"bio\":\"Emoji test 🎉 🚀 ❤️ and 中文 العربية\"}")
+        .body("{\"displayName\":\"ユーザー 名前\",\"bio\":\"Emoji test 🎉 🚀 ❤️ and 中文 العربية\"}")
         .when()
         .put("/api/me/profile")
         .then()

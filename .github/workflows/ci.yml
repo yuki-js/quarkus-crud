@@ -26,7 +26,7 @@ jobs:
         run: npm install -g @stoplight/spectral-cli
       
       - name: Validate OpenAPI spec with Spectral
-        run: spectral lint src/main/resources/META-INF/openapi.yaml --ruleset .spectral.yaml
+        run: spectral lint openapi/openapi.yaml --ruleset .spectral.yaml
         continue-on-error: true
       
       - name: Set up JDK 21
@@ -41,7 +41,7 @@ jobs:
       
       - name: Validate OpenAPI spec with generator
         run: |
-          java -jar openapi-generator-cli.jar validate -i src/main/resources/META-INF/openapi.yaml
+          java -jar openapi-generator-cli.jar validate -i openapi/openapi.yaml
 
   build:
     name: Build and Test

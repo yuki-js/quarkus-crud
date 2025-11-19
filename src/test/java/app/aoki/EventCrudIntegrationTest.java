@@ -10,8 +10,8 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
 
 /**
- * Integration tests for Event CRUD operations. Tests create, read, update, and delete
- * functionality for events.
+ * Integration tests for Event CRUD operations. Tests create, read, update, and delete functionality
+ * for events.
  */
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
