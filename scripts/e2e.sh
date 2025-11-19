@@ -81,7 +81,8 @@ if [ -z "$TOKEN" ]; then
     log_error "Failed to extract JWT token from response headers"
     FAILED=$((FAILED + 1))
 else
-    log_info "JWT token extracted successfully: ${TOKEN:0:20}..."
+    TOKEN_PREFIX=$(echo "$TOKEN" | cut -c1-20)
+    log_info "JWT token extracted successfully: ${TOKEN_PREFIX}..."
 fi
 
 response=$(cat "$TMP_DIR/guest.json")

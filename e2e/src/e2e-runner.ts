@@ -5,12 +5,14 @@
  * Controlled by BASE_URL environment variable (default: http://localhost:8080)
  */
 
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import {
   AuthenticationApi,
   RoomsApi,
   HealthApi,
   Configuration,
+  RoomResponse,
+  UserResponse,
 } from '../generated-client';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8080';
@@ -169,10 +171,12 @@ async function runE2ETests(): Promise<void> {
           accessToken: token1,
         });
         const roomsApiWithToken = new RoomsApi(configWithAuth);
-        const createResponse = await roomsApiWithToken.createRoom({
-          name: 'TS E2E Test Room',
-          description: 'Created by TypeScript E2E test',
-        });
+        const createResponse = (await roomsApiWithToken.createRoom({
+          createRoomRequest: {
+            name: 'TS E2E Test Room',
+            description: 'Created by TypeScript E2E test',
+          }
+        })) as unknown as AxiosResponse<RoomResponse>;
         assertEquals(201, createResponse.status, 'Create room returns 201');
         assertTrue(
           createResponse.data.name === 'TS E2E Test Room',
@@ -190,7 +194,9 @@ async function runE2ETests(): Promise<void> {
     logTest('Test 7: Create room without authentication (should fail with 401)');
     try {
       await roomsApi.createRoom({
-        name: 'Unauthorized Room',
+        createRoomRequest: {
+          name: 'Unauthorized Room',
+        }
       });
       logError('Expected 401 error but request succeeded');
       testsFailed++;
@@ -208,7 +214,7 @@ async function runE2ETests(): Promise<void> {
     logTest('Test 8: Get room by ID');
     if (roomId) {
       try {
-        const getRoomResponse = await roomsApi.getRoomById(roomId);
+        const getRoomResponse = await roomsApi.getRoomById({ id: roomId });
         assertEquals(200, getRoomResponse.status, 'Get room by ID returns 200');
         assertEquals(
           roomId,
@@ -234,10 +240,13 @@ async function runE2ETests(): Promise<void> {
           accessToken: token1,
         });
         const roomsApiWithToken = new RoomsApi(configWithAuth);
-        const updateResponse = await roomsApiWithToken.updateRoom(roomId, {
-          name: 'Updated TS E2E Room',
-          description: 'Updated by TypeScript E2E test',
-        });
+        const updateResponse = (await roomsApiWithToken.updateRoom({
+          id: roomId,
+          updateRoomRequest: {
+            name: 'Updated TS E2E Room',
+            description: 'Updated by TypeScript E2E test',
+          }
+        })) as unknown as AxiosResponse<RoomResponse>;
         assertEquals(200, updateResponse.status, 'Update room returns 200');
         assertTrue(
           updateResponse.data.name === 'Updated TS E2E Room',
@@ -281,7 +290,7 @@ async function runE2ETests(): Promise<void> {
     // Test 11: Get non-existent room (should fail)
     logTest('Test 11: Get non-existent room (should fail with 404)');
     try {
-      await roomsApi.getRoomById(999999);
+      await roomsApi.getRoomById({ id: 999999 });
       logError('Expected 404 error but request succeeded');
       testsFailed++;
     } catch (error) {
@@ -298,8 +307,11 @@ async function runE2ETests(): Promise<void> {
     logTest('Test 12: Update room without authentication (should fail with 401)');
     if (roomId) {
       try {
-        await roomsApi.updateRoom(roomId, {
-          name: 'Unauthorized Update',
+        await roomsApi.updateRoom({
+          id: roomId,
+          updateRoomRequest: {
+            name: 'Unauthorized Update',
+          }
         });
         logError('Expected 401 error but request succeeded');
         testsFailed++;
@@ -331,8 +343,11 @@ async function runE2ETests(): Promise<void> {
           });
           const roomsApiWithToken2 = new RoomsApi(configWithAuth2);
           try {
-            await roomsApiWithToken2.updateRoom(roomId, {
-              name: 'Forbidden Update',
+            await roomsApiWithToken2.updateRoom({
+              id: roomId,
+              updateRoomRequest: {
+                name: 'Forbidden Update',
+              }
             });
             logError('Expected 403 error but request succeeded');
             testsFailed++;
@@ -361,7 +376,7 @@ async function runE2ETests(): Promise<void> {
           accessToken: token1,
         });
         const roomsApiWithToken = new RoomsApi(configWithAuth);
-        const deleteResponse = await roomsApiWithToken.deleteRoom(roomId);
+        const deleteResponse = await roomsApiWithToken.deleteRoom({ id: roomId });
         assertEquals(204, deleteResponse.status, 'Delete room returns 204');
       } catch (error) {
         logError(`Delete room failed: ${error}`);
@@ -373,7 +388,7 @@ async function runE2ETests(): Promise<void> {
     logTest('Test 15: Verify room is deleted (should return 404)');
     if (roomId) {
       try {
-        await roomsApi.getRoomById(roomId);
+        await roomsApi.getRoomById({ id: roomId });
         logError('Expected 404 error but request succeeded');
         testsFailed++;
       } catch (error) {
@@ -397,14 +412,16 @@ async function runE2ETests(): Promise<void> {
           accessToken: token1,
         });
         const roomsApiWithToken = new RoomsApi(configWithAuth);
-        const createForDeleteResponse = await roomsApiWithToken.createRoom({
-          name: 'Room to delete',
-        });
+        const createForDeleteResponse = (await roomsApiWithToken.createRoom({
+          createRoomRequest: {
+            name: 'Room to delete',
+          }
+        })) as unknown as AxiosResponse<RoomResponse>;
         const deleteRoomId = createForDeleteResponse.data.id;
 
         // Try to delete without auth
         try {
-          await roomsApi.deleteRoom(deleteRoomId);
+          await roomsApi.deleteRoom({ id: deleteRoomId });
           logError('Expected 401 error but request succeeded');
           testsFailed++;
         } catch (error) {
@@ -418,7 +435,7 @@ async function runE2ETests(): Promise<void> {
         }
 
         // Clean up - delete with proper auth
-        await roomsApiWithToken.deleteRoom(deleteRoomId);
+        await roomsApiWithToken.deleteRoom({ id: deleteRoomId });
       } catch (error) {
         logError(`Delete room test setup failed: ${error}`);
         testsFailed++;
@@ -435,7 +452,9 @@ async function runE2ETests(): Promise<void> {
         });
         const roomsApiWithToken = new RoomsApi(configWithAuth);
         await roomsApiWithToken.createRoom({
-          name: '',
+          createRoomRequest: {
+            name: '',
+          }
         });
         logError('Expected 400 error but request succeeded');
         testsFailed++;
