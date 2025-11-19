@@ -75,23 +75,15 @@ public class ExternalServerAuthenticationTest {
         .when()
         .get("/api/auth/me")
         .then()
-        .statusCode(anyOf(is(200), is(401))) // 401 may occur due to server configuration
-        .body(
-            anyOf(
-                // If 200, should have user data
-                allOf(containsString("id"), containsString("createdAt")),
-                // If 401, may be empty or have error
-                anything()));
+        .statusCode(200)
+        .body("id", notNullValue())
+        .body("createdAt", notNullValue());
   }
 
   @Test
   @Order(3)
   public void testGetCurrentUserWithoutToken() {
-    given()
-        .when()
-        .get("/api/auth/me")
-        .then()
-        .statusCode(anyOf(is(401), is(500))); // 401 or 500 depending on server implementation
+    given().when().get("/api/auth/me").then().statusCode(401);
   }
 
   @Test

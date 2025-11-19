@@ -78,7 +78,7 @@ public class ExternalServerRoomCrudTest {
         .when()
         .post("/api/rooms")
         .then()
-        .statusCode(anyOf(is(401), is(500))); // 401 or 500 depending on server implementation
+        .statusCode(401);
   }
 
   @Test
@@ -92,47 +92,30 @@ public class ExternalServerRoomCrudTest {
             .when()
             .post("/api/rooms")
             .then()
-            .statusCode(anyOf(is(200), is(201), is(401)))
+            .statusCode(anyOf(is(200), is(201)))
+            .body("id", notNullValue())
+            .body("name", equalTo("Test Room"))
+            .body("description", equalTo("Test Description"))
+            .body("userId", notNullValue())
+            .body("createdAt", notNullValue())
             .extract()
             .response();
 
-    int statusCode = response.getStatusCode();
-
-    if (statusCode == 200 || statusCode == 201) {
-      // Room created successfully
-      response.then().body("id", notNullValue()).body("name", equalTo("Test Room"));
-
-      roomId = response.jsonPath().getLong("id");
-      assertNotNull(roomId, "Room ID should not be null");
-    } else {
-      // 401 - authentication issue, skip remaining room tests
-      System.out.println(
-          "Warning: Room creation returned 401, skipping room-dependent tests. "
-              + "This may indicate JWT configuration issues on the server.");
-      // Mark roomId as null to skip cleanup
-      roomId = null;
-    }
+    roomId = response.jsonPath().getLong("id");
+    assertNotNull(roomId, "Room ID should not be null");
   }
 
   @Test
   @Order(3)
   public void testGetRoomById() {
-    if (roomId == null) {
-      System.out.println("Skipping test: Room was not created");
-      return;
-    }
-
     given()
         .when()
         .get("/api/rooms/" + roomId)
         .then()
-        .statusCode(anyOf(is(200), is(401), is(404)))
-        .body(
-            anyOf(
-                // If successful
-                allOf(containsString("id"), containsString("name")),
-                // If error
-                anything()));
+        .statusCode(200)
+        .body("id", equalTo(roomId.intValue()))
+        .body("name", equalTo("Test Room"))
+        .body("description", equalTo("Test Description"));
   }
 
   @Test
@@ -142,8 +125,8 @@ public class ExternalServerRoomCrudTest {
         .when()
         .get("/api/rooms/999999")
         .then()
-        .statusCode(
-            anyOf(is(404), is(401), is(500))); // 404 not found, 401 if auth required, or 500
+        .statusCode(404)
+        .body("error", equalTo("Room not found"));
   }
 
   @Test
@@ -153,8 +136,10 @@ public class ExternalServerRoomCrudTest {
         .when()
         .get("/api/rooms")
         .then()
-        .statusCode(anyOf(is(200), is(401)))
-        .body(anyOf(anything(), notNullValue()));
+        .statusCode(200)
+        .body("$", hasSize(greaterThanOrEqualTo(1)))
+        .body("[0].id", notNullValue())
+        .body("[0].name", notNullValue());
   }
 
   @Test
@@ -165,7 +150,8 @@ public class ExternalServerRoomCrudTest {
         .when()
         .get("/api/rooms/my")
         .then()
-        .statusCode(anyOf(is(200), is(401)));
+        .statusCode(200)
+        .body("$", hasSize(greaterThanOrEqualTo(1)));
   }
 
   @Test
@@ -175,17 +161,13 @@ public class ExternalServerRoomCrudTest {
         .when()
         .get("/api/rooms/my")
         .then()
-        .statusCode(anyOf(is(401), is(500))); // 401 or 500 depending on server implementation
+        .statusCode(401)
+        .body("error", equalTo("Authentication required"));
   }
 
   @Test
   @Order(8)
   public void testUpdateRoom() {
-    if (roomId == null) {
-      System.out.println("Skipping test: Room was not created");
-      return;
-    }
-
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
@@ -193,24 +175,23 @@ public class ExternalServerRoomCrudTest {
         .when()
         .put("/api/rooms/" + roomId)
         .then()
-        .statusCode(anyOf(is(200), is(401), is(404)));
+        .statusCode(200)
+        .body("id", equalTo(roomId.intValue()))
+        .body("name", equalTo("Updated Room"))
+        .body("description", equalTo("Updated Description"));
   }
 
   @Test
   @Order(9)
   public void testUpdateRoomWithoutAuthentication() {
-    if (roomId == null) {
-      System.out.println("Skipping test: Room was not created");
-      return;
-    }
-
     given()
         .contentType(ContentType.JSON)
         .body("{\"name\":\"Hacked Room\",\"description\":\"Hacked Description\"}")
         .when()
         .put("/api/rooms/" + roomId)
         .then()
-        .statusCode(anyOf(is(401), is(500))); // 401 or 500 depending on server implementation
+        .statusCode(401)
+        .body("error", equalTo("Authentication required"));
   }
 
   @Test
@@ -223,41 +204,33 @@ public class ExternalServerRoomCrudTest {
         .when()
         .put("/api/rooms/999999")
         .then()
-        .statusCode(anyOf(is(404), is(401))); // 404 not found or 401 if auth issue
+        .statusCode(404)
+        .body("error", equalTo("Room not found"));
   }
 
   @Test
   @Order(11)
   public void testDeleteRoomWithoutAuthentication() {
-    if (roomId == null) {
-      System.out.println("Skipping test: Room was not created");
-      return;
-    }
-
     given()
         .when()
         .delete("/api/rooms/" + roomId)
         .then()
-        .statusCode(anyOf(is(401), is(500))); // 401 or 500 depending on server implementation
+        .statusCode(401)
+        .body("error", equalTo("Authentication required"));
   }
 
   @Test
   @Order(12)
   public void testDeleteRoom() {
-    if (roomId == null) {
-      System.out.println("Skipping test: Room was not created");
-      return;
-    }
-
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .delete("/api/rooms/" + roomId)
         .then()
-        .statusCode(anyOf(is(204), is(401)));
+        .statusCode(204);
 
-    // Mark as cleaned up
-    roomId = null;
+    // Verify room is deleted
+    given().when().get("/api/rooms/" + roomId).then().statusCode(404);
   }
 
   @Test
@@ -268,6 +241,7 @@ public class ExternalServerRoomCrudTest {
         .when()
         .delete("/api/rooms/999999")
         .then()
-        .statusCode(anyOf(is(404), is(401))); // 404 not found or 401 if auth issue
+        .statusCode(404)
+        .body("error", equalTo("Room not found"));
   }
 }
