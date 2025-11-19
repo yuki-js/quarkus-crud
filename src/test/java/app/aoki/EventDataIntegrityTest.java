@@ -6,9 +6,8 @@ import static org.hamcrest.Matchers.*;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.TestMethodOrder;
  */
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-
 public class EventDataIntegrityTest {
 
   private static String jwtToken;
@@ -85,8 +83,7 @@ public class EventDataIntegrityTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body(
-            "{\"profileData\":{\"displayName\":\"Quiz Master 🎮\",\"bio\":\"日本語もOK\"}}")
+        .body("{\"profileData\":{\"displayName\":\"Quiz Master 🎮\",\"bio\":\"日本語もOK\"}}")
         .when()
         .put("/api/me/profile")
         .then()
@@ -103,8 +100,7 @@ public class EventDataIntegrityTest {
         given()
             .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
-            .body(
-                "{\"meta\":{\"name\":\"Morning Quiz\"},\"expiresAt\":\"2025-12-31T23:59:59Z\"}")
+            .body("{\"meta\":{\"name\":\"Morning Quiz\"},\"expiresAt\":\"2025-12-31T23:59:59Z\"}")
             .post("/api/events");
 
     // Create second event
@@ -112,8 +108,7 @@ public class EventDataIntegrityTest {
         given()
             .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
-            .body(
-                "{\"meta\":{\"name\":\"Evening Quiz\"},\"expiresAt\":\"2025-12-31T23:59:59Z\"}")
+            .body("{\"meta\":{\"name\":\"Evening Quiz\"},\"expiresAt\":\"2025-12-31T23:59:59Z\"}")
             .post("/api/events");
 
     // Verify both have unique IDs

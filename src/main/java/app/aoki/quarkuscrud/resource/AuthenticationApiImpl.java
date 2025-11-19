@@ -12,11 +12,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 import java.util.Map;
 
 @ApplicationScoped
+@Path("/api")
 public class AuthenticationApiImpl implements AuthenticationApi {
 
   @Inject UserService userService;

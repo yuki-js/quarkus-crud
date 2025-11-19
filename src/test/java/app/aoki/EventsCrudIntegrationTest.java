@@ -8,7 +8,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.TestInstance;
 
 /**
  * Integration tests for Event CRUD operations. Tests create, read, and list functionality for
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.TestInstance;
  */
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-
 public class EventsCrudIntegrationTest {
 
   private static String jwtToken;
@@ -99,13 +97,15 @@ public class EventsCrudIntegrationTest {
   @Test
   @Order(5)
   public void testListEventsByUser() {
-    Long userId = given().header("Authorization", "Bearer " + jwtToken)
-        .when()
-        .get("/api/me")
-        .then()
-        .extract()
-        .jsonPath()
-        .getLong("id");
+    Long userId =
+        given()
+            .header("Authorization", "Bearer " + jwtToken)
+            .when()
+            .get("/api/me")
+            .then()
+            .extract()
+            .jsonPath()
+            .getLong("id");
 
     given()
         .header("Authorization", "Bearer " + jwtToken)
@@ -188,12 +188,14 @@ public class EventsCrudIntegrationTest {
     assertNotNull(eventId3);
 
     // Verify all events are listed
-    Long userId = given().header("Authorization", "Bearer " + jwtToken)
-        .get("/api/me")
-        .then()
-        .extract()
-        .jsonPath()
-        .getLong("id");
+    Long userId =
+        given()
+            .header("Authorization", "Bearer " + jwtToken)
+            .get("/api/me")
+            .then()
+            .extract()
+            .jsonPath()
+            .getLong("id");
 
     given()
         .header("Authorization", "Bearer " + jwtToken)

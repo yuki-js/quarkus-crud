@@ -8,11 +8,13 @@ import app.aoki.quarkuscrud.generated.model.GetUserById200Response;
 import app.aoki.quarkuscrud.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
 @ApplicationScoped
+@Path("/api")
 public class UsersApiImpl implements UsersApi {
 
   @Inject UserService userService;

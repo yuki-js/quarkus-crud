@@ -7,9 +7,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.TestMethodOrder;
  */
 @QuarkusTest
 @TestMethodOrder(OrderAnnotation.class)
-
 public class EventAuthorizationIntegrationTest {
 
   private static String user1Token;
@@ -103,8 +101,7 @@ public class EventAuthorizationIntegrationTest {
         given()
             .header("Authorization", "Bearer " + user1Token)
             .contentType(ContentType.JSON)
-            .body(
-                "{\"meta\":{\"name\":\"User 1 Event\"},\"expiresAt\":\"2025-12-31T23:59:59Z\"}")
+            .body("{\"meta\":{\"name\":\"User 1 Event\"},\"expiresAt\":\"2025-12-31T23:59:59Z\"}")
             .post("/api/events");
     Long event1Id = event1Response.jsonPath().getLong("id");
 
@@ -113,8 +110,7 @@ public class EventAuthorizationIntegrationTest {
         given()
             .header("Authorization", "Bearer " + user2Token)
             .contentType(ContentType.JSON)
-            .body(
-                "{\"meta\":{\"name\":\"User 2 Event\"},\"expiresAt\":\"2025-12-31T23:59:59Z\"}")
+            .body("{\"meta\":{\"name\":\"User 2 Event\"},\"expiresAt\":\"2025-12-31T23:59:59Z\"}")
             .post("/api/events");
     Long event2Id = event2Response.jsonPath().getLong("id");
 
