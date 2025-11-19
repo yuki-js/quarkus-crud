@@ -118,7 +118,7 @@ CREATE TABLE events (
     initiator_id BIGINT NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'created',
     meta JSONB,
-    expires_at TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_events_initiator FOREIGN KEY (initiator_id) REFERENCES users(id) ON DELETE CASCADE
@@ -129,7 +129,7 @@ COMMENT ON TABLE events IS 'Quiz event entity';
 COMMENT ON COLUMN events.initiator_id IS 'User who initiated the event';
 COMMENT ON COLUMN events.status IS 'Event status: created, active, ended, expired, deleted';
 COMMENT ON COLUMN events.meta IS 'Flexible event metadata stored as JSONB';
-COMMENT ON COLUMN events.expires_at IS 'Expiration timestamp for the event';
+COMMENT ON COLUMN events.expires_at IS 'Optional expiration timestamp for the event (null means no expiration)';
 
 -- Indexes on events table
 CREATE INDEX idx_events_initiator ON events(initiator_id);
