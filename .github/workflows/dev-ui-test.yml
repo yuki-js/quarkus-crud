@@ -178,18 +178,41 @@ jobs:
         run: |
           echo "Verifying continuous testing within Dev UI process..."
           echo ""
-          echo "Continuous testing should have automatically run tests within the dev process."
-          echo "Checking dev mode logs for test execution..."
+          echo "Waiting for continuous testing to complete all 58 tests..."
           echo ""
           
-          # Check if continuous testing ran the tests
-          if grep -q "All.*tests.*passing\|tests.*completed" /tmp/quarkus-dev.log; then
+          # Wait for tests to complete (with timeout)
+          MAX_TEST_WAIT=120
+          TEST_COUNTER=0
+          
+          while [ $TEST_COUNTER -lt $MAX_TEST_WAIT ]; do
+            # Check if all tests completed
+            if grep -q "All 58 tests are passing" /tmp/quarkus-dev.log 2>/dev/null; then
+              echo "✅ All 58 tests completed successfully"
+              break
+            fi
+            
+            # Check test progress
+            if grep -q "Running [0-9]*/58" /tmp/quarkus-dev.log 2>/dev/null; then
+              CURRENT_TEST=$(grep -o "Running [0-9]*/58" /tmp/quarkus-dev.log | tail -1)
+              if [ $((TEST_COUNTER % 10)) -eq 0 ]; then
+                echo "Tests in progress: $CURRENT_TEST (${TEST_COUNTER}s elapsed)"
+              fi
+            fi
+            
+            TEST_COUNTER=$((TEST_COUNTER + 1))
+            sleep 1
+          done
+          
+          # Verify test completion
+          if grep -q "All 58 tests are passing" /tmp/quarkus-dev.log; then
+            echo ""
             echo "✅ Continuous testing executed tests within dev mode process"
             
             # Extract test summary
             echo ""
             echo "Test Summary from continuous testing:"
-            grep -E "All.*tests|tests.*completed|Running [0-9]+/[0-9]+" /tmp/quarkus-dev.log | tail -5
+            grep "All 58 tests are passing" /tmp/quarkus-dev.log | tail -1
             
             # Show the continuous testing interface prompt
             if grep -q "Press \[r\] to re-run" /tmp/quarkus-dev.log; then
@@ -197,11 +220,18 @@ jobs:
               echo "✅ Continuous testing interface active"
               grep "Press \[" /tmp/quarkus-dev.log | head -2
             fi
-          else
-            echo "❌ Continuous testing did not execute tests"
+            
             echo ""
-            echo "Checking for test-related output in logs:"
-            grep -i "test" /tmp/quarkus-dev.log | tail -20
+            echo "Test execution details:"
+            grep "Running [0-9]*/58" /tmp/quarkus-dev.log | tail -5
+          else
+            echo "❌ Continuous testing did not complete all tests within timeout"
+            echo ""
+            echo "Last test progress:"
+            grep -E "Running [0-9]*/58|All.*tests" /tmp/quarkus-dev.log | tail -10
+            echo ""
+            echo "Checking for errors:"
+            grep -E "ERROR|FAILED|Exception" /tmp/quarkus-dev.log | tail -20
             exit 1
           fi
           
