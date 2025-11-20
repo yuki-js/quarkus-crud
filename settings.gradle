@@ -8,13 +8,4 @@ pluginManagement {
         id "${quarkusPluginId}" version "${quarkusPluginVersion}"
     }
 }
-
-// Enable build cache for faster builds
-buildCache {
-    local {
-        enabled = true
-        directory = new File(rootDir, 'build-cache')
-    }
-}
-
 rootProject.name='quarkus-template'
