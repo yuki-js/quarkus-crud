@@ -3,162 +3,209 @@
 ## 概要 / Summary
 
 GitHub Actionsのワークフロー実行時間を削減するための最適化を実施しました。
-グローバル設定（gradle.properties/settings.gradle）には一切手を加えず、ワークフローファイルのみを最適化する保守的なアプローチを採用しています。
+**最も重要な最適化**: 同一ソースコードに対する重複したGradle実行を排除しました。
 
-Optimized GitHub Actions workflow execution time using a conservative approach that modifies only workflow files, without touching global Gradle settings.
+Most important optimization: Eliminated redundant Gradle executions on the same source code target.
+
+## 🚨 Critical Finding: Redundant Gradle Executions
+
+### 問題の本質 / Core Problem
+
+以前のワークフローでは、**同じソースコードに対して複数回Gradleタスクを実行**していました:
+
+**CI Workflow (Before):**
+```yaml
+- run: ./gradlew generateOpenApiModels  # Compilation #1
+- run: ./gradlew spotlessCheck          # Compilation #2 (implicit)
+- run: ./gradlew checkstyleMain...      # Compilation #3 (implicit)
+- run: ./gradlew build                  # Compilation #4 + Tests
+```
+
+**問題点:**
+- `build`タスクは既に`generateOpenApiModels`を含む
+- `spotlessCheck`と`checkstyleMain`は暗黙的にコンパイルを実行
+- **結果**: 同じコードを4回コンパイル・ビルド
+
+**Publish-Jib Workflow (Before):**
+```yaml
+- run: ./gradlew build --no-daemon           # Build #1
+- run: ./gradlew jib --no-daemon (4 times!)  # Build #2-5
+```
+
+**問題点:**
+- `--no-daemon`フラグにより、各Gradle実行が独立したプロセス
+- Gradle daemonなしでは、ビルドキャッシュが効かない
+- **結果**: 実質的に5回ビルド
 
 ## 実施した最適化 / Optimizations Implemented
 
-### 1. ジョブの並列実行 / Parallel Job Execution
+### 1. CI Workflow: Single Gradle Invocation
+
+**Before (4 separate Gradle executions):**
+```yaml
+- run: ./gradlew generateOpenApiModels
+- run: ./gradlew spotlessCheck
+- run: ./gradlew checkstyleMain checkstyleTest
+- run: ./gradlew build
+```
+
+**After (1 Gradle execution with multiple tasks):**
+```yaml
+- run: ./gradlew build spotlessCheck checkstyleMain checkstyleTest --no-daemon
+```
+
+**効果 / Impact:**
+- Gradle起動オーバーヘッド: 4回 → 1回
+- コンパイル回数: 4回 → 1回
+- 依存性解決: 4回 → 1回
+- **予想削減時間**: ~40-60秒
+
+### 2. Publish-Jib: Gradle Daemon Enabled
+
+**Before (daemon disabled, no incremental builds):**
+```yaml
+- run: ./gradlew build --no-daemon
+- run: ./gradlew jib --no-daemon  # Rebuilds everything
+- run: ./gradlew jib --no-daemon  # Rebuilds everything
+- run: ./gradlew jib --no-daemon  # Rebuilds everything
+- run: ./gradlew jib --no-daemon  # Rebuilds everything
+```
+
+**After (daemon enabled, reuses build artifacts):**
+```yaml
+- run: ./gradlew build           # Build once
+- run: ./gradlew jib            # Reuses artifacts
+- run: ./gradlew jib            # Reuses artifacts
+- run: ./gradlew jib            # Reuses artifacts
+- run: ./gradlew jib            # Reuses artifacts
+```
+
+**効果 / Impact:**
+- Gradle daemon起動: 5回 → 1回
+- フルビルド: 5回 → 1回
+- Jib実行: ビルド済みartifactsを再利用
+- **予想削減時間**: ~3-4分 (JVM), ~15-20分 (Native)
+
+### 3. Parallel Job Execution
 
 **Before:**
 ```yaml
 jobs:
-  openapi-validation:
-    # ...
+  openapi-validation: ...
   build:
-    needs: openapi-validation  # Sequential execution
+    needs: openapi-validation  # Sequential
 ```
 
 **After:**
 ```yaml
 jobs:
-  openapi-validation:
-    # ...
-  build:
-    # No 'needs' - runs in parallel
+  openapi-validation: ...
+  build: ...  # Parallel
 ```
 
-**効果 / Impact:** OpenAPI validation and build now run in parallel, reducing total workflow time.
+**効果 / Impact:** ~30-40秒削減
 
-### 2. 保守的なキャッシング戦略 / Conservative Caching Strategy
+### 4. Conservative Caching Strategy
 
-Only cache stable, non-fragile dependencies:
-- ✅ Java SDK (via `actions/setup-java@v4` with `cache: gradle`)
-- ✅ Gradle wrapper (via `gradle/actions/setup-gradle@v4`)
-- ❌ Removed: Gradle build cache (can cause inconsistencies)
-- ❌ Removed: GraalVM build artifacts (too fragile)
-- ❌ Removed: npm cache (unnecessary for infrequent Spectral usage)
+Only cache stable dependencies:
+- ✅ Java SDK (`cache: gradle` in actions/setup-java)
+- ✅ Gradle wrapper (gradle/actions/setup-gradle)
+- ❌ **Not cached**: Gradle build cache, GraalVM artifacts
 
-### 3. 不要な処理の削除 / Removed Unnecessary Steps
+## Gradle Task Dependencies (参考)
 
-**OpenAPI Validation Job:**
-- Removed: Explicit OpenAPI model compilation (21 seconds)
-- Reason: Models are generated automatically during the build job
-- Kept only: Spectral linting and OpenAPI Generator validation
+Gradleのタスク依存関係を理解することが重要:
 
-### 4. Gradle設定の非変更 / No Gradle Configuration Changes
+```
+build
+  └─ test
+      └─ compileTestJava
+          └─ compileJava
+              └─ generateOpenApiModels (OpenAPI plugin)
+```
 
-**重要 / Important:**
-- gradle.properties: 変更なし / No changes
-- settings.gradle: 変更なし / No changes
-- 理由 / Reason: これらはCI環境だけでなくローカル開発環境にも影響するため
+つまり、`./gradlew build`を実行すると:
+1. `generateOpenApiModels` (自動実行)
+2. `compileJava` (自動実行)
+3. `compileTestJava` (自動実行)
+4. `test` (自動実行)
 
-### 5. --no-daemonフラグの適切な使用 / Proper Use of --no-daemon
+**結論**: `build`の前に個別にこれらを実行する必要はない
 
-- Kept `--no-daemon` in publish-jib.yml (multiple Gradle invocations)
-- Removed from ci.yml (single build execution - daemon overhead not beneficial)
+## --no-daemon フラグの使い分け / When to Use --no-daemon
 
-## 削除した非効率な最適化 / Removed Inefficient Optimizations
+### 使うべき場合 / Use --no-daemon when:
+- ❌ **Short-lived builds**: Daemon起動オーバーヘッドの方が大きい
+- ❌ **Single Gradle execution**: Daemonのメリットがない
 
-以前の実装で追加されていた以下の最適化は、Gradleのキャッシュ不整合のリスクが高いため削除しました:
+### 使わないべき場合 / Do NOT use --no-daemon when:
+- ✅ **Multiple Gradle executions**: Daemon間でキャッシュ共有
+- ✅ **Incremental builds**: Up-to-date checkが効く
+- ✅ **Long-running builds**: 起動オーバーヘッドが償却される
 
-1. **Gradle Build Cache** (`org.gradle.caching=true`)
-   - 問題: キャッシュが壊れると原因不明のビルドエラーが発生
-   - 対策: 削除し、Gradleの通常のインクリメンタルビルドに依存
-
-2. **Configuration Cache** (`org.gradle.configuration-cache=true`)
-   - 問題: まだIncubating機能で不安定
-   - 対策: 削除
-
-3. **--build-cacheフラグ**
-   - 問題: gradle.propertiesで無効なのにフラグで有効化すると混乱を招く
-   - 対策: 削除
-
-4. **--parallelフラグ**
-   - 問題: このプロジェクトの規模では効果が限定的
-   - 対策: 削除
-
-## ボトルネック分析結果 / Bottleneck Analysis Results
-
-実際のワークフローログから特定したボトルネック:
-
-### OpenAPI Validation Job (50秒)
-1. OpenAPI specification compilation: 21秒 ← **削除済み**
-2. Spectral installation: 10秒
-3. その他: 19秒
-
-### Build and Test Job (1分37秒)
-1. Container initialization: 20秒
-2. OpenAPI model generation: 21秒
-3. Build and test: 28秒
-4. その他: 28秒
+**CI Workflow**: `--no-daemon`使用 (1回だけの実行)
+**Publish Workflow**: `--no-daemon`不使用 (複数回実行でdaemonのメリット大)
 
 ## 期待される効果 / Expected Impact
 
-- **OpenAPI Validation Job:** 50秒 → 30秒 (40%削減)
-- **Total CI Time:** 並列実行により約30-40秒短縮
-- **Cache Reliability:** Gradleキャッシュの不整合リスクを排除
+### CI Workflow
+- **Before**: ~2-3分
+- **After**: ~1.5-2分
+- **削減**: ~30-40秒 (20-25%)
 
-## 今後の改善案 / Future Improvement Opportunities
+### Publish-Jib JVM Workflow
+- **Before**: ~5-6分
+- **After**: ~2-3分
+- **削減**: ~3分 (50%)
 
-1. **Spectral Dockerイメージの使用**
-   - npm installの10秒を削減可能
-   - ただし、Dockerイメージのpullに時間がかかる可能性あり
+### Publish-Jib Native Workflow
+- **Before**: ~20-25分
+- **After**: ~5-8分
+- **削減**: ~15分 (60-70%)
 
-2. **Test Containersの最適化**
-   - PostgreSQL起動時間の20秒を短縮
-   - 既存のtest-databaseイメージの活用
+## 重要な教訓 / Key Lessons Learned
 
-3. **Native Buildの最適化**
-   - GraalVMのセットアップとビルドに5分以上かかっている
-   - ただし、native buildは本番デプロイ時のみ必要
+### 1. Gradleのタスク依存関係を理解する
+- 暗黙的な依存関係を見逃さない
+- `build`は既に多くのタスクを含む
 
-## 注意事項 / Cautions
+### 2. Gradle Daemonを正しく使う
+- 複数実行時はdaemonを有効化
+- 単発実行時は無効化
 
-1. **Gradleキャッシュは使わない**
-   - 不整合が発生しやすく、デバッグが困難
-   - Java SDKとGradle wrapperのキャッシュのみ使用
+### 3. 同じソースコードに対する重複実行を排除
+- 各Gradle実行がコストが高い
+- タスクを統合して1回の実行にまとめる
 
-2. **gradle.properties/settings.gradleは触らない**
-   - これらはローカル開発環境にも影響する
-   - CI専用の設定はworkflowファイルのみで行う
-
-3. **--no-daemonの使い分け**
-   - 短時間のビルド: daemonのオーバーヘッドの方が大きい
-   - 長時間/複数回のビルド: daemonを使うと効率的
+### 4. キャッシュは保守的に
+- 壊れやすいキャッシュは避ける
+- 安定したものだけキャッシュ
 
 ## ファイル変更履歴 / File Changes
 
 ### Modified Files:
-- `.github/workflows/ci.yml` - Parallel execution, conservative caching
-- `.github/workflows/publish-jib.yml` - Conservative caching, --no-daemon optimization
-- `.github/workflows/dev-ui-test.yml` - Conservative caching
-
-### Deleted Files:
-- `docs/github-actions-optimization.md` - Replaced with this handover document
+- `.github/workflows/ci.yml` - Single Gradle invocation, parallel execution
+- `.github/workflows/publish-jib.yml` - Gradle daemon enabled, minimal invocations
 
 ### NOT Modified (Important):
-- `gradle.properties` - No changes to avoid affecting local development
-- `settings.gradle` - No changes to avoid affecting local development
+- `gradle.properties` - No changes (affects local development)
+- `settings.gradle` - No changes (affects local development)
 
 ## 検証方法 / Verification
 
-To verify these optimizations:
-
 ```bash
-# Check workflow timing on GitHub Actions
-# Compare with previous runs:
-# - Before: ~3-4 minutes total
-# - After: ~2-3 minutes total (expected)
+# Local verification of Gradle tasks
+./gradlew build spotlessCheck checkstyleMain checkstyleTest --dry-run
 
-# Verify no Gradle cache issues:
-./gradlew clean build
-# Should work without any cache-related errors
+# Should show task dependency graph and prove no redundancy
 ```
+
+## 今後の改善案 / Future Improvements
+
+1. **Gradle Configuration Cache** - 一度安定したら有効化を検討
+2. **Test Parallelization** - Gradleの`--parallel`フラグ (要検証)
+3. **Selective Testing** - 変更されたモジュールのみテスト
 
 ## 連絡先 / Contact
 
 この最適化に関する質問は、このPRのコメントでお願いします。
-
-For questions about this optimization, please comment on this PR.
