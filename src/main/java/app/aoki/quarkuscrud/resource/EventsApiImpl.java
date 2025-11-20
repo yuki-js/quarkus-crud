@@ -91,9 +91,7 @@ public class EventsApiImpl implements EventsApi {
           .build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(
-              new ErrorResponse(
-                  "Failed to create event: " + e.getMessage()))
+          .entity(new ErrorResponse("Failed to create event: " + e.getMessage()))
           .build();
     }
   }
@@ -133,9 +131,7 @@ public class EventsApiImpl implements EventsApi {
 
     if (code == null || code.isBlank()) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(
-              new ErrorResponse(
-                  "invitationCode is required to join an event"))
+          .entity(new ErrorResponse("invitationCode is required to join an event"))
           .build();
     }
 
@@ -143,9 +139,7 @@ public class EventsApiImpl implements EventsApi {
         eventInvitationCodeMapper.findByInvitationCode(code).orElse(null);
     if (invitationCode == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(
-              new ErrorResponse(
-                  "No active event matches the invitation code"))
+          .entity(new ErrorResponse("No active event matches the invitation code"))
           .build();
     }
 
@@ -155,9 +149,7 @@ public class EventsApiImpl implements EventsApi {
         || event.getStatus() == EventStatus.DELETED
         || event.getStatus() == EventStatus.EXPIRED) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(
-              new ErrorResponse(
-                  "No active event matches the invitation code"))
+          .entity(new ErrorResponse("No active event matches the invitation code"))
           .build();
     }
 
@@ -186,15 +178,12 @@ public class EventsApiImpl implements EventsApi {
         PSQLException psqlException = (PSQLException) e.getCause();
         if (psqlException.getSQLState() != null && psqlException.getSQLState().equals("23505")) {
           return Response.status(Response.Status.CONFLICT)
-              .entity(
-                  new ErrorResponse("User already joined the event"))
+              .entity(new ErrorResponse("User already joined the event"))
               .build();
         }
       }
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(
-              new ErrorResponse(
-                  "Failed to join event: " + e.getMessage()))
+          .entity(new ErrorResponse("Failed to join event: " + e.getMessage()))
           .build();
     }
   }
@@ -264,9 +253,7 @@ public class EventsApiImpl implements EventsApi {
     // Return a simple status response for now
     // TODO: Implement proper Server-Sent Events streaming
     return Response.ok()
-        .entity(
-            new ErrorResponse(
-                "Event live streaming not yet implemented"))
+        .entity(new ErrorResponse("Event live streaming not yet implemented"))
         .build();
   }
 

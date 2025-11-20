@@ -97,9 +97,7 @@ public class ProfilesApiImpl implements ProfilesApi {
       return Response.ok(toProfileResponse(newProfile)).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(
-              new ErrorResponse(
-                  "Failed to update profile: " + e.getMessage()))
+          .entity(new ErrorResponse("Failed to update profile: " + e.getMessage()))
           .build();
     }
   }

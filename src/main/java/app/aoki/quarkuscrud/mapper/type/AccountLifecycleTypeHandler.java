@@ -11,8 +11,8 @@ import org.apache.ibatis.type.JdbcType;
 
 /**
  * Custom MyBatis type handler that maps the AccountLifecycle enum to the database string
- * representation and vice versa. Handles both enum names (e.g., CREATED) and custom values
- * (e.g., created) to tolerate historical data casing.
+ * representation and vice versa. Handles both enum names (e.g., CREATED) and custom values (e.g.,
+ * created) to tolerate historical data casing.
  */
 public class AccountLifecycleTypeHandler extends BaseTypeHandler<AccountLifecycle> {
 

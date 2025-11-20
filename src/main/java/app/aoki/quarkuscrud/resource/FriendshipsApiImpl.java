@@ -51,9 +51,7 @@ public class FriendshipsApiImpl implements FriendshipsApi {
 
     if (!sender.getId().equals(request.getFromUserId())) {
       return Response.status(Response.Status.FORBIDDEN)
-          .entity(
-              new ErrorResponse(
-                  "Cannot send a friendship on behalf of another user"))
+          .entity(new ErrorResponse("Cannot send a friendship on behalf of another user"))
           .build();
     }
 
@@ -90,9 +88,7 @@ public class FriendshipsApiImpl implements FriendshipsApi {
             .build();
       }
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(
-              new ErrorResponse(
-                  "Failed to create friendship: " + e.getMessage()))
+          .entity(new ErrorResponse("Failed to create friendship: " + e.getMessage()))
           .build();
     }
   }
