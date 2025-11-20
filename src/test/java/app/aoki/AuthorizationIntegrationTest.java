@@ -102,7 +102,9 @@ public class AuthorizationIntegrationTest {
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("profileData.displayName", equalTo("Hacked Name")); // This updates User 2's profile, not User 1's
+        .body(
+            "profileData.displayName",
+            equalTo("Hacked Name")); // This updates User 2's profile, not User 1's
 
     // Verify User 1's profile is unchanged
     given()
