@@ -102,7 +102,9 @@ public class AuthorizationIntegrationTest {
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("profileData.displayName", equalTo("Hacked Name")); // This updates User 2's profile, not User 1's
+        .body(
+            "profileData.displayName",
+            equalTo("Hacked Name")); // This updates User 2's profile, not User 1's
 
     // Verify User 1's profile is unchanged
     given()
@@ -177,8 +179,8 @@ public class AuthorizationIntegrationTest {
         .post("/api/users/" + user2Id + "/friendship")
         .then()
         .statusCode(anyOf(is(200), is(201)))
-        .body("fromUserId", equalTo(user1Id.intValue()))
-        .body("toUserId", equalTo(user2Id.intValue()));
+        .body("senderUserId", equalTo(user1Id.intValue()))
+        .body("recipientUserId", equalTo(user2Id.intValue()));
 
     // User 2 can see the received friendship
     given()

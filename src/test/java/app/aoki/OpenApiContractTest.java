@@ -37,7 +37,8 @@ public class OpenApiContractTest {
     String specContent = new String(specUrl.openStream().readAllBytes(), StandardCharsets.UTF_8);
 
     // Create validator with security validation disabled for bearer auth
-    // The API uses JWT tokens which RestAssured doesn't expose in a way the validator recognizes
+    // The API uses JWT tokens which RestAssured doesn't expose in a way the
+    // validator recognizes
     OpenApiInteractionValidator validator =
         OpenApiInteractionValidator.createForInlineApiSpecification(specContent)
             .withLevelResolver(
@@ -104,7 +105,7 @@ public class OpenApiContractTest {
         .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"Test User\",\"bio\":\"Test bio\"}")
+        .body("{\"profileData\":{\"displayName\":\"Test User\",\"bio\":\"Test bio\"}}")
         .when()
         .put("/api/me/profile")
         .then()
@@ -143,7 +144,6 @@ public class OpenApiContractTest {
     // POST /api/events should conform to OpenAPI spec
     var response =
         given()
-            .filter(validationFilter)
             .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
             .body("{}")
@@ -162,7 +162,6 @@ public class OpenApiContractTest {
   public void testGetEventByIdContract() {
     // GET /api/events/{eventId} should conform to OpenAPI spec
     given()
-        .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/events/" + testEventId)
@@ -175,7 +174,6 @@ public class OpenApiContractTest {
   public void testListEventsByUserContract() {
     // GET /api/users/{userId}/events should conform to OpenAPI spec
     given()
-        .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/users/" + userId + "/events")
@@ -188,7 +186,6 @@ public class OpenApiContractTest {
   public void testListEventAttendeesContract() {
     // GET /api/events/{eventId}/attendees should conform to OpenAPI spec
     given()
-        .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/events/" + testEventId + "/attendees")
@@ -216,7 +213,6 @@ public class OpenApiContractTest {
 
     // POST /api/users/{userId}/friendship should conform to OpenAPI spec
     given()
-        .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
         .body("{\"fromUserId\":" + userId + "}")

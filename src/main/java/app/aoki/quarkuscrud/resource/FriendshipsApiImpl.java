@@ -1,14 +1,14 @@
 package app.aoki.quarkuscrud.resource;
 
-import app.aoki.quarkuscrud.entity.Friendship;
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.FriendshipsApi;
-import app.aoki.quarkuscrud.generated.model.ReceiveFriendship201Response;
+import app.aoki.quarkuscrud.generated.model.Friendship;
 import app.aoki.quarkuscrud.generated.model.ReceiveFriendshipRequest;
 import app.aoki.quarkuscrud.mapper.FriendshipMapper;
 import app.aoki.quarkuscrud.mapper.UserMapper;
+import app.aoki.quarkuscrud.support.ErrorResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
@@ -31,35 +31,34 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   @Authenticated
   public Response listReceivedFriendships() {
     User user = authenticatedUser.get();
-    List<Friendship> friendships = friendshipMapper.findByRecipientId(user.getId());
-    List<ReceiveFriendship201Response> responses =
-        friendships.stream().map(this::toFriendshipResponse).collect(Collectors.toList());
-    return Response.ok(responses).build();
+    List<Friendship> payload =
+        friendshipMapper.findByRecipientId(user.getId()).stream()
+            .map(this::toFriendshipResponse)
+            .collect(Collectors.toList());
+    return Response.ok(payload).build();
   }
 
   @Override
   @Authenticated
   public Response receiveFriendship(Long userId, ReceiveFriendshipRequest request) {
-    User currentUser = authenticatedUser.get();
+    User sender = authenticatedUser.get();
 
-    // Verify the sender user exists
     if (userMapper.findById(userId).isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new app.aoki.quarkuscrud.support.ErrorResponse("User not found"))
+          .entity(new ErrorResponse("User not found"))
           .build();
     }
 
-    // Check if friendship already exists
-    if (friendshipMapper.findBySenderAndRecipient(userId, currentUser.getId()).isPresent()) {
+    if (friendshipMapper.findBySenderAndRecipient(sender.getId(), userId).isPresent()) {
       return Response.status(Response.Status.CONFLICT)
-          .entity(new app.aoki.quarkuscrud.support.ErrorResponse("Friendship already exists"))
+          .entity(new ErrorResponse("Friendship already exists"))
           .build();
     }
 
-    // Create friendship
-    Friendship friendship = new Friendship();
-    friendship.setSenderId(userId);
-    friendship.setRecipientId(currentUser.getId());
+    app.aoki.quarkuscrud.entity.Friendship friendship =
+        new app.aoki.quarkuscrud.entity.Friendship();
+    friendship.setSenderId(sender.getId());
+    friendship.setRecipientId(userId);
     LocalDateTime now = LocalDateTime.now();
     friendship.setCreatedAt(now);
     friendship.setUpdatedAt(now);
@@ -70,32 +69,27 @@ public class FriendshipsApiImpl implements FriendshipsApi {
           .entity(toFriendshipResponse(friendship))
           .build();
     } catch (Exception e) {
-      // Handle unique constraint violation
-      if (e.getCause() instanceof PSQLException) {
-        PSQLException psqlException = (PSQLException) e.getCause();
-        if (psqlException.getSQLState() != null
-            && psqlException.getSQLState().equals("23505")) { // Unique violation
-          return Response.status(Response.Status.CONFLICT)
-              .entity(new app.aoki.quarkuscrud.support.ErrorResponse("Friendship already exists"))
-              .build();
-        }
+      if (e.getCause() instanceof PSQLException psqlException
+          && "23505".equals(psqlException.getSQLState())) {
+        return Response.status(Response.Status.CONFLICT)
+            .entity(new ErrorResponse("Friendship already exists"))
+            .build();
       }
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(
-              new app.aoki.quarkuscrud.support.ErrorResponse(
-                  "Failed to create friendship: " + e.getMessage()))
+          .entity(new ErrorResponse("Failed to create friendship: " + e.getMessage()))
           .build();
     }
   }
 
-  private ReceiveFriendship201Response toFriendshipResponse(Friendship friendship) {
-    ReceiveFriendship201Response response = new ReceiveFriendship201Response();
+  private Friendship toFriendshipResponse(app.aoki.quarkuscrud.entity.Friendship friendship) {
+    Friendship response = new Friendship();
     response.setId(friendship.getId());
     response.setSenderUserId(friendship.getSenderId());
     response.setRecipientUserId(friendship.getRecipientId());
     response.setCreatedAt(friendship.getCreatedAt().atOffset(ZoneOffset.UTC));
-    response.setUpdatedAt(friendship.getUpdatedAt().atOffset(ZoneOffset.UTC));
-    // TODO: Add sender profile if needed
+    if (friendship.getUpdatedAt() != null) {
+      response.setUpdatedAt(friendship.getUpdatedAt().atOffset(ZoneOffset.UTC));
+    }
     return response;
   }
 }

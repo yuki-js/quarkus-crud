@@ -122,12 +122,12 @@ public class EventCrudIntegrationTest {
     given()
         .header("Authorization", "Bearer " + newUserToken)
         .contentType(ContentType.JSON)
-        .body("{\"code\":\"" + invitationCode + "\"}")
+        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
         .when()
         .post("/api/events/join-by-code")
         .then()
         .statusCode(anyOf(is(200), is(201)))
-        .body("attendeeId", notNullValue());
+        .body("id", notNullValue());
   }
 
   @Test
