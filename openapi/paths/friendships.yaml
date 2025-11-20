@@ -21,13 +21,9 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - fromUserId
+              required: []
+              
               properties:
-                fromUserId:
-                  type: integer
-                  format: int64
-                  description: Identifier of the sender (must match the authenticated user).
                 meta:
                   type: object
                   description: Free-form metadata captured for the exchange.
