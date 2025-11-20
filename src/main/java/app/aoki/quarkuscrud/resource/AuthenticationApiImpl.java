@@ -15,10 +15,13 @@ import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 @Path("/api")
 public class AuthenticationApiImpl implements AuthenticationApi {
+
+  private static final Logger LOG = Logger.getLogger(AuthenticationApiImpl.class);
 
   @Inject UserService userService;
   @Inject JwtService jwtService;
@@ -63,6 +66,7 @@ public class AuthenticationApiImpl implements AuthenticationApi {
     try {
       return objectMapper.readValue(metaJson, new TypeReference<>() {});
     } catch (Exception e) {
+      LOG.errorf(e, "Failed to parse user metadata JSON: %s", metaJson);
       return new HashMap<>();
     }
   }
