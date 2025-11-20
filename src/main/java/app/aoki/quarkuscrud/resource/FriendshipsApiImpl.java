@@ -12,9 +12,6 @@ import app.aoki.quarkuscrud.mapper.UserMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDateTime;
@@ -24,7 +21,6 @@ import java.util.stream.Collectors;
 import org.postgresql.util.PSQLException;
 
 @ApplicationScoped
-@Path("/api")
 public class FriendshipsApiImpl implements FriendshipsApi {
 
   @Inject FriendshipMapper friendshipMapper;
@@ -32,8 +28,6 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
-  @GET
-  @Path("/me/friendships/received")
   @Authenticated
   public Response listReceivedFriendships() {
     User user = authenticatedUser.get();
@@ -44,8 +38,6 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   }
 
   @Override
-  @POST
-  @Path("/users/{userId}/friendship")
   @Authenticated
   public Response receiveFriendship(
       @PathParam("userId") Long userId, @Valid ReceiveFriendshipRequest receiveFriendshipRequest) {

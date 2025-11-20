@@ -315,6 +315,9 @@ sourceSets {
     main {
         java {
             srcDir 'build/generated-src/openapi/src/gen/java'
+            // Exclude RestApplication as it conflicts with Quarkus auto-configuration
+            exclude 'app/aoki/quarkuscrud/generated/RestApplication.java'
+            exclude 'app/aoki/quarkuscrud/generated/RestResourceRoot.java'
         }
     }
 }
