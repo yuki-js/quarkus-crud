@@ -38,13 +38,13 @@ public class FriendshipIntegrationTest {
     given()
         .header("Authorization", "Bearer " + user1Token)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"User One\",\"bio\":\"First user\"}")
+        .body("{\"profileData\":{\"displayName\":\"User One\",\"bio\":\"First user\"}}")
         .put("/api/me/profile");
 
     given()
         .header("Authorization", "Bearer " + user2Token)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"User Two\",\"bio\":\"Second user\"}")
+        .body("{\"profileData\":{\"displayName\":\"User Two\",\"bio\":\"Second user\"}}")
         .put("/api/me/profile");
   }
 
