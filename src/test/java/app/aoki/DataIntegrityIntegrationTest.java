@@ -73,8 +73,8 @@ public class DataIntegrityIntegrationTest {
 
   @Test
   @Order(3)
-  public void testUpdateProfileWithNullBio() {
-    // Update with null bio
+  public void testProfileHandlesNullFieldsCorrectly() {
+    // Test that null bio field is handled correctly without throwing exceptions
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
