@@ -58,7 +58,10 @@ public class EventsApiImpl implements EventsApi {
       event.setInitiatorId(user.getId());
       event.setStatus(EventStatus.CREATED);
       event.setMeta(objectMapper.writeValueAsString(createEventRequest.getMeta()));
-      event.setExpiresAt(createEventRequest.getExpiresAt().toLocalDateTime());
+      event.setExpiresAt(
+          createEventRequest.getExpiresAt() != null
+              ? createEventRequest.getExpiresAt().toLocalDateTime()
+              : null);
       LocalDateTime now = LocalDateTime.now();
       event.setCreatedAt(now);
       event.setUpdatedAt(now);
@@ -244,9 +247,11 @@ public class EventsApiImpl implements EventsApi {
     response.setInitiatorId(event.getInitiatorId());
     response.setStatus(CreateEvent201Response.StatusEnum.fromValue(event.getStatus().getValue()));
     response.setInvitationCode(invitationCode);
-    response.setExpiresAt(event.getExpiresAt().atOffset(ZoneOffset.UTC));
+    response.setExpiresAt(
+        event.getExpiresAt() != null ? event.getExpiresAt().atOffset(ZoneOffset.UTC) : null);
     response.setCreatedAt(event.getCreatedAt().atOffset(ZoneOffset.UTC));
-    response.setUpdatedAt(event.getUpdatedAt().atOffset(ZoneOffset.UTC));
+    response.setUpdatedAt(
+        event.getUpdatedAt() != null ? event.getUpdatedAt().atOffset(ZoneOffset.UTC) : null);
 
     // Parse JSON meta
     if (event.getMeta() != null) {
