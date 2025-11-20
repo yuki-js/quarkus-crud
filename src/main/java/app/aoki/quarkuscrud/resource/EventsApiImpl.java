@@ -1,13 +1,13 @@
 package app.aoki.quarkuscrud.resource;
 
-import app.aoki.quarkuscrud.entity.Event;
-import app.aoki.quarkuscrud.entity.EventAttendee;
 import app.aoki.quarkuscrud.entity.EventInvitationCode;
 import app.aoki.quarkuscrud.entity.EventStatus;
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.EventsApi;
+import app.aoki.quarkuscrud.generated.model.Event;
+import app.aoki.quarkuscrud.generated.model.EventAttendee;
 import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
 import app.aoki.quarkuscrud.mapper.EventAttendeeMapper;
@@ -64,7 +64,7 @@ public class EventsApiImpl implements EventsApi {
 
     try {
       // Create event
-      Event event = new Event();
+      app.aoki.quarkuscrud.entity.Event event = new app.aoki.quarkuscrud.entity.Event();
       event.setInitiatorId(user.getId());
       event.setStatus(EventStatus.CREATED);
       event.setMeta(objectMapper.writeValueAsString(createEventRequest.getMeta()));
@@ -141,7 +141,8 @@ public class EventsApiImpl implements EventsApi {
           .build();
     }
 
-    Event event = eventMapper.findById(invitationCode.getEventId()).orElse(null);
+    app.aoki.quarkuscrud.entity.Event event =
+        eventMapper.findById(invitationCode.getEventId()).orElse(null);
 
     if (event == null
         || event.getStatus() == EventStatus.DELETED
@@ -159,7 +160,8 @@ public class EventsApiImpl implements EventsApi {
     }
 
     // Add user as attendee
-    EventAttendee attendee = new EventAttendee();
+    app.aoki.quarkuscrud.entity.EventAttendee attendee =
+        new app.aoki.quarkuscrud.entity.EventAttendee();
     attendee.setEventId(event.getId());
     attendee.setAttendeeUserId(user.getId());
     attendee.setMeta(null);
@@ -199,8 +201,9 @@ public class EventsApiImpl implements EventsApi {
           .build();
     }
 
-    List<EventAttendee> attendees = eventAttendeeMapper.findByEventId(eventId);
-    List<app.aoki.quarkuscrud.generated.model.EventAttendee> responses =
+    List<app.aoki.quarkuscrud.entity.EventAttendee> attendees =
+        eventAttendeeMapper.findByEventId(eventId);
+    List<EventAttendee> responses =
         attendees.stream().map(this::toAttendeeResponse).collect(Collectors.toList());
     return Response.ok(responses).build();
   }
@@ -218,8 +221,8 @@ public class EventsApiImpl implements EventsApi {
           .build();
     }
 
-    List<Event> events = eventMapper.findByInitiatorId(userId);
-    List<app.aoki.quarkuscrud.generated.model.Event> responses =
+    List<app.aoki.quarkuscrud.entity.Event> events = eventMapper.findByInitiatorId(userId);
+    List<Event> responses =
         events.stream()
             .map(
                 event -> {
@@ -255,15 +258,11 @@ public class EventsApiImpl implements EventsApi {
         .build();
   }
 
-  private app.aoki.quarkuscrud.generated.model.Event toEventResponse(
-      Event event, String invitationCode) {
-    app.aoki.quarkuscrud.generated.model.Event response =
-        new app.aoki.quarkuscrud.generated.model.Event();
+  private Event toEventResponse(app.aoki.quarkuscrud.entity.Event event, String invitationCode) {
+    Event response = new Event();
     response.setId(event.getId());
     response.setInitiatorId(event.getInitiatorId());
-    response.setStatus(
-        app.aoki.quarkuscrud.generated.model.Event.StatusEnum.fromValue(
-            event.getStatus().getValue()));
+    response.setStatus(Event.StatusEnum.fromValue(event.getStatus().getValue()));
     if (invitationCode != null) {
       response.setInvitationCode(invitationCode);
     }
@@ -291,10 +290,8 @@ public class EventsApiImpl implements EventsApi {
     return response;
   }
 
-  private app.aoki.quarkuscrud.generated.model.EventAttendee toAttendeeResponse(
-      EventAttendee attendee) {
-    app.aoki.quarkuscrud.generated.model.EventAttendee response =
-        new app.aoki.quarkuscrud.generated.model.EventAttendee();
+  private EventAttendee toAttendeeResponse(app.aoki.quarkuscrud.entity.EventAttendee attendee) {
+    EventAttendee response = new EventAttendee();
     response.setId(attendee.getId());
     response.setEventId(attendee.getEventId());
     response.setAttendeeUserId(attendee.getAttendeeUserId());

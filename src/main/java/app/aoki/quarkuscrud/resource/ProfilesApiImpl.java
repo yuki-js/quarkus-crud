@@ -1,10 +1,10 @@
 package app.aoki.quarkuscrud.resource;
 
 import app.aoki.quarkuscrud.entity.User;
-import app.aoki.quarkuscrud.entity.UserProfile;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.ProfilesApi;
+import app.aoki.quarkuscrud.generated.model.UserProfile;
 import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
 import app.aoki.quarkuscrud.mapper.UserMapper;
 import app.aoki.quarkuscrud.mapper.UserProfileMapper;
@@ -77,7 +77,8 @@ public class ProfilesApiImpl implements ProfilesApi {
 
     try {
       // Create new profile revision
-      UserProfile newProfile = new UserProfile();
+      app.aoki.quarkuscrud.entity.UserProfile newProfile =
+          new app.aoki.quarkuscrud.entity.UserProfile();
       newProfile.setUserId(user.getId());
       newProfile.setProfileData(
           objectMapper.writeValueAsString(updateMyProfileRequest.getProfileData()));
@@ -101,9 +102,8 @@ public class ProfilesApiImpl implements ProfilesApi {
     }
   }
 
-  private app.aoki.quarkuscrud.generated.model.UserProfile toProfileResponse(UserProfile profile) {
-    app.aoki.quarkuscrud.generated.model.UserProfile response =
-        new app.aoki.quarkuscrud.generated.model.UserProfile();
+  private UserProfile toProfileResponse(app.aoki.quarkuscrud.entity.UserProfile profile) {
+    UserProfile response = new UserProfile();
     response.setId(profile.getId());
     response.setUserId(profile.getUserId());
     response.setCreatedAt(profile.getCreatedAt().atOffset(ZoneOffset.UTC));
