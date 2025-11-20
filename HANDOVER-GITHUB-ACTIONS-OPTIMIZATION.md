@@ -1,211 +1,180 @@
-# GitHub Actions Optimization Handover
-
-## 概要 / Summary
-
-GitHub Actionsのワークフロー実行時間を削減するための最適化を実施しました。
-**最も重要な最適化**: 同一ソースコードに対する重複したGradle実行を排除しました。
-
-Most important optimization: Eliminated redundant Gradle executions on the same source code target.
-
-## 🚨 Critical Finding: Redundant Gradle Executions
-
-### 問題の本質 / Core Problem
-
-以前のワークフローでは、**同じソースコードに対して複数回Gradleタスクを実行**していました:
-
-**CI Workflow (Before):**
-```yaml
-- run: ./gradlew generateOpenApiModels  # Compilation #1
-- run: ./gradlew spotlessCheck          # Compilation #2 (implicit)
-- run: ./gradlew checkstyleMain...      # Compilation #3 (implicit)
-- run: ./gradlew build                  # Compilation #4 + Tests
-```
-
-**問題点:**
-- `build`タスクは既に`generateOpenApiModels`を含む
-- `spotlessCheck`と`checkstyleMain`は暗黙的にコンパイルを実行
-- **結果**: 同じコードを4回コンパイル・ビルド
-
-**Publish-Jib Workflow (Before):**
-```yaml
-- run: ./gradlew build --no-daemon           # Build #1
-- run: ./gradlew jib --no-daemon (4 times!)  # Build #2-5
-```
-
-**問題点:**
-- `--no-daemon`フラグにより、各Gradle実行が独立したプロセス
-- Gradle daemonなしでは、ビルドキャッシュが効かない
-- **結果**: 実質的に5回ビルド
+# GitHub Actions Optimization - Handover Documentation
 
 ## 実施した最適化 / Optimizations Implemented
 
-### 1. CI Workflow: Single Gradle Invocation
+### 1. CI Workflow (ci.yml) ✅ Already Optimal
+**Status**: 最適化済み / Already optimized (実行時間: ~1.5分)
 
-**Before (4 separate Gradle executions):**
-```yaml
-- run: ./gradlew generateOpenApiModels
-- run: ./gradlew spotlessCheck
-- run: ./gradlew checkstyleMain checkstyleTest
-- run: ./gradlew build
+**実施済みの最適化:**
+- ✅ 並列実行: OpenAPI検証とビルドを並列実行
+- ✅ 単一Gradle呼び出し: build + spotlessCheck + checkstyle を1回で実行
+- ✅ 保守的キャッシング: Java SDK + Gradle wrapperのみ
+
+**所要時間:**
+- OpenAPI Validation: 27秒 (並列)
+- Build and Test: 1分25秒 (並列)
+- **合計: ~1.5分** (以前は2-3分)
+
+### 2. Publish-Jib Workflow (publish-jib.yml) ✅ Optimal
+**Status**: 最適化済み / Already optimized
+
+**実施済みの最適化:**
+- ✅ Gradle daemonを有効化してartifacts再利用
+- ✅ 1回ビルド → 複数jib push (4回) = daemon経由で再利用
+- ✅ JVM/Native別々のjobで並列実行
+
+**所要時間:**
+- JVM Build + 4× Jib: ~2-3分
+- Native Build + 4× Jib: ~6-8分 (GraalVMネイティブコンパイルは本質的に時間がかかる)
+
+### 3. Publish-Jib-Debug Workflow (publish-jib-debug.yml) ⚠️ **修正完了**
+**Status**: **最適化が必要だった → 修正済み**
+
+**問題点 (修正前):**
+- ❌ `--no-daemon` を build と jib×4 で使用
+- ❌ 結果: 5回の独立したGradleプロセス起動
+- ❌ artifactsの再利用なし → 毎回再コンパイル
+
+**実施した修正:**
+- ✅ Gradle daemonを有効化 (`--no-daemon`を削除)
+- ✅ publish-jib.ymlと同じパターンを適用
+- ✅ 1回ビルド → 複数jib push (daemon経由)
+
+**期待される改善:**
+- Gradleプロセス起動: 5回 → 1回 (-10秒)
+- 冗長な再コンパイル: 4回削除 (-20-30秒)
+- **合計削減: ~30-45秒**
+
+### 4. Dev-UI-Test Workflow (dev-ui-test.yml) ✅ Optimal
+**Status**: 最適化済み / Already optimized
+
+**実施済みの最適化:**
+- ✅ `assemble` を使用 (buildより軽量、テスト不要)
+- ✅ 事前コンパイルでdev mode起動を高速化
+
+### 5. K8s-Validate Workflow (k8s-validate.yml) ℹ️ そのまま
+**Status**: 変更なし / No changes needed
+
+**理由:**
+- manifestsの変更時のみ実行 (path filter設定済み)
+- 実行頻度が低い
+- 時間はかかるが (2分) 必要な検証
+
+### 6. Copilot-Setup-Steps Workflow ℹ️ 評価中
+**Status**: 使用頻度を確認中
+
+**特徴:**
+- workflow_dispatchのみ (手動実行)
+- 依存関係の事前ダウンロード
+- 実際の使用頻度による削除を検討可能
+
+## 重要な発見 / Key Findings
+
+### Gradle Task Dependencies (--dry-run結果)
+```
+:generateOpenApiModels  # OpenAPIモデル生成
+:compileJava            # Javaコンパイル (generateOpenApiModelsに依存)
+:test                   # テスト実行
+:build                  # ← これが全て含む！
+:spotlessCheck          # コードフォーマットチェック (compileJavaに暗黙的依存)
+:checkstyleMain         # Checkstyle (compileJavaに暗黙的依存)
 ```
 
-**After (1 Gradle execution with multiple tasks):**
-```yaml
-- run: ./gradlew build spotlessCheck checkstyleMain checkstyleTest --no-daemon
-```
+**重要**: `./gradlew build` は既に以下を含む:
+- generateOpenApiModels
+- compileJava
+- test
 
-**効果 / Impact:**
-- Gradle起動オーバーヘッド: 4回 → 1回
-- コンパイル回数: 4回 → 1回
-- 依存性解決: 4回 → 1回
-- **予想削減時間**: ~40-60秒
+したがって、別途これらを実行する必要はありません!
 
-### 2. Publish-Jib: Gradle Daemon Enabled
+### --no-daemon の適切な使用
 
-**Before (daemon disabled, no incremental builds):**
-```yaml
-- run: ./gradlew build --no-daemon
-- run: ./gradlew jib --no-daemon  # Rebuilds everything
-- run: ./gradlew jib --no-daemon  # Rebuilds everything
-- run: ./gradlew jib --no-daemon  # Rebuilds everything
-- run: ./gradlew jib --no-daemon  # Rebuilds everything
-```
+**使うべき場合:**
+- ✅ 単一のGradle呼び出しのみ (例: CI build)
+- ✅ ジョブが短時間で終了する場合
 
-**After (daemon enabled, reuses build artifacts):**
-```yaml
-- run: ./gradlew build           # Build once
-- run: ./gradlew jib            # Reuses artifacts
-- run: ./gradlew jib            # Reuses artifacts
-- run: ./gradlew jib            # Reuses artifacts
-- run: ./gradlew jib            # Reuses artifacts
-```
+**使うべきでない場合:**
+- ❌ 同じジョブ内で複数回Gradleを呼び出す場合
+- ❌ ビルドartifactsを再利用したい場合
+- ❌ jib等のプラグインを複数回実行する場合
 
-**効果 / Impact:**
-- Gradle daemon起動: 5回 → 1回
-- フルビルド: 5回 → 1回
-- Jib実行: ビルド済みartifactsを再利用
-- **予想削減時間**: ~3-4分 (JVM), ~15-20分 (Native)
+### Cache Strategy (保守的アプローチ)
 
-### 3. Parallel Job Execution
+**キャッシュしているもの:**
+- ✅ Java SDK (actions/setup-java内蔵)
+- ✅ Gradle wrapper (gradle/actions/setup-gradle内蔵)
+- ✅ GraalVM (graalvm/setup-graalvm内蔵)
 
-**Before:**
-```yaml
-jobs:
-  openapi-validation: ...
-  build:
-    needs: openapi-validation  # Sequential
-```
+**意図的にキャッシュしていないもの:**
+- ❌ Gradle build cache (不整合リスクが高い)
+- ❌ Configuration cache (Incubating機能、不安定)
+- ❌ npm/Node.js (効果が限定的、Spectral installは10秒程度)
+- ❌ OpenAPI Generator CLI (wgetが速い、キャッシュより確実)
 
-**After:**
-```yaml
-jobs:
-  openapi-validation: ...
-  build: ...  # Parallel
-```
+**理由**: 
+- Gradleのbuild cacheは環境差異で壊れやすい
+- キャッシュが壊れると逆に遅くなる
+- 保守的なアプローチで安定性を優先
 
-**効果 / Impact:** ~30-40秒削減
+## 実測パフォーマンス / Actual Performance
 
-### 4. Conservative Caching Strategy
+### CI Workflow (Run #19550889784)
+- **OpenAPI Validation**: 27秒
+- **Build and Test**: 1分25秒
+- **合計**: ~1.5分 (並列実行)
 
-Only cache stable dependencies:
-- ✅ Java SDK (`cache: gradle` in actions/setup-java)
-- ✅ Gradle wrapper (gradle/actions/setup-gradle)
-- ❌ **Not cached**: Gradle build cache, GraalVM artifacts
+### 改善前との比較
+- 以前: 2-3分 (逐次実行、複数Gradle起動)
+- 現在: 1.5分
+- **改善**: 25-50%高速化
 
-## Gradle Task Dependencies (参考)
+## 今後の監視ポイント / Monitoring Points
 
-Gradleのタスク依存関係を理解することが重要:
+1. **publish-jib-debug.yml の改善効果を確認**
+   - 次回実行時に30-45秒の短縮を確認
 
-```
-build
-  └─ test
-      └─ compileTestJava
-          └─ compileJava
-              └─ generateOpenApiModels (OpenAPI plugin)
-```
+2. **Cache hit rateの監視**
+   - Java SDK cache
+   - Gradle wrapper cache
+   - GraalVM cache
 
-つまり、`./gradlew build`を実行すると:
-1. `generateOpenApiModels` (自動実行)
-2. `compileJava` (自動実行)
-3. `compileTestJava` (自動実行)
-4. `test` (自動実行)
+3. **Native buildの時間**
+   - GraalVMネイティブコンパイルは本質的に時間がかかる (5-8分)
+   - これ以上の高速化は困難
 
-**結論**: `build`の前に個別にこれらを実行する必要はない
+## さらなる最適化の可能性 / Future Optimization Opportunities
 
-## --no-daemon フラグの使い分け / When to Use --no-daemon
+### 低優先度 (ROIが低い)
+1. **Spectral/npm cache追加** 
+   - 効果: ~10秒削減
+   - リスク: キャッシュ不整合
 
-### 使うべき場合 / Use --no-daemon when:
-- ❌ **Short-lived builds**: Daemon起動オーバーヘッドの方が大きい
-- ❌ **Single Gradle execution**: Daemonのメリットがない
+2. **OpenAPI Generator CLI cache**
+   - 効果: ~3-5秒削減
+   - wgetが既に十分高速
 
-### 使わないべき場合 / Do NOT use --no-daemon when:
-- ✅ **Multiple Gradle executions**: Daemon間でキャッシュ共有
-- ✅ **Incremental builds**: Up-to-date checkが効く
-- ✅ **Long-running builds**: 起動オーバーヘッドが償却される
+3. **GraalVM artifact cache**
+   - 効果: 大きいが不安定
+   - リスク: ビルド失敗のリスクが高い
 
-**CI Workflow**: `--no-daemon`使用 (1回だけの実行)
-**Publish Workflow**: `--no-daemon`不使用 (複数回実行でdaemonのメリット大)
+### 実施しない理由
+これらの最適化は「不安定性のリスク > 時間削減のメリット」という判断です。
 
-## 期待される効果 / Expected Impact
+## まとめ / Summary
 
-### CI Workflow
-- **Before**: ~2-3分
-- **After**: ~1.5-2分
-- **削減**: ~30-40秒 (20-25%)
+**実施した最適化:**
+1. ✅ CI workflowの並列実行化
+2. ✅ Publish-Jib workflowのdaemon有効化
+3. ✅ **Publish-Jib-Debug workflowの修正** (今回の主な改善)
+4. ✅ 冗長なGradle実行の排除
+5. ✅ 保守的なキャッシング戦略
 
-### Publish-Jib JVM Workflow
-- **Before**: ~5-6分
-- **After**: ~2-3分
-- **削減**: ~3分 (50%)
+**達成した改善:**
+- CI: 2-3分 → 1.5分 (25-50%削減)
+- Publish-Jib-Debug: 予想30-45秒削減
+- 安定性: キャッシュ不整合リスク排除
 
-### Publish-Jib Native Workflow
-- **Before**: ~20-25分
-- **After**: ~5-8分
-- **削減**: ~15分 (60-70%)
-
-## 重要な教訓 / Key Lessons Learned
-
-### 1. Gradleのタスク依存関係を理解する
-- 暗黙的な依存関係を見逃さない
-- `build`は既に多くのタスクを含む
-
-### 2. Gradle Daemonを正しく使う
-- 複数実行時はdaemonを有効化
-- 単発実行時は無効化
-
-### 3. 同じソースコードに対する重複実行を排除
-- 各Gradle実行がコストが高い
-- タスクを統合して1回の実行にまとめる
-
-### 4. キャッシュは保守的に
-- 壊れやすいキャッシュは避ける
-- 安定したものだけキャッシュ
-
-## ファイル変更履歴 / File Changes
-
-### Modified Files:
-- `.github/workflows/ci.yml` - Single Gradle invocation, parallel execution
-- `.github/workflows/publish-jib.yml` - Gradle daemon enabled, minimal invocations
-
-### NOT Modified (Important):
-- `gradle.properties` - No changes (affects local development)
-- `settings.gradle` - No changes (affects local development)
-
-## 検証方法 / Verification
-
-```bash
-# Local verification of Gradle tasks
-./gradlew build spotlessCheck checkstyleMain checkstyleTest --dry-run
-
-# Should show task dependency graph and prove no redundancy
-```
-
-## 今後の改善案 / Future Improvements
-
-1. **Gradle Configuration Cache** - 一度安定したら有効化を検討
-2. **Test Parallelization** - Gradleの`--parallel`フラグ (要検証)
-3. **Selective Testing** - 変更されたモジュールのみテスト
-
-## 連絡先 / Contact
-
-この最適化に関する質問は、このPRのコメントでお願いします。
+**今後の方針:**
+- 現在の最適化で十分なパフォーマンス
+- さらなる最適化は安定性を損なうリスクあり
+- パフォーマンス監視を継続
