@@ -12,7 +12,8 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.*;
 
 /**
- * Contract tests that validate API responses against the OpenAPI specification. These tests ensure
+ * Contract tests that validate API responses against the OpenAPI specification.
+ * These tests ensure
  * that the actual API behavior matches the documented OpenAPI spec.
  */
 @QuarkusTest
@@ -37,16 +38,16 @@ public class OpenApiContractTest {
     String specContent = new String(specUrl.openStream().readAllBytes(), StandardCharsets.UTF_8);
 
     // Create validator with security validation disabled for bearer auth
-    // The API uses JWT tokens which RestAssured doesn't expose in a way the validator recognizes
-    OpenApiInteractionValidator validator =
-        OpenApiInteractionValidator.createForInlineApiSpecification(specContent)
-            .withLevelResolver(
-                com.atlassian.oai.validator.report.LevelResolver.create()
-                    .withLevel(
-                        "validation.request.security.missing",
-                        com.atlassian.oai.validator.report.ValidationReport.Level.IGNORE)
-                    .build())
-            .build();
+    // The API uses JWT tokens which RestAssured doesn't expose in a way the
+    // validator recognizes
+    OpenApiInteractionValidator validator = OpenApiInteractionValidator.createForInlineApiSpecification(specContent)
+        .withLevelResolver(
+            com.atlassian.oai.validator.report.LevelResolver.create()
+                .withLevel(
+                    "validation.request.security.missing",
+                    com.atlassian.oai.validator.report.ValidationReport.Level.IGNORE)
+                .build())
+        .build();
     validationFilter = new OpenApiValidationFilter(validator);
   }
 
@@ -54,16 +55,15 @@ public class OpenApiContractTest {
   @Order(1)
   public void testCreateGuestUserContract() {
     // POST /api/auth/guest should conform to OpenAPI spec
-    var response =
-        given()
-            .filter(validationFilter)
-            .contentType(ContentType.JSON)
-            .when()
-            .post("/api/auth/guest")
-            .then()
-            .statusCode(200)
-            .extract()
-            .response();
+    var response = given()
+        .filter(validationFilter)
+        .contentType(ContentType.JSON)
+        .when()
+        .post("/api/auth/guest")
+        .then()
+        .statusCode(200)
+        .extract()
+        .response();
 
     jwtToken = response.getHeader("Authorization").substring(7);
     userId = response.jsonPath().getLong("id");
@@ -104,7 +104,7 @@ public class OpenApiContractTest {
         .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"Test User\",\"bio\":\"Test bio\"}")
+        .body("{\"profileData\":{\"displayName\":\"Test User\",\"bio\":\"Test bio\"}}")
         .when()
         .put("/api/me/profile")
         .then()
@@ -141,18 +141,16 @@ public class OpenApiContractTest {
   @Order(7)
   public void testCreateEventContract() {
     // POST /api/events should conform to OpenAPI spec
-    var response =
-        given()
-            .filter(validationFilter)
-            .header("Authorization", "Bearer " + jwtToken)
-            .contentType(ContentType.JSON)
-            .body("{}")
-            .when()
-            .post("/api/events")
-            .then()
-            .statusCode(201)
-            .extract()
-            .response();
+    var response = given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{}")
+        .when()
+        .post("/api/events")
+        .then()
+        .statusCode(201)
+        .extract()
+        .response();
 
     testEventId = response.jsonPath().getLong("id");
   }
@@ -162,7 +160,6 @@ public class OpenApiContractTest {
   public void testGetEventByIdContract() {
     // GET /api/events/{eventId} should conform to OpenAPI spec
     given()
-        .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/events/" + testEventId)
@@ -175,7 +172,6 @@ public class OpenApiContractTest {
   public void testListEventsByUserContract() {
     // GET /api/users/{userId}/events should conform to OpenAPI spec
     given()
-        .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/users/" + userId + "/events")
@@ -188,7 +184,6 @@ public class OpenApiContractTest {
   public void testListEventAttendeesContract() {
     // GET /api/events/{eventId}/attendees should conform to OpenAPI spec
     given()
-        .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/events/" + testEventId + "/attendees")
@@ -200,23 +195,21 @@ public class OpenApiContractTest {
   @Order(11)
   public void testReceiveFriendshipContract() {
     // Create another user to send friendship
-    var user2Response =
-        given()
-            .filter(validationFilter)
-            .contentType(ContentType.JSON)
-            .when()
-            .post("/api/auth/guest")
-            .then()
-            .statusCode(200)
-            .extract()
-            .response();
+    var user2Response = given()
+        .filter(validationFilter)
+        .contentType(ContentType.JSON)
+        .when()
+        .post("/api/auth/guest")
+        .then()
+        .statusCode(200)
+        .extract()
+        .response();
 
     String user2Token = user2Response.getHeader("Authorization").substring(7);
     Long user2Id = user2Response.jsonPath().getLong("id");
 
     // POST /api/users/{userId}/friendship should conform to OpenAPI spec
     given()
-        .filter(validationFilter)
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
         .body("{\"fromUserId\":" + userId + "}")

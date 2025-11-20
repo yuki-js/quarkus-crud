@@ -73,8 +73,8 @@ public class FriendshipIntegrationTest {
         .then()
         .statusCode(anyOf(is(200), is(201)))
         .body("id", notNullValue())
-        .body("fromUserId", equalTo(user1Id.intValue()))
-        .body("toUserId", equalTo(user2Id.intValue()));
+        .body("senderUserId", equalTo(user1Id.intValue()))
+        .body("recipientUserId", equalTo(user2Id.intValue()));
   }
 
   @Test
@@ -88,7 +88,7 @@ public class FriendshipIntegrationTest {
         .then()
         .statusCode(200)
         .body("size()", greaterThanOrEqualTo(1))
-        .body("[0].fromUserId", equalTo(user1Id.intValue()));
+        .body("[0].senderUserId", equalTo(user1Id.intValue()));
   }
 
   @Test
@@ -117,8 +117,8 @@ public class FriendshipIntegrationTest {
         .post("/api/users/" + user1Id + "/friendship")
         .then()
         .statusCode(anyOf(is(200), is(201)))
-        .body("fromUserId", equalTo(user2Id.intValue()))
-        .body("toUserId", equalTo(user1Id.intValue()));
+        .body("senderUserId", equalTo(user2Id.intValue()))
+        .body("recipientUserId", equalTo(user1Id.intValue()));
 
     // User 1 should now have a received friendship from User 2
     given()

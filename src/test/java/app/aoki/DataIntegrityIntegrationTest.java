@@ -180,7 +180,7 @@ public class DataIntegrityIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"code\":\"INVALID\"}")
+        .body("{\"invitationCode\":\"INVALID\"}")
         .when()
         .post("/api/events/join-by-code")
         .then()

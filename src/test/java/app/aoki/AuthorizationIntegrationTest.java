@@ -177,8 +177,8 @@ public class AuthorizationIntegrationTest {
         .post("/api/users/" + user2Id + "/friendship")
         .then()
         .statusCode(anyOf(is(200), is(201)))
-        .body("fromUserId", equalTo(user1Id.intValue()))
-        .body("toUserId", equalTo(user2Id.intValue()));
+        .body("senderUserId", equalTo(user1Id.intValue()))
+        .body("recipientUserId", equalTo(user2Id.intValue()));
 
     // User 2 can see the received friendship
     given()
