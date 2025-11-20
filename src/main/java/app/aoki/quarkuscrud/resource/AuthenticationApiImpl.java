@@ -9,10 +9,12 @@ import app.aoki.quarkuscrud.service.JwtService;
 import app.aoki.quarkuscrud.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 
 @ApplicationScoped
+@Path("/api")
 public class AuthenticationApiImpl implements AuthenticationApi {
 
   @Inject UserService userService;
@@ -39,10 +41,6 @@ public class AuthenticationApiImpl implements AuthenticationApi {
     CreateGuestUser200Response response = new CreateGuestUser200Response();
     response.setId(user.getId());
     response.setCreatedAt(user.getCreatedAt().atOffset(ZoneOffset.UTC));
-    response.setUpdatedAt(
-        user.getUpdatedAt() != null
-            ? user.getUpdatedAt().atOffset(ZoneOffset.UTC)
-            : user.getCreatedAt().atOffset(ZoneOffset.UTC));
     if (user.getAccountLifecycle() != null) {
       response.setAccountLifecycle(
           CreateGuestUser200Response.AccountLifecycleEnum.fromValue(

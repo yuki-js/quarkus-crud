@@ -8,6 +8,7 @@ import app.aoki.quarkuscrud.mapper.UserMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 
@@ -19,7 +20,7 @@ public class UsersApiImpl implements UsersApi {
 
   @Override
   @Authenticated
-  public Response getUserById(Long userId) {
+  public Response getUserById(@PathParam("userId") Long userId) {
     return userMapper
         .findById(userId)
         .map(user -> Response.ok(toUserPublicResponse(user)).build())

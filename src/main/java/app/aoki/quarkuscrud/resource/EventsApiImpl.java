@@ -20,6 +20,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 import org.postgresql.util.PSQLException;
 
 @ApplicationScoped
+@Path("/api")
 public class EventsApiImpl implements EventsApi {
 
   @Inject EventMapper eventMapper;
@@ -89,7 +92,7 @@ public class EventsApiImpl implements EventsApi {
 
   @Override
   @Authenticated
-  public Response getEventById(Long eventId) {
+  public Response getEventById(@PathParam("eventId") Long eventId) {
     return eventMapper
         .findById(eventId)
         .map(
@@ -179,7 +182,7 @@ public class EventsApiImpl implements EventsApi {
 
   @Override
   @Authenticated
-  public Response listEventAttendees(Long eventId) {
+  public Response listEventAttendees(@PathParam("eventId") Long eventId) {
     // Verify event exists
     if (eventMapper.findById(eventId).isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
@@ -195,7 +198,7 @@ public class EventsApiImpl implements EventsApi {
 
   @Override
   @Authenticated
-  public Response listEventsByUser(Long userId) {
+  public Response listEventsByUser(@PathParam("userId") Long userId) {
     // Verify user exists
     if (userMapper.findById(userId).isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
@@ -221,7 +224,7 @@ public class EventsApiImpl implements EventsApi {
 
   @Override
   @Authenticated
-  public Response streamEventLive(Long eventId) {
+  public Response streamEventLive(@PathParam("eventId") Long eventId) {
     // For now, return a simple response. SSE implementation would require more setup
     // This is a placeholder that returns JSON instead of SSE
     if (eventMapper.findById(eventId).isEmpty()) {

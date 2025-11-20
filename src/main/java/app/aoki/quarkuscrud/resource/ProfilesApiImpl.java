@@ -13,6 +13,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ApplicationScoped
+@Path("/api")
 public class ProfilesApiImpl implements ProfilesApi {
 
   @Inject UserProfileMapper userProfileMapper;
@@ -42,7 +45,7 @@ public class ProfilesApiImpl implements ProfilesApi {
 
   @Override
   @Authenticated
-  public Response getUserProfile(Long userId) {
+  public Response getUserProfile(@PathParam("userId") Long userId) {
     return userProfileMapper
         .findLatestByUserId(userId)
         .map(profile -> Response.ok(toProfileResponse(profile)).build())
