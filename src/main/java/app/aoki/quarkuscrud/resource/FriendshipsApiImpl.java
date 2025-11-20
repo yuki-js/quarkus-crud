@@ -42,6 +42,13 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   public Response receiveFriendship(Long userId, ReceiveFriendshipRequest request) {
     User currentUser = authenticatedUser.get();
 
+    // Prevent users from befriending themselves
+    if (userId.equals(currentUser.getId())) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new app.aoki.quarkuscrud.support.ErrorResponse("Cannot befriend yourself"))
+          .build();
+    }
+
     // Verify the sender user exists
     if (userMapper.findById(userId).isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
