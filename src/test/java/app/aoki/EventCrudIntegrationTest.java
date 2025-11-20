@@ -19,8 +19,9 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
- * Integration tests for Event CRUD operations. Tests create, read, update, and delete functionality
- * for events.
+ * Integration tests for Event CRUD operations. Tests create, read, and join functionality for
+ * events. Note: Events don't support traditional update/delete operations - they use status
+ * transitions instead.
  */
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
