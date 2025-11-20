@@ -1,6 +1,7 @@
 package app.aoki;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
@@ -9,7 +10,12 @@ import io.restassured.http.ContentType;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Contract tests that validate API responses against the OpenAPI specification. These tests ensure
@@ -68,7 +74,7 @@ public class OpenApiContractTest {
 
     jwtToken = response.getHeader("Authorization").substring(7);
     userId = response.jsonPath().getLong("id");
-    Assertions.assertNotNull(jwtToken, "JWT token should be set in Authorization header");
+    assertNotNull(jwtToken, "JWT token should be set in Authorization header");
   }
 
   @Test

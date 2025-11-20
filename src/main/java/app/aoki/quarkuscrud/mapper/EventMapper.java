@@ -21,12 +21,15 @@ public interface EventMapper {
 
   @Insert(
       "INSERT INTO events (initiator_id, status, meta, expires_at, created_at, updated_at) "
-          + "VALUES (#{initiatorId}, #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, #{meta}::jsonb, #{expiresAt}, #{createdAt}, #{updatedAt})")
+          + "VALUES (#{initiatorId}, "
+          + "#{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, "
+          + "#{meta}::jsonb, #{expiresAt}, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(Event event);
 
   @Select(
-      "SELECT id, initiator_id, status, meta::text as meta, expires_at, created_at, updated_at FROM events WHERE id = #{id}")
+      "SELECT id, initiator_id, status, meta::text as meta, expires_at, "
+          + "created_at, updated_at FROM events WHERE id = #{id}")
   @Results(
       id = "eventResultMap",
       value = {
@@ -45,23 +48,29 @@ public interface EventMapper {
   Optional<Event> findById(@Param("id") Long id);
 
   @Select(
-      "SELECT id, initiator_id, status, meta::text as meta, expires_at, created_at, updated_at FROM events WHERE initiator_id = #{initiatorId}")
+      "SELECT id, initiator_id, status, meta::text as meta, expires_at, "
+          + "created_at, updated_at FROM events WHERE initiator_id = #{initiatorId}")
   @ResultMap("eventResultMap")
   List<Event> findByInitiatorId(@Param("initiatorId") Long initiatorId);
 
   @Select(
-      "SELECT id, initiator_id, status, meta::text as meta, expires_at, created_at, updated_at FROM events WHERE status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}")
+      "SELECT id, initiator_id, status, meta::text as meta, expires_at, "
+          + "created_at, updated_at FROM events "
+          + "WHERE status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}")
   @ResultMap("eventResultMap")
   List<Event> findByStatus(@Param("status") EventStatus status);
 
   @Select(
-      "SELECT id, initiator_id, status, meta::text as meta, expires_at, created_at, updated_at FROM events ORDER BY created_at DESC")
+      "SELECT id, initiator_id, status, meta::text as meta, expires_at, "
+          + "created_at, updated_at FROM events ORDER BY created_at DESC")
   @ResultMap("eventResultMap")
   List<Event> findAll();
 
   @Update(
-      "UPDATE events SET initiator_id = #{initiatorId}, status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, "
-          + "meta = #{meta}::jsonb, expires_at = #{expiresAt}, updated_at = #{updatedAt} WHERE id = #{id}")
+      "UPDATE events SET initiator_id = #{initiatorId}, "
+          + "status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, "
+          + "meta = #{meta}::jsonb, expires_at = #{expiresAt}, "
+          + "updated_at = #{updatedAt} WHERE id = #{id}")
   void update(Event event);
 
   @Delete("DELETE FROM events WHERE id = #{id}")

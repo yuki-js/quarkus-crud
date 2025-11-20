@@ -46,7 +46,8 @@ public interface FriendshipMapper {
   List<Friendship> findByRecipientId(@Param("recipientId") Long recipientId);
 
   @Select(
-      "SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
+      "SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships "
+          + "WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
   @ResultMap("friendshipResultMap")
   Optional<Friendship> findBySenderAndRecipient(
       @Param("senderId") Long senderId, @Param("recipientId") Long recipientId);
