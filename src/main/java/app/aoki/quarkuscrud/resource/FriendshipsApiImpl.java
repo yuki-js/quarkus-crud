@@ -43,18 +43,6 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   public Response receiveFriendship(Long userId, ReceiveFriendshipRequest request) {
     User sender = authenticatedUser.get();
 
-    if (request == null || request.getFromUserId() == null) {
-      return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new ErrorResponse("fromUserId is required"))
-          .build();
-    }
-
-    if (!sender.getId().equals(request.getFromUserId())) {
-      return Response.status(Response.Status.FORBIDDEN)
-          .entity(new ErrorResponse("Cannot send a friendship on behalf of another user"))
-          .build();
-    }
-
     if (userMapper.findById(userId).isEmpty()) {
       return Response.status(Response.Status.NOT_FOUND)
           .entity(new ErrorResponse("User not found"))
