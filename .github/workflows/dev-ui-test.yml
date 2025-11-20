@@ -24,8 +24,23 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - name: Cache Gradle Build Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle/
+            build-cache/
+          key: ${{ runner.os }}-gradle-dev-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-dev-
+            ${{ runner.os }}-gradle-
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -33,7 +48,7 @@ jobs:
       - name: Pre-build to avoid delays during dev mode
         run: |
           echo "Pre-compiling the application..."
-          ./gradlew assemble
+          ./gradlew assemble --build-cache
 
       - name: Start Quarkus Dev UI in background
         run: |

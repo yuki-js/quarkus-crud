@@ -73,18 +73,32 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - name: Cache Gradle Build Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle/
+            build-cache/
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: Build application
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build --build-cache --no-daemon
 
       - name: Build and push JVM normal image
         env:
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew jib --no-daemon \
+          ./gradlew jib --no-daemon --build-cache \
             -Djib.from.image=${{ env.NORMAL_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm \
             -Djib.to.auth.username=${{ github.actor }} \
@@ -95,7 +109,7 @@ jobs:
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew jib --no-daemon \
+          ./gradlew jib --no-daemon --build-cache \
             -Djib.from.image=${{ env.DEBUG_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug \
             -Djib.to.auth.username=${{ github.actor }} \
@@ -107,7 +121,7 @@ jobs:
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew jib --no-daemon \
+          ./gradlew jib --no-daemon --build-cache \
             -Djib.from.image=${{ env.NORMAL_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:latest-jvm \
             -Djib.to.auth.username=${{ github.actor }} \
@@ -120,7 +134,7 @@ jobs:
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          ./gradlew jib --no-daemon \
+          ./gradlew jib --no-daemon --build-cache \
             -Djib.from.image=${{ env.NORMAL_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${VERSION}-jvm \
             -Djib.to.auth.username=${{ github.actor }} \
@@ -156,13 +170,39 @@ jobs:
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
+          cache: 'gradle'
+
+      - name: Cache Gradle Build Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            .gradle/
+            build-cache/
+          key: ${{ runner.os }}-gradle-native-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-native-
+            ${{ runner.os }}-gradle-
+
+      - name: Cache GraalVM Native Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/quarkus
+            build/.cache
+          key: ${{ runner.os }}-graalvm-${{ hashFiles('**/build.gradle', '**/gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-graalvm-
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: Build native executable
         run: |
-          ./gradlew build -Dquarkus.package.type=native --no-daemon
+          ./gradlew build -Dquarkus.package.type=native --build-cache --no-daemon
 
       - name: Prepare native executable for Jib
         run: |
@@ -183,7 +223,7 @@ jobs:
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew jib --no-daemon \
+          ./gradlew jib --no-daemon --build-cache \
             -PnativeBuild \
             -Djib.from.image=${{ env.NORMAL_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native \
@@ -195,7 +235,7 @@ jobs:
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew jib --no-daemon \
+          ./gradlew jib --no-daemon --build-cache \
             -PnativeBuild \
             -Djib.from.image=${{ env.DEBUG_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug \
@@ -208,7 +248,7 @@ jobs:
           REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew jib --no-daemon \
+          ./gradlew jib --no-daemon --build-cache \
             -PnativeBuild \
             -Djib.from.image=${{ env.NORMAL_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:latest-native \
@@ -222,7 +262,7 @@ jobs:
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          ./gradlew jib --no-daemon \
+          ./gradlew jib --no-daemon --build-cache \
             -PnativeBuild \
             -Djib.from.image=${{ env.NORMAL_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${VERSION}-native \
