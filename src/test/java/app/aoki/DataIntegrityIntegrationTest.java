@@ -40,13 +40,13 @@ public class DataIntegrityIntegrationTest {
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
         .body(
-            "{\"displayName\":\"User @#$% with & special chars\",\"bio\":\"Testing special chars\"}")
+            "{\"profileData\":{\"displayName\":\"User @#$% with & special chars\",\"bio\":\"Testing special chars\"}}")
         .when()
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("User @#$% with & special chars"))
-        .body("bio", equalTo("Testing special chars"));
+        .body("profileData.displayName", equalTo("User @#$% with & special chars"))
+        .body("profileData.bio", equalTo("Testing special chars"));
   }
 
   @Test
@@ -55,13 +55,14 @@ public class DataIntegrityIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"ユーザー 名前\",\"bio\":\"Emoji test 🎉 🚀 ❤️ and 中文 العربية\"}")
+        .body(
+            "{\"profileData\":{\"displayName\":\"ユーザー 名前\",\"bio\":\"Emoji test 🎉 🚀 ❤️ and 中文 العربية\"}}")
         .when()
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("ユーザー 名前"))
-        .body("bio", containsString("🎉"));
+        .body("profileData.displayName", equalTo("ユーザー 名前"))
+        .body("profileData.bio", containsString("🎉"));
   }
 
   @Test
@@ -71,13 +72,13 @@ public class DataIntegrityIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"Profile with Null Bio\",\"bio\":null}")
+        .body("{\"profileData\":{\"displayName\":\"Profile with Null Bio\",\"bio\":null}}")
         .when()
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("Profile with Null Bio"))
-        .body("bio", nullValue());
+        .body("profileData.displayName", equalTo("Profile with Null Bio"))
+        .body("profileData.bio", nullValue());
   }
 
   @Test
@@ -148,7 +149,12 @@ public class DataIntegrityIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"" + longDisplayName + "\",\"bio\":\"" + longBio + "\"}")
+        .body(
+            "{\"profileData\":{\"displayName\":\""
+                + longDisplayName
+                + "\",\"bio\":\""
+                + longBio
+                + "\"}}")
         .when()
         .put("/api/me/profile")
         .then()
@@ -161,7 +167,7 @@ public class DataIntegrityIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"\",\"bio\":\"Empty name test\"}")
+        .body("{\"profileData\":{\"displayName\":\"\",\"bio\":\"Empty name test\"}}")
         .when()
         .put("/api/me/profile")
         .then()

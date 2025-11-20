@@ -52,13 +52,13 @@ public class ProfileCrudIntegrationTest {
         given()
             .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
-            .body("{\"displayName\":\"Test User\",\"bio\":\"Test bio\"}")
+            .body("{\"profileData\":{\"displayName\":\"Test User\",\"bio\":\"Test bio\"}}")
             .when()
             .put("/api/me/profile")
             .then()
             .statusCode(200)
-            .body("displayName", equalTo("Test User"))
-            .body("bio", equalTo("Test bio"))
+            .body("profileData.displayName", equalTo("Test User"))
+            .body("profileData.bio", equalTo("Test bio"))
             .extract()
             .response();
   }
@@ -72,8 +72,8 @@ public class ProfileCrudIntegrationTest {
         .get("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("Test User"))
-        .body("bio", equalTo("Test bio"));
+        .body("profileData.displayName", equalTo("Test User"))
+        .body("profileData.bio", equalTo("Test bio"));
   }
 
   @Test
@@ -85,7 +85,7 @@ public class ProfileCrudIntegrationTest {
         .get("/api/users/" + userId + "/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("Test User"));
+        .body("profileData.displayName", equalTo("Test User"));
   }
 
   @Test
@@ -94,13 +94,14 @@ public class ProfileCrudIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"Test 日本語 @#$%\",\"bio\":\"Bio with émojis 🎉 and ünïçödé\"}")
+        .body(
+            "{\"profileData\":{\"displayName\":\"Test 日本語 @#$%\",\"bio\":\"Bio with émojis 🎉 and ünïçödé\"}}")
         .when()
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("Test 日本語 @#$%"))
-        .body("bio", equalTo("Bio with émojis 🎉 and ünïçödé"));
+        .body("profileData.displayName", equalTo("Test 日本語 @#$%"))
+        .body("profileData.bio", equalTo("Bio with émojis 🎉 and ünïçödé"));
   }
 
   @Test
@@ -109,13 +110,13 @@ public class ProfileCrudIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"Name Only\",\"bio\":null}")
+        .body("{\"profileData\":{\"displayName\":\"Name Only\",\"bio\":null}}")
         .when()
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("Name Only"))
-        .body("bio", nullValue());
+        .body("profileData.displayName", equalTo("Name Only"))
+        .body("profileData.bio", nullValue());
   }
 
   @Test
@@ -123,7 +124,7 @@ public class ProfileCrudIntegrationTest {
   public void testUpdateProfileWithoutAuthentication() {
     given()
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"Should Fail\"}")
+        .body("{\"profileData\":{\"displayName\":\"Should Fail\"}}")
         .when()
         .put("/api/me/profile")
         .then()

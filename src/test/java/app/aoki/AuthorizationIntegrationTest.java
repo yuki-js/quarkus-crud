@@ -52,13 +52,13 @@ public class AuthorizationIntegrationTest {
     given()
         .header("Authorization", "Bearer " + user1Token)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"User One\"}")
+        .body("{\"profileData\":{\"displayName\":\"User One\"}}")
         .put("/api/me/profile");
 
     given()
         .header("Authorization", "Bearer " + user2Token)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"User Two\"}")
+        .body("{\"profileData\":{\"displayName\":\"User Two\"}}")
         .put("/api/me/profile");
   }
 
@@ -97,12 +97,12 @@ public class AuthorizationIntegrationTest {
     given()
         .header("Authorization", "Bearer " + user2Token)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"Hacked Name\"}")
+        .body("{\"profileData\":{\"displayName\":\"Hacked Name\"}}")
         .when()
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("Hacked Name")); // This updates User 2's profile, not User 1's
+        .body("profileData.displayName", equalTo("Hacked Name")); // This updates User 2's profile, not User 1's
 
     // Verify User 1's profile is unchanged
     given()
@@ -111,7 +111,7 @@ public class AuthorizationIntegrationTest {
         .get("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("User One"));
+        .body("profileData.displayName", equalTo("User One"));
   }
 
   @Test
@@ -120,13 +120,13 @@ public class AuthorizationIntegrationTest {
     given()
         .header("Authorization", "Bearer " + user1Token)
         .contentType(ContentType.JSON)
-        .body("{\"displayName\":\"Updated by Owner\",\"bio\":\"Owner update\"}")
+        .body("{\"profileData\":{\"displayName\":\"Updated by Owner\",\"bio\":\"Owner update\"}}")
         .when()
         .put("/api/me/profile")
         .then()
         .statusCode(200)
-        .body("displayName", equalTo("Updated by Owner"))
-        .body("bio", equalTo("Owner update"));
+        .body("profileData.displayName", equalTo("Updated by Owner"))
+        .body("profileData.bio", equalTo("Owner update"));
   }
 
   @Test
