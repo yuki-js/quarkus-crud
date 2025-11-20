@@ -1,17 +1,20 @@
 package app.aoki.quarkuscrud.resource;
 
-import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.AuthenticationApi;
-import app.aoki.quarkuscrud.generated.model.CreateGuestUser200Response;
+import app.aoki.quarkuscrud.generated.model.User;
 import app.aoki.quarkuscrud.service.JwtService;
 import app.aoki.quarkuscrud.service.UserService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.Map;
 
 @ApplicationScoped
 @Path("/api")
@@ -20,11 +23,12 @@ public class AuthenticationApiImpl implements AuthenticationApi {
   @Inject UserService userService;
   @Inject JwtService jwtService;
   @Inject AuthenticatedUser authenticatedUser;
+  @Inject ObjectMapper objectMapper;
 
   @Override
   public Response createGuestUser() {
     // Create a new user with anonymous authentication
-    User user = userService.createAnonymousUser();
+    app.aoki.quarkuscrud.entity.User user = userService.createAnonymousUser();
     String token = jwtService.generateAnonymousToken(user);
 
     return Response.ok(toUserResponse(user)).header("Authorization", "Bearer " + token).build();
@@ -33,19 +37,33 @@ public class AuthenticationApiImpl implements AuthenticationApi {
   @Override
   @Authenticated
   public Response getCurrentUser() {
-    User user = authenticatedUser.get();
+    app.aoki.quarkuscrud.entity.User user = authenticatedUser.get();
     return Response.ok(toUserResponse(user)).build();
   }
 
-  private CreateGuestUser200Response toUserResponse(User user) {
-    CreateGuestUser200Response response = new CreateGuestUser200Response();
+  private User toUserResponse(app.aoki.quarkuscrud.entity.User user) {
+    User response = new User();
     response.setId(user.getId());
     response.setCreatedAt(user.getCreatedAt().atOffset(ZoneOffset.UTC));
+    response.setUpdatedAt(
+        user.getUpdatedAt() != null ? user.getUpdatedAt().atOffset(ZoneOffset.UTC) : null);
+    response.setCurrentProfileRevision(user.getCurrentProfileRevision());
+    response.setMeta(parseMeta(user.getMeta()));
     if (user.getAccountLifecycle() != null) {
       response.setAccountLifecycle(
-          CreateGuestUser200Response.AccountLifecycleEnum.fromValue(
-              user.getAccountLifecycle().name().toLowerCase()));
+          User.AccountLifecycleEnum.fromValue(user.getAccountLifecycle().name().toLowerCase()));
     }
     return response;
+  }
+
+  private Map<String, Object> parseMeta(String metaJson) {
+    if (metaJson == null || metaJson.isBlank()) {
+      return new HashMap<>();
+    }
+    try {
+      return objectMapper.readValue(metaJson, new TypeReference<>() {});
+    } catch (Exception e) {
+      return new HashMap<>();
+    }
   }
 }

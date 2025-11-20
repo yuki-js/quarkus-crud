@@ -6,14 +6,21 @@ import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.ProfilesApi;
 import app.aoki.quarkuscrud.generated.model.GetUserProfile200Response;
-import app.aoki.quarkuscrud.generated.model.UpdateMyProfileRequest;
+import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
 import app.aoki.quarkuscrud.mapper.UserMapper;
 import app.aoki.quarkuscrud.mapper.UserProfileMapper;
+import app.aoki.quarkuscrud.support.ErrorResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -31,6 +38,9 @@ public class ProfilesApiImpl implements ProfilesApi {
 
   @Override
   @Authenticated
+  @GET
+  @Path("/me/profile")
+  @Produces(MediaType.APPLICATION_JSON)
   public Response getMyProfile() {
     User user = authenticatedUser.get();
     return userProfileMapper
@@ -38,25 +48,32 @@ public class ProfilesApiImpl implements ProfilesApi {
         .map(profile -> Response.ok(toProfileResponse(profile)).build())
         .orElse(
             Response.status(Response.Status.NOT_FOUND)
-                .entity(new app.aoki.quarkuscrud.support.ErrorResponse("Profile not found"))
+                .entity(new ErrorResponse("Profile not found"))
                 .build());
   }
 
   @Override
   @Authenticated
-  public Response getUserProfile(Long userId) {
+  @GET
+  @Path("/users/{userId}/profile")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getUserProfile(@PathParam("userId") Long userId) {
     return userProfileMapper
         .findLatestByUserId(userId)
         .map(profile -> Response.ok(toProfileResponse(profile)).build())
         .orElse(
             Response.status(Response.Status.NOT_FOUND)
-                .entity(new app.aoki.quarkuscrud.support.ErrorResponse("Profile not found"))
+                .entity(new ErrorResponse("Profile not found"))
                 .build());
   }
 
   @Override
   @Authenticated
-  public Response updateMyProfile(UpdateMyProfileRequest updateMyProfileRequest) {
+  @PUT
+  @Path("/me/profile")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateMyProfile(UserProfileUpdateRequest updateMyProfileRequest) {
     User user = authenticatedUser.get();
 
     try {
@@ -81,7 +98,7 @@ public class ProfilesApiImpl implements ProfilesApi {
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(
-              new app.aoki.quarkuscrud.support.ErrorResponse(
+              new ErrorResponse(
                   "Failed to update profile: " + e.getMessage()))
           .build();
     }
