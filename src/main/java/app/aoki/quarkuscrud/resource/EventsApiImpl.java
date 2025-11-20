@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
 import org.postgresql.util.PSQLException;
 
 @ApplicationScoped
-@Path("/api")
 public class EventsApiImpl implements EventsApi {
 
   @Inject EventMapper eventMapper;

@@ -9,12 +9,10 @@ import app.aoki.quarkuscrud.service.JwtService;
 import app.aoki.quarkuscrud.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import java.time.ZoneOffset;
 
 @ApplicationScoped
-@Path("/api")
 public class AuthenticationApiImpl implements AuthenticationApi {
 
   @Inject UserService userService;
