@@ -11,7 +11,9 @@ import app.aoki.quarkuscrud.mapper.FriendshipMapper;
 import app.aoki.quarkuscrud.mapper.UserMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -39,7 +41,8 @@ public class FriendshipsApiImpl implements FriendshipsApi {
 
   @Override
   @Authenticated
-  public Response receiveFriendship(Long userId, ReceiveFriendshipRequest request) {
+  public Response receiveFriendship(
+      @PathParam("userId") Long userId, @Valid ReceiveFriendshipRequest receiveFriendshipRequest) {
     User currentUser = authenticatedUser.get();
 
     // Prevent users from befriending themselves
