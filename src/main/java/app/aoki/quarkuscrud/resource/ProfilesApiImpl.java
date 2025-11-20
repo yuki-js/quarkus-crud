@@ -5,7 +5,6 @@ import app.aoki.quarkuscrud.entity.UserProfile;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.ProfilesApi;
-import app.aoki.quarkuscrud.generated.model.GetUserProfile200Response;
 import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
 import app.aoki.quarkuscrud.mapper.UserMapper;
 import app.aoki.quarkuscrud.mapper.UserProfileMapper;
@@ -102,8 +101,9 @@ public class ProfilesApiImpl implements ProfilesApi {
     }
   }
 
-  private GetUserProfile200Response toProfileResponse(UserProfile profile) {
-    GetUserProfile200Response response = new GetUserProfile200Response();
+  private app.aoki.quarkuscrud.generated.model.UserProfile toProfileResponse(UserProfile profile) {
+    app.aoki.quarkuscrud.generated.model.UserProfile response =
+        new app.aoki.quarkuscrud.generated.model.UserProfile();
     response.setId(profile.getId());
     response.setUserId(profile.getUserId());
     response.setCreatedAt(profile.getCreatedAt().atOffset(ZoneOffset.UTC));

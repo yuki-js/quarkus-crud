@@ -3,7 +3,7 @@ package app.aoki.quarkuscrud.resource;
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.generated.api.UsersApi;
-import app.aoki.quarkuscrud.generated.model.GetUserById200Response;
+import app.aoki.quarkuscrud.generated.model.UserPublic;
 import app.aoki.quarkuscrud.mapper.UserMapper;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -37,14 +37,13 @@ public class UsersApiImpl implements UsersApi {
                 .build());
   }
 
-  private GetUserById200Response toUserPublicResponse(User user) {
-    GetUserById200Response response = new GetUserById200Response();
+  private UserPublic toUserPublicResponse(User user) {
+    UserPublic response = new UserPublic();
     response.setId(user.getId());
     response.setCreatedAt(user.getCreatedAt().atOffset(ZoneOffset.UTC));
     if (user.getAccountLifecycle() != null) {
       response.setAccountLifecycle(
-          GetUserById200Response.AccountLifecycleEnum.fromValue(
-              user.getAccountLifecycle().getValue()));
+          UserPublic.AccountLifecycleEnum.fromValue(user.getAccountLifecycle().getValue()));
     }
     // TODO: Add profile summary if needed
     return response;

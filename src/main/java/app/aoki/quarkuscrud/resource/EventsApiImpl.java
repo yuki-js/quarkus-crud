@@ -8,10 +8,8 @@ import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.EventsApi;
-import app.aoki.quarkuscrud.generated.model.CreateEvent201Response;
 import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
-import app.aoki.quarkuscrud.generated.model.JoinEventByCode201Response;
 import app.aoki.quarkuscrud.mapper.EventAttendeeMapper;
 import app.aoki.quarkuscrud.mapper.EventInvitationCodeMapper;
 import app.aoki.quarkuscrud.mapper.EventMapper;
@@ -202,7 +200,7 @@ public class EventsApiImpl implements EventsApi {
     }
 
     List<EventAttendee> attendees = eventAttendeeMapper.findByEventId(eventId);
-    List<JoinEventByCode201Response> responses =
+    List<app.aoki.quarkuscrud.generated.model.EventAttendee> responses =
         attendees.stream().map(this::toAttendeeResponse).collect(Collectors.toList());
     return Response.ok(responses).build();
   }
@@ -221,7 +219,7 @@ public class EventsApiImpl implements EventsApi {
     }
 
     List<Event> events = eventMapper.findByInitiatorId(userId);
-    List<CreateEvent201Response> responses =
+    List<app.aoki.quarkuscrud.generated.model.Event> responses =
         events.stream()
             .map(
                 event -> {
@@ -257,11 +255,15 @@ public class EventsApiImpl implements EventsApi {
         .build();
   }
 
-  private CreateEvent201Response toEventResponse(Event event, String invitationCode) {
-    CreateEvent201Response response = new CreateEvent201Response();
+  private app.aoki.quarkuscrud.generated.model.Event toEventResponse(
+      Event event, String invitationCode) {
+    app.aoki.quarkuscrud.generated.model.Event response =
+        new app.aoki.quarkuscrud.generated.model.Event();
     response.setId(event.getId());
     response.setInitiatorId(event.getInitiatorId());
-    response.setStatus(CreateEvent201Response.StatusEnum.fromValue(event.getStatus().getValue()));
+    response.setStatus(
+        app.aoki.quarkuscrud.generated.model.Event.StatusEnum.fromValue(
+            event.getStatus().getValue()));
     if (invitationCode != null) {
       response.setInvitationCode(invitationCode);
     }
@@ -289,8 +291,10 @@ public class EventsApiImpl implements EventsApi {
     return response;
   }
 
-  private JoinEventByCode201Response toAttendeeResponse(EventAttendee attendee) {
-    JoinEventByCode201Response response = new JoinEventByCode201Response();
+  private app.aoki.quarkuscrud.generated.model.EventAttendee toAttendeeResponse(
+      EventAttendee attendee) {
+    app.aoki.quarkuscrud.generated.model.EventAttendee response =
+        new app.aoki.quarkuscrud.generated.model.EventAttendee();
     response.setId(attendee.getId());
     response.setEventId(attendee.getEventId());
     response.setAttendeeUserId(attendee.getAttendeeUserId());
