@@ -12,7 +12,13 @@ import app.aoki.quarkuscrud.mapper.UserMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -21,6 +27,7 @@ import java.util.stream.Collectors;
 import org.postgresql.util.PSQLException;
 
 @ApplicationScoped
+@Path("/api")
 public class FriendshipsApiImpl implements FriendshipsApi {
 
   @Inject FriendshipMapper friendshipMapper;
@@ -28,6 +35,9 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
+  @GET
+  @Path("/me/friendships/received")
+  @Produces(MediaType.APPLICATION_JSON)
   @Authenticated
   public Response listReceivedFriendships() {
     User user = authenticatedUser.get();
@@ -38,10 +48,21 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   }
 
   @Override
+  @POST
+  @Path("/users/{userId}/friendship")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   @Authenticated
   public Response receiveFriendship(
       @PathParam("userId") Long userId, @Valid ReceiveFriendshipRequest receiveFriendshipRequest) {
     User currentUser = authenticatedUser.get();
+
+    // Prevent users from receiving friendship from themselves
+    if (userId.equals(currentUser.getId())) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new app.aoki.quarkuscrud.support.ErrorResponse("Cannot receive friendship from yourself"))
+          .build();
+    }
 
     // Verify the sender user exists
     if (userMapper.findById(userId).isEmpty()) {
