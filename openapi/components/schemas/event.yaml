@@ -65,18 +65,14 @@ EventCreateRequest:
       example: FRIDAY-QUIZ
 EventJoinByCodeRequest:
   type: object
-  description: >
-    Request body for joining an event by invitation code. Provide
-    `invitationCode` (preferred) or the legacy `code` field. At least one must be supplied.
+  description: Request body for joining an event by invitation code.
+  required:
+    - invitationCode
   properties:
     invitationCode:
       type: string
       description: Case-insensitive code identifying the event to join.
       example: QUIZ-2025-01
-    code:
-      type: string
-      description: Deprecated alias for `invitationCode`.
-      deprecated: true
 EventLiveEvent:
   type: object
   description: Server-Sent Event payload describing attendee changes.

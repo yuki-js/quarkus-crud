@@ -35,11 +35,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 import org.postgresql.util.PSQLException;
 
 @ApplicationScoped
 @Path("/api")
 public class EventsApiImpl implements EventsApi {
+
+  private static final Logger LOG = Logger.getLogger(EventsApiImpl.class);
 
   @Inject EventMapper eventMapper;
   @Inject EventAttendeeMapper eventAttendeeMapper;
@@ -125,7 +128,7 @@ public class EventsApiImpl implements EventsApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response joinEventByCode(EventJoinByCodeRequest joinEventByCodeRequest) {
     User user = authenticatedUser.get();
-    String code = normalizeCode(joinEventByCodeRequest);
+    String code = joinEventByCodeRequest.getInvitationCode();
 
     if (code == null || code.isBlank()) {
       return Response.status(Response.Status.BAD_REQUEST)
@@ -325,18 +328,6 @@ public class EventsApiImpl implements EventsApi {
     return code.toString();
   }
 
-  private String normalizeCode(EventJoinByCodeRequest request) {
-    if (request == null) {
-      return null;
-    }
-    String primary = request.getInvitationCode();
-    if (primary != null && !primary.isBlank()) {
-      return primary;
-    }
-    String legacy = request.getCode();
-    return legacy != null && !legacy.isBlank() ? legacy : null;
-  }
-
   private LocalDateTime toLocalDateTime(Object value) {
     if (value == null) {
       return null;
@@ -347,7 +338,8 @@ public class EventsApiImpl implements EventsApi {
     if (value instanceof String text && !text.isBlank()) {
       try {
         return OffsetDateTime.parse(text).toLocalDateTime();
-      } catch (Exception ignored) {
+      } catch (Exception e) {
+        LOG.warnf("Failed to parse datetime string: %s - %s", text, e.getMessage());
         return null;
       }
     }
