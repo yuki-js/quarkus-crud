@@ -69,10 +69,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     boolean isAuthEndpoint = path.startsWith("/api/auth/") || path.equals("/api/me");
 
     if (!authenticationService.hasBearerToken(authHeader)) {
-      String errorMessage = isAuthEndpoint ? "No JWT token found" : "Authentication required";
       requestContext.abortWith(
           Response.status(Response.Status.UNAUTHORIZED)
-              .entity(new ErrorResponse(errorMessage))
+              .entity(new ErrorResponse("No JWT token found"))
               .build());
       return;
     }
@@ -82,10 +81,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     Optional<User> user = authenticationService.authenticateFromJwt(jwt);
 
     if (user.isEmpty()) {
-      String errorMessage = isAuthEndpoint ? "Invalid JWT token" : "Authentication required";
       requestContext.abortWith(
           Response.status(Response.Status.UNAUTHORIZED)
-              .entity(new ErrorResponse(errorMessage))
+              .entity(new ErrorResponse("Invalid JWT token"))
               .build());
       return;
     }
