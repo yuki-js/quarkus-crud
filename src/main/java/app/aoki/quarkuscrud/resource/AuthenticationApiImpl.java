@@ -41,6 +41,10 @@ public class AuthenticationApiImpl implements AuthenticationApi {
     CreateGuestUser200Response response = new CreateGuestUser200Response();
     response.setId(user.getId());
     response.setCreatedAt(user.getCreatedAt().atOffset(ZoneOffset.UTC));
+    response.setUpdatedAt(
+        user.getUpdatedAt() != null
+            ? user.getUpdatedAt().atOffset(ZoneOffset.UTC)
+            : user.getCreatedAt().atOffset(ZoneOffset.UTC));
     if (user.getAccountLifecycle() != null) {
       response.setAccountLifecycle(
           CreateGuestUser200Response.AccountLifecycleEnum.fromValue(
