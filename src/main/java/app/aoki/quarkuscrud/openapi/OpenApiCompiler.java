@@ -5,7 +5,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
-import io.swagger.v3.parser.util.ResolverFully;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,7 +46,6 @@ public final class OpenApiCompiler {
 
     ParseOptions options = new ParseOptions();
     options.setResolve(true);
-    options.setResolveFully(true);
 
     SwaggerParseResult parseResult =
         new OpenAPIV3Parser().readLocation(input.toUri().toString(), null, options);
@@ -66,8 +64,6 @@ public final class OpenApiCompiler {
       System.err.println("OpenAPI parse result did not contain a specification.");
       throw new IOException("OpenAPI parse result did not contain a specification.");
     }
-
-    new ResolverFully().resolveFully(openAPI);
 
     String yaml = Yaml.mapper().writeValueAsString(openAPI);
 

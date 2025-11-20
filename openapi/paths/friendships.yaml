@@ -3,8 +3,8 @@ paths:
     post:
       tags:
         - Friendships
-      summary: Receive friendship card from user
-      description: Record that the authenticated user has received the specified user's profile card.
+      summary: Share my profile card with another user
+      description: Record that the authenticated user has shared their profile card with the specified user.
       operationId: receiveFriendship
       parameters:
         - name: userId
@@ -15,12 +15,19 @@ paths:
             type: integer
             format: int64
       requestBody:
-        description: Optional metadata about the card exchange.
+        required: true
+        description: Sender information for the exchange.
         content:
           application/json:
             schema:
               type: object
+              required:
+                - fromUserId
               properties:
+                fromUserId:
+                  type: integer
+                  format: int64
+                  description: Identifier of the sender (must match the authenticated user).
                 meta:
                   type: object
                   description: Free-form metadata captured for the exchange.
