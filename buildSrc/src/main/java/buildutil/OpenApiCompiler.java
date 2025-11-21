@@ -1,4 +1,4 @@
-package app.aoki.quarkuscrud.openapi;
+package buildutil;
 
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -61,7 +61,6 @@ public final class OpenApiCompiler {
 
     OpenAPI openAPI = parseResult.getOpenAPI();
     if (openAPI == null) {
-      System.err.println("OpenAPI parse result did not contain a specification.");
       throw new IOException("OpenAPI parse result did not contain a specification.");
     }
 
