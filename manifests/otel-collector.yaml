@@ -102,6 +102,9 @@ spec:
             - name: prometheus
               containerPort: 8889
               protocol: TCP
+            - name: health
+              containerPort: 13133
+              protocol: TCP
           volumeMounts:
             - name: otel-collector-config
               mountPath: /etc/otel-collector-config.yaml
@@ -116,13 +119,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 13133
+              port: health
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /
-              port: 13133
+              port: health
             initialDelaySeconds: 10
             periodSeconds: 5
       volumes:
