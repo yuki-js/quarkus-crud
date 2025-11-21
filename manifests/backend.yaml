@@ -52,6 +52,13 @@ spec:
               value: /keys/publicKey.pem
             - name: SMALLRYE_JWT_SIGN_KEY_LOCATION
               value: /keys-src/privateKey.pem
+            # Observability environment variables
+            - name: DEPLOYMENT_ENVIRONMENT
+              value: production
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: ${OTEL_COLLECTOR_ENDPOINT:http://otel-collector:4317}
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "0.1"
           volumeMounts:
             - name: config
               mountPath: /deployments/config
@@ -120,6 +127,12 @@ metadata:
     component: backend
     name: backend
     environment: production
+  annotations:
+    # Prometheus scraping annotations
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/q/metrics"
+    prometheus.io/scheme: "http"
 spec:
   type: ClusterIP
   selector:
