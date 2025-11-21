@@ -104,7 +104,7 @@ public class EventCrudIntegrationTest {
     // Get current user's ID
     Response userResponse =
         given().header("Authorization", "Bearer " + jwtToken).when().get("/api/me");
-    Long userId = userResponse.jsonPath().getLong("id");
+    long userId = userResponse.jsonPath().getLong("id");
 
     // List events for this user
     given()

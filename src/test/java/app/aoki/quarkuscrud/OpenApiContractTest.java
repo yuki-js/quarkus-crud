@@ -215,7 +215,7 @@ public class OpenApiContractTest {
             .response();
 
     String user2Token = user2Response.getHeader("Authorization").substring(7);
-    Long user2Id = user2Response.jsonPath().getLong("id");
+    long user2Id = user2Response.jsonPath().getLong("id");
 
     // POST /api/users/{userId}/friendship should conform to OpenAPI spec
     given()
