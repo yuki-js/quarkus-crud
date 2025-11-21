@@ -17,7 +17,6 @@ import app.aoki.quarkuscrud.mapper.UserMapper;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -92,10 +91,7 @@ public class EventsApiImpl implements EventsApi {
       code.setUpdatedAt(now);
       eventInvitationCodeMapper.insert(code);
 
-      Counter.builder("events.created")
-          .description("Number of events created")
-          .register(meterRegistry)
-          .increment();
+      meterRegistry.counter("events.created").increment();
 
       LOG.infof("Successfully created event ID: %d", event.getId());
       return Response.status(Response.Status.CREATED)
@@ -103,19 +99,12 @@ public class EventsApiImpl implements EventsApi {
           .build();
     } catch (Exception e) {
       LOG.errorf(e, "Failed to create event for user ID: %d", user.getId());
-      Counter.builder("events.errors")
-          .description("Event operation errors")
-          .tag("operation", "create")
-          .register(meterRegistry)
-          .increment();
+      meterRegistry.counter("events.errors", "operation", "create").increment();
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new ErrorResponse("Failed to create event: " + e.getMessage()))
           .build();
     } finally {
-      sample.stop(
-          Timer.builder("events.creation.time")
-              .description("Time to create an event")
-              .register(meterRegistry));
+      sample.stop(meterRegistry.timer("events.creation.time"));
     }
   }
 

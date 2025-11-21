@@ -8,7 +8,6 @@ import app.aoki.quarkuscrud.service.JwtService;
 import app.aoki.quarkuscrud.service.UserService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -42,25 +41,16 @@ public class AuthenticationApiImpl implements AuthenticationApi {
       app.aoki.quarkuscrud.entity.User user = userService.createAnonymousUser();
       String token = jwtService.generateAnonymousToken(user);
 
-      Counter.builder("api.guests.created")
-          .description("Number of guest users created via API")
-          .register(meterRegistry)
-          .increment();
+      meterRegistry.counter("api.guests.created").increment();
 
       LOG.infof("Successfully created guest user with ID: %d", user.getId());
       return Response.ok(toUserResponse(user)).header("Authorization", "Bearer " + token).build();
     } catch (Exception e) {
       LOG.errorf(e, "Failed to create guest user");
-      Counter.builder("api.guests.errors")
-          .description("Number of errors creating guest users")
-          .register(meterRegistry)
-          .increment();
+      meterRegistry.counter("api.guests.errors").increment();
       throw e;
     } finally {
-      sample.stop(
-          Timer.builder("api.guests.creation.time")
-              .description("Time taken to create a guest user via API")
-              .register(meterRegistry));
+      sample.stop(meterRegistry.timer("api.guests.creation.time"));
     }
   }
 

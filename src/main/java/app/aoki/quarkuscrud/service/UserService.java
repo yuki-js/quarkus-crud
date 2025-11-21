@@ -66,20 +66,12 @@ public class UserService {
       authnProviderMapper.insert(authnProvider);
 
       // Record metrics
-      Counter.builder("users.created")
-          .description("Number of users created")
-          .tag("auth_method", AuthMethod.ANONYMOUS.name().toLowerCase())
-          .register(meterRegistry)
-          .increment();
+      meterRegistry.counter("users.created", "auth_method", "anonymous").increment();
 
       LOG.infof("Successfully created anonymous user with ID: %d", user.getId());
       return user;
     } finally {
-      sample.stop(
-          Timer.builder("users.creation.time")
-              .description("Time taken to create a user")
-              .tag("auth_method", AuthMethod.ANONYMOUS.name().toLowerCase())
-              .register(meterRegistry));
+      sample.stop(meterRegistry.timer("users.creation.time", "auth_method", "anonymous"));
     }
   }
 
@@ -180,11 +172,7 @@ public class UserService {
           .increment();
       return result;
     } finally {
-      sample.stop(
-          Timer.builder("users.lookup.time")
-              .description("Time taken to lookup a user")
-              .tag("method", "by_id")
-              .register(meterRegistry));
+      sample.stop(meterRegistry.timer("users.lookup.time", "method", "by_id"));
     }
   }
 
@@ -219,11 +207,7 @@ public class UserService {
           .increment();
       return Optional.empty();
     } finally {
-      sample.stop(
-          Timer.builder("users.lookup.time")
-              .description("Time taken to lookup a user")
-              .tag("method", "by_auth_identifier")
-              .register(meterRegistry));
+      sample.stop(meterRegistry.timer("users.lookup.time", "method", "by_auth_identifier"));
     }
   }
 
@@ -259,17 +243,11 @@ public class UserService {
       user.setUpdatedAt(LocalDateTime.now());
       userMapper.update(user);
 
-      Counter.builder("users.updated")
-          .description("Number of users updated")
-          .register(meterRegistry)
-          .increment();
+      meterRegistry.counter("users.updated").increment();
 
       LOG.infof("Successfully updated user with ID: %d", user.getId());
     } finally {
-      sample.stop(
-          Timer.builder("users.update.time")
-              .description("Time taken to update a user")
-              .register(meterRegistry));
+      sample.stop(meterRegistry.timer("users.update.time"));
     }
   }
 
@@ -289,17 +267,11 @@ public class UserService {
     try {
       userMapper.deleteById(id);
 
-      Counter.builder("users.deleted")
-          .description("Number of users deleted")
-          .register(meterRegistry)
-          .increment();
+      meterRegistry.counter("users.deleted").increment();
 
       LOG.infof("Successfully deleted user with ID: %d", id);
     } finally {
-      sample.stop(
-          Timer.builder("users.delete.time")
-              .description("Time taken to delete a user")
-              .register(meterRegistry));
+      sample.stop(meterRegistry.timer("users.delete.time"));
     }
   }
 }
