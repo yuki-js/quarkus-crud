@@ -61,7 +61,6 @@ public final class OpenApiCompiler {
 
     OpenAPI openAPI = parseResult.getOpenAPI();
     if (openAPI == null) {
-      System.err.println("OpenAPI parse result did not contain a specification.");
       throw new IOException("OpenAPI parse result did not contain a specification.");
     }
 
