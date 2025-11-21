@@ -4,51 +4,48 @@ name: CI build
 
 on:
   push:
-  pull_request:
-    branches:
-      - main
 
 jobs:
   openapi-validation:
     name: OpenAPI Specification Validation
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-      
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: 21
           distribution: temurin
           cache: gradle
-      
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-      
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
-      
+
       - name: Compile OpenAPI specification
         run: ./gradlew compileOpenApi
-      
+
       - name: Set up Node.js (for Spectral)
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      
+          node-version: "22"
+
       - name: Install Spectral
         run: npm install -g @stoplight/spectral-cli
-      
+
       - name: Validate OpenAPI spec with Spectral
         run: spectral lint build/openapi-compiled/openapi.yaml --ruleset .spectral.yaml
         continue-on-error: true
-      
+
       - name: Download OpenAPI Generator CLI
         run: |
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar -O openapi-generator-cli.jar
-      
+
       - name: Validate OpenAPI spec with generator
         run: |
           java -jar openapi-generator-cli.jar validate -i build/openapi-compiled/openapi.yaml
@@ -56,7 +53,7 @@ jobs:
   build:
     name: Build and Test
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -70,7 +67,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -98,11 +95,11 @@ jobs:
         run: |
           echo "# 🧪 Test Execution Evidence" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Test Results Summary
           echo "## 📊 Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ -d "build/test-results/test" ]; then
             TOTAL_TESTS=$(find build/test-results/test -name "*.xml" -exec grep -o 'tests="[0-9]*"' {} \; | grep -o '[0-9]*' | awk '{s+=$1} END {print s}')
             TOTAL_FAILURES=$(find build/test-results/test -name "*.xml" -exec grep -o 'failures="[0-9]*"' {} \; | grep -o '[0-9]*' | awk '{s+=$1} END {print s}')
@@ -136,16 +133,16 @@ jobs:
             done
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Database Evidence
           echo "## 🗄️ Database Verification" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Verifying data persistence in PostgreSQL..." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Check tables exist
           TABLES=$(PGPASSWORD=postgres psql -h localhost -U postgres -d quarkus_crud -t -c "\dt" 2>/dev/null | grep -E "users|rooms|flyway" | wc -l || echo "0")
-          
+
           if [ "$TABLES" -ge 3 ]; then
             echo "✅ Database tables created successfully" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -177,7 +174,7 @@ jobs:
             echo "⚠️ Database tables not found or not accessible" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Coverage Summary
           echo "## 🎯 Test Coverage Areas" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -188,11 +185,11 @@ jobs:
           echo "- ✅ Database Integration (PostgreSQL + Flyway + MyBatis)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ REST API Endpoints (all resources)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Build Status
           TOTAL_FAILURES=${TOTAL_FAILURES:-0}
           TOTAL_ERRORS=${TOTAL_ERRORS:-0}
-          
+
           if [ "$TOTAL_FAILURES" -eq 0 ] && [ "$TOTAL_ERRORS" -eq 0 ]; then
             echo "## ✅ Build Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
