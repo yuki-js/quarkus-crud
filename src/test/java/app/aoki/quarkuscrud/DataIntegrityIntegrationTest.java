@@ -1,4 +1,4 @@
-package app.aoki;
+package app.aoki.quarkuscrud;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.anyOf;
