@@ -54,7 +54,6 @@ public class EventsApiImpl implements EventsApi {
   private static final String INVITATION_CODE_CHARS =
       "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding confusing characters
   private static final int INVITATION_CODE_LENGTH = 8;
-  private static final SecureRandom RANDOM = new SecureRandom();
 
   @Override
   @Authenticated
@@ -322,8 +321,9 @@ public class EventsApiImpl implements EventsApi {
   private String generateUniqueInvitationCode() {
     // Simple implementation - in production, you'd want to ensure uniqueness
     StringBuilder code = new StringBuilder(INVITATION_CODE_LENGTH);
+    SecureRandom rnd = new SecureRandom(); // created at runtime
     for (int i = 0; i < INVITATION_CODE_LENGTH; i++) {
-      code.append(INVITATION_CODE_CHARS.charAt(RANDOM.nextInt(INVITATION_CODE_CHARS.length())));
+      code.append(INVITATION_CODE_CHARS.charAt(rnd.nextInt(INVITATION_CODE_CHARS.length())));
     }
     return code.toString();
   }
