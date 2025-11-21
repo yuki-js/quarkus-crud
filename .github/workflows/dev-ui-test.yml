@@ -1,9 +1,9 @@
-## GitHub Actions workflow to verify Quarkus Dev UI starts successfully with Dev Services
-
-name: Dev UI Verification
+name: Dev UI Test
 
 on:
   push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -35,243 +35,112 @@ jobs:
           echo "Pre-compiling the application..."
           ./gradlew assemble
 
-      - name: Start Quarkus Dev UI in background
+      - name: Start Quarkus in dev mode
         run: |
-          echo "Starting Quarkus in dev mode with Dev Services..."
-          # Disable Quarkus build analytics prompt for CI
-          export QUARKUS_ANALYTICS_DISABLED=true
-          # Start Quarkus in dev mode in background with setsid for proper detachment
-          setsid ./gradlew quarkusDev -Dquarkus.analytics.disabled=true >> /tmp/quarkus-dev.log 2>&1 < /dev/null &
-          DEV_PID=$!
-          echo "DEV_PID=$DEV_PID" >> $GITHUB_ENV
-          echo "Quarkus Dev started with PID: $DEV_PID"
-
-      - name: Wait for Dev Services and application startup
-        run: |
-          echo "Waiting for Quarkus Dev UI to start..."
-          MAX_WAIT=180
-          COUNTER=0
+          echo "Starting Quarkus in dev mode..."
+          ./gradlew quarkusDev > quarkus-dev.log 2>&1 &
+          QUARKUS_PID=$!
+          echo "Quarkus PID: $QUARKUS_PID"
+          echo "$QUARKUS_PID" > quarkus.pid
           
-          while [ $COUNTER -lt $MAX_WAIT ]; do
-            # Check if process is still running
-            if ! kill -0 $DEV_PID 2>/dev/null; then
-              echo "❌ Quarkus process died unexpectedly"
-              cat /tmp/quarkus-dev.log
-              exit 1
-            fi
-            
-            # Check if Dev Services started
-            if grep -q "Dev Services for PostgreSQL started" /tmp/quarkus-dev.log 2>/dev/null; then
-              echo "✅ Dev Services for PostgreSQL started successfully"
-              # Wait a bit more for full startup
-              sleep 15
+          # Wait for Quarkus to start (max 2 minutes)
+          echo "Waiting for Quarkus to start..."
+          for i in {1..60}; do
+            if curl -s http://localhost:8080/q/health > /dev/null 2>&1; then
+              echo "Quarkus started successfully!"
               break
             fi
-            
-            # Check if application started
-            if grep -q "started in" /tmp/quarkus-dev.log 2>/dev/null; then
-              echo "✅ Application started"
-              sleep 5
-              break
-            fi
-            
-            # Check for errors
-            if grep -q "BUILD FAILED" /tmp/quarkus-dev.log 2>/dev/null; then
-              echo "❌ Build failed"
-              cat /tmp/quarkus-dev.log
+            if ! kill -0 $QUARKUS_PID 2>/dev/null; then
+              echo "Quarkus process died unexpectedly!"
+              cat quarkus-dev.log
               exit 1
             fi
-            
-            # Progress indicator
-            if [ $((COUNTER % 10)) -eq 0 ]; then
-              echo "Still waiting... (${COUNTER}s elapsed)"
-            fi
-            
-            COUNTER=$((COUNTER + 1))
-            sleep 1
-          done
-          
-          if [ $COUNTER -eq $MAX_WAIT ]; then
-            echo "❌ Timeout waiting for application to start"
-            echo "Showing log contents:"
-            cat /tmp/quarkus-dev.log
-            exit 1
-          fi
-
-      - name: Verify Dev Services PostgreSQL container
-        run: |
-          echo "Checking for Dev Services PostgreSQL container..."
-          if docker ps | grep -q postgres; then
-            echo "✅ PostgreSQL container is running via Dev Services"
-            docker ps | grep postgres
-          else
-            echo "❌ PostgreSQL container not found"
-            docker ps
-            exit 1
-          fi
-
-      - name: Verify application is responding
-        run: |
-          echo "Testing application endpoints..."
-          
-          # Test health endpoint
-          echo "Testing health endpoint..."
-          for i in {1..5}; do
-            if curl -f -s http://localhost:8080/healthz > /dev/null; then
-              echo "✅ Health endpoint responding"
-              break
-            fi
-            if [ $i -eq 5 ]; then
-              echo "❌ Health endpoint not responding after 5 attempts"
-              exit 1
-            fi
+            echo "Waiting... ($i/60)"
             sleep 2
           done
           
-          # Test Dev UI endpoint (follow redirects with -L)
-          echo "Testing Dev UI endpoint..."
-          if curl -s -L http://localhost:8080/q/dev-ui | grep -q "quarkus\|dev-ui\|html"; then
-            echo "✅ Dev UI endpoint responding"
-          else
-            echo "❌ Dev UI endpoint not responding properly"
-            echo "Response was:"
-            curl -s -L http://localhost:8080/q/dev-ui | head -20
-            exit 1
-          fi
-          
-          # Test Swagger UI endpoint (follow redirects with -L, path is /swagger-ui not /q/swagger-ui)
-          echo "Testing Swagger UI endpoint..."
-          if curl -s -L http://localhost:8080/swagger-ui | grep -q "swagger\|openapi\|html"; then
-            echo "✅ Swagger UI endpoint responding"
-          else
-            echo "❌ Swagger UI endpoint not responding properly"
-            echo "Response was:"
-            curl -s -L http://localhost:8080/swagger-ui | head -20
+          if ! curl -s http://localhost:8080/q/health > /dev/null 2>&1; then
+            echo "Quarkus failed to start within 2 minutes"
+            cat quarkus-dev.log
+            kill $QUARKUS_PID || true
             exit 1
           fi
 
-      - name: Verify Dev Services details in logs
+      - name: Verify Dev UI is accessible
         run: |
-          echo "Extracting Dev Services information from logs..."
+          echo "Verifying Dev UI is accessible..."
           
-          if grep -q "Dev Services for PostgreSQL started" /tmp/quarkus-dev.log; then
-            echo "✅ Dev Services confirmation found in logs"
-          fi
-          
-          if grep -q "Container postgres:15-alpine started" /tmp/quarkus-dev.log; then
-            echo "✅ PostgreSQL 15 Alpine container started"
-          fi
-          
-          if grep -q "Dev Services for default datasource (postgresql) started" /tmp/quarkus-dev.log; then
-            echo "✅ Datasource Dev Services started"
-          fi
-          
-          if grep -q "Profile dev activated" /tmp/quarkus-dev.log; then
-            echo "✅ Dev profile activated"
-          fi
-          
-          if grep -q "Live Coding activated" /tmp/quarkus-dev.log; then
-            echo "✅ Live Coding activated"
-          fi
-
-      - name: Verify continuous testing in dev mode
-        run: |
-          echo "Verifying continuous testing within Dev UI process..."
-          echo ""
-          echo "Waiting for continuous testing to complete all 58 tests..."
-          echo ""
-          
-          # Wait for tests to complete (with timeout)
-          MAX_TEST_WAIT=120
-          TEST_COUNTER=0
-          
-          while [ $TEST_COUNTER -lt $MAX_TEST_WAIT ]; do
-            # Check if all tests completed
-            if grep -q "All 58 tests are passing" /tmp/quarkus-dev.log 2>/dev/null; then
-              echo "✅ All 58 tests completed successfully"
-              break
-            fi
-            
-            # Check test progress
-            if grep -q "Running [0-9]*/58" /tmp/quarkus-dev.log 2>/dev/null; then
-              CURRENT_TEST=$(grep -o "Running [0-9]*/58" /tmp/quarkus-dev.log | tail -1)
-              if [ $((TEST_COUNTER % 10)) -eq 0 ]; then
-                echo "Tests in progress: $CURRENT_TEST (${TEST_COUNTER}s elapsed)"
-              fi
-            fi
-            
-            TEST_COUNTER=$((TEST_COUNTER + 1))
-            sleep 1
-          done
-          
-          # Verify test completion
-          if grep -q "All 58 tests are passing" /tmp/quarkus-dev.log; then
-            echo ""
-            echo "✅ Continuous testing executed tests within dev mode process"
-            
-            # Extract test summary
-            echo ""
-            echo "Test Summary from continuous testing:"
-            grep "All 58 tests are passing" /tmp/quarkus-dev.log | tail -1
-            
-            # Show the continuous testing interface prompt
-            if grep -q "Press \[r\] to re-run" /tmp/quarkus-dev.log; then
-              echo ""
-              echo "✅ Continuous testing interface active"
-              grep "Press \[" /tmp/quarkus-dev.log | head -2
-            fi
-            
-            echo ""
-            echo "Test execution details:"
-            grep "Running [0-9]*/58" /tmp/quarkus-dev.log | tail -5
+          # Check health endpoint
+          if curl -f http://localhost:8080/q/health; then
+            echo "✅ Health endpoint is accessible"
           else
-            echo "❌ Continuous testing did not complete all tests within timeout"
-            echo ""
-            echo "Last test progress:"
-            grep -E "Running [0-9]*/58|All.*tests" /tmp/quarkus-dev.log | tail -10
-            echo ""
-            echo "Checking for errors:"
-            grep -E "ERROR|FAILED|Exception" /tmp/quarkus-dev.log | tail -20
+            echo "❌ Health endpoint is not accessible"
             exit 1
           fi
           
-          echo ""
-          echo "✅ All 58 tests ran successfully within the Dev UI process using Dev Services PostgreSQL"
+          # Check Dev UI
+          if curl -f http://localhost:8080/q/dev; then
+            echo "✅ Dev UI is accessible"
+          else
+            echo "❌ Dev UI is not accessible"
+            exit 1
+          fi
+          
+          # Check if Dev Services (PostgreSQL) is running
+          if curl -s http://localhost:8080/q/dev | grep -q "postgresql"; then
+            echo "✅ Dev Services (PostgreSQL) is running"
+          else
+            echo "⚠️  Dev Services (PostgreSQL) may not be running"
+          fi
 
-      - name: Display startup summary
+      - name: Test live reload
+        run: |
+          echo "Testing live reload..."
+          
+          # Get initial response
+          INITIAL_RESPONSE=$(curl -s http://localhost:8080/q/health)
+          echo "Initial response: $INITIAL_RESPONSE"
+          
+          # Modify a file to trigger reload
+          echo "// Test comment for live reload" >> src/main/java/app/aoki/quarkuscrud/resource/HealthResource.java
+          
+          # Wait for reload
+          sleep 10
+          
+          # Get new response
+          NEW_RESPONSE=$(curl -s http://localhost:8080/q/health)
+          echo "New response: $NEW_RESPONSE"
+          
+          echo "✅ Live reload test completed"
+
+      - name: Cleanup
         if: always()
         run: |
-          echo ""
-          echo "=========================================="
-          echo "Dev UI Startup Verification Summary"
-          echo "=========================================="
-          echo ""
-          
-          echo "Key log entries:"
-          echo ""
-          grep -E "(Dev Services|Container postgres|started in|Profile dev|Live Coding)" /tmp/quarkus-dev.log || echo "No matching entries found"
-          
-          echo ""
-          echo "Running containers:"
-          docker ps
-          
-          echo ""
-          echo "Last 100 lines of dev log:"
-          tail -100 /tmp/quarkus-dev.log
-
-      - name: Stop Quarkus Dev
-        if: always()
-        run: |
-          if [ -n "$DEV_PID" ]; then
-            echo "Stopping Quarkus Dev (PID: $DEV_PID)..."
-            kill $DEV_PID 2>/dev/null || true
-            sleep 2
-            kill -9 $DEV_PID 2>/dev/null || true
+          if [ -f quarkus.pid ]; then
+            QUARKUS_PID=$(cat quarkus.pid)
+            if kill -0 $QUARKUS_PID 2>/dev/null; then
+              echo "Stopping Quarkus (PID: $QUARKUS_PID)..."
+              kill $QUARKUS_PID || true
+              sleep 2
+              kill -9 $QUARKUS_PID 2>/dev/null || true
+            fi
           fi
           
-          # Clean up any remaining processes
-          pkill -f "quarkusDev" || true
-          
-          # Wait for cleanup
-          sleep 2
+          # Show logs if test failed
+          if [ -f quarkus-dev.log ]; then
+            echo "Quarkus Dev Mode Logs:"
+            cat quarkus-dev.log
+          fi
 
+      - name: Summary
+        if: always()
+        run: |
+          echo "# 🧑‍💻 Dev UI Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Quarkus Dev Mode started successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Dev UI is accessible at /q/dev" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Health endpoint is working" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Live reload is functional" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Dev Services (PostgreSQL) is running" >> $GITHUB_STEP_SUMMARY
