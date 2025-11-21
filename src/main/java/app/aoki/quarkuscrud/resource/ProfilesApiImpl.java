@@ -6,10 +6,8 @@ import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.ProfilesApi;
 import app.aoki.quarkuscrud.generated.model.UserProfile;
 import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
-import app.aoki.quarkuscrud.service.ProfileService;
+import app.aoki.quarkuscrud.service.ProfileUseCaseService;
 import app.aoki.quarkuscrud.support.ErrorResponse;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -20,17 +18,13 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.time.ZoneOffset;
-import java.util.HashMap;
-import java.util.Map;
 
 @ApplicationScoped
 @Path("/api")
 public class ProfilesApiImpl implements ProfilesApi {
 
-  @Inject ProfileService profileService;
+  @Inject ProfileUseCaseService profileUseCaseService;
   @Inject AuthenticatedUser authenticatedUser;
-  @Inject ObjectMapper objectMapper;
 
   @Override
   @Authenticated
@@ -39,9 +33,9 @@ public class ProfilesApiImpl implements ProfilesApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response getMyProfile() {
     User user = authenticatedUser.get();
-    return profileService
-        .findLatestByUserId(user.getId())
-        .map(profile -> Response.ok(toProfileResponse(profile)).build())
+    return profileUseCaseService
+        .getLatestProfile(user.getId())
+        .map(profile -> Response.ok(profile).build())
         .orElse(
             Response.status(Response.Status.NOT_FOUND)
                 .entity(new ErrorResponse("Profile not found"))
@@ -54,9 +48,9 @@ public class ProfilesApiImpl implements ProfilesApi {
   @Path("/users/{userId}/profile")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getUserProfile(@PathParam("userId") Long userId) {
-    return profileService
-        .findLatestByUserId(userId)
-        .map(profile -> Response.ok(toProfileResponse(profile)).build())
+    return profileUseCaseService
+        .getLatestProfile(userId)
+        .map(profile -> Response.ok(profile).build())
         .orElse(
             Response.status(Response.Status.NOT_FOUND)
                 .entity(new ErrorResponse("Profile not found"))
@@ -73,46 +67,13 @@ public class ProfilesApiImpl implements ProfilesApi {
     User user = authenticatedUser.get();
 
     try {
-      String profileData = objectMapper.writeValueAsString(updateMyProfileRequest.getProfileData());
-      app.aoki.quarkuscrud.entity.UserProfile newProfile =
-          profileService.createProfileRevision(user.getId(), profileData, null);
-      return Response.ok(toProfileResponse(newProfile)).build();
+      UserProfile profile =
+          profileUseCaseService.updateProfile(user.getId(), updateMyProfileRequest);
+      return Response.ok(profile).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new ErrorResponse("Failed to update profile: " + e.getMessage()))
           .build();
     }
-  }
-
-  private UserProfile toProfileResponse(app.aoki.quarkuscrud.entity.UserProfile profile) {
-    UserProfile response = new UserProfile();
-    response.setId(profile.getId());
-    response.setUserId(profile.getUserId());
-    response.setCreatedAt(profile.getCreatedAt().atOffset(ZoneOffset.UTC));
-    response.setUpdatedAt(profile.getUpdatedAt().atOffset(ZoneOffset.UTC));
-
-    // Parse JSON profile data
-    try {
-      Map<String, Object> profileData =
-          objectMapper.readValue(profile.getProfileData(), new TypeReference<>() {});
-      response.setProfileData(profileData);
-    } catch (Exception e) {
-      response.setProfileData(new HashMap<>());
-    }
-
-    // Parse JSON revision meta
-    if (profile.getRevisionMeta() != null) {
-      try {
-        Map<String, Object> revisionMeta =
-            objectMapper.readValue(profile.getRevisionMeta(), new TypeReference<>() {});
-        response.setRevisionMeta(revisionMeta);
-      } catch (Exception e) {
-        response.setRevisionMeta(new HashMap<>());
-      }
-    } else {
-      response.setRevisionMeta(new HashMap<>());
-    }
-
-    return response;
   }
 }
