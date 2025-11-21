@@ -1,8 +1,14 @@
-package app.aoki;
+package app.aoki.quarkuscrud;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -53,7 +59,7 @@ public class AuthenticationIntegrationTest {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .when()
-        .get("/api/auth/me")
+        .get("/api/me")
         .then()
         .statusCode(200)
         .body("id", notNullValue())
@@ -65,7 +71,7 @@ public class AuthenticationIntegrationTest {
   public void testGetCurrentUserWithoutToken() {
     given()
         .when()
-        .get("/api/auth/me")
+        .get("/api/me")
         .then()
         .statusCode(401)
         .body("error", equalTo("No JWT token found"));
@@ -77,7 +83,7 @@ public class AuthenticationIntegrationTest {
     given()
         .header("Authorization", "Bearer invalid-token-12345")
         .when()
-        .get("/api/auth/me")
+        .get("/api/me")
         .then()
         .statusCode(401);
   }

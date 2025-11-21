@@ -1,8 +1,15 @@
 package app.aoki.quarkuscrud.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.aoki.quarkuscrud.entity.AuthenticationProvider;
+import app.aoki.quarkuscrud.entity.AccountLifecycle;
+import app.aoki.quarkuscrud.entity.AuthMethod;
 import app.aoki.quarkuscrud.entity.User;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -22,9 +29,9 @@ public class UserServiceTest {
     User user = userService.createAnonymousUser();
 
     assertNotNull(user.getId());
-    assertNotNull(user.getAuthIdentifier());
-    assertEquals(AuthenticationProvider.ANONYMOUS, user.getAuthProvider());
-    assertNull(user.getExternalSubject());
+    assertEquals(AccountLifecycle.CREATED, user.getAccountLifecycle());
+    assertNull(user.getCurrentProfileRevision());
+    assertNull(user.getMeta());
     assertNotNull(user.getCreatedAt());
     assertNotNull(user.getUpdatedAt());
   }
@@ -33,12 +40,10 @@ public class UserServiceTest {
   @Transactional
   public void testGetOrCreateExternalUserNewUser() {
     String externalSubject = "google-user-123";
-    User user = userService.getOrCreateExternalUser(AuthenticationProvider.OIDC, externalSubject);
+    User user = userService.getOrCreateExternalUser(AuthMethod.OIDC, externalSubject);
 
     assertNotNull(user.getId());
-    assertNotNull(user.getAuthIdentifier()); // Internal reference still generated
-    assertEquals(AuthenticationProvider.OIDC, user.getAuthProvider());
-    assertEquals(externalSubject, user.getExternalSubject());
+    assertEquals(AccountLifecycle.CREATED, user.getAccountLifecycle());
     assertNotNull(user.getCreatedAt());
     assertNotNull(user.getUpdatedAt());
   }
@@ -49,16 +54,15 @@ public class UserServiceTest {
     String externalSubject = "google-user-456";
 
     // Create user first time
-    User user1 = userService.getOrCreateExternalUser(AuthenticationProvider.OIDC, externalSubject);
+    User user1 = userService.getOrCreateExternalUser(AuthMethod.OIDC, externalSubject);
     Long userId1 = user1.getId();
 
     // Try to create same user again
-    User user2 = userService.getOrCreateExternalUser(AuthenticationProvider.OIDC, externalSubject);
+    User user2 = userService.getOrCreateExternalUser(AuthMethod.OIDC, externalSubject);
     Long userId2 = user2.getId();
 
     // Should return the same user
     assertEquals(userId1, userId2);
-    assertEquals(externalSubject, user2.getExternalSubject());
   }
 
   @Test
@@ -66,61 +70,39 @@ public class UserServiceTest {
   public void testGetOrCreateExternalUserThrowsForAnonymous() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> userService.getOrCreateExternalUser(AuthenticationProvider.ANONYMOUS, "some-id"));
+        () -> userService.getOrCreateExternalUser(AuthMethod.ANONYMOUS, "some-id"));
   }
 
   @Test
   @Transactional
-  public void testFindByProviderAndExternalSubject() {
+  public void testFindByMethodAndExternalSubject() {
     String externalSubject = "github-user-789";
-    User createdUser =
-        userService.getOrCreateExternalUser(AuthenticationProvider.OIDC, externalSubject);
+    User createdUser = userService.getOrCreateExternalUser(AuthMethod.OIDC, externalSubject);
 
     Optional<User> foundUser =
-        userService.findByProviderAndExternalSubject(AuthenticationProvider.OIDC, externalSubject);
+        userService.findByMethodAndExternalSubject(AuthMethod.OIDC, externalSubject);
 
     assertTrue(foundUser.isPresent());
     assertEquals(createdUser.getId(), foundUser.get().getId());
-    assertEquals(externalSubject, foundUser.get().getExternalSubject());
   }
 
   @Test
   @Transactional
-  public void testFindByProviderAndExternalSubject_NotFound() {
+  public void testFindByMethodAndExternalSubjectNotFound() {
     Optional<User> foundUser =
-        userService.findByProviderAndExternalSubject(
-            AuthenticationProvider.OIDC, "non-existent-user");
+        userService.findByMethodAndExternalSubject(AuthMethod.OIDC, "nonexistent-user");
 
     assertFalse(foundUser.isPresent());
   }
 
   @Test
   @Transactional
-  public void testUserEffectiveSubjectAnonymous() {
-    User user = userService.createAnonymousUser();
-    assertEquals(user.getAuthIdentifier(), user.getEffectiveSubject());
-  }
+  public void testMultipleAnonymousUsersAreUnique() {
+    User user1 = userService.createAnonymousUser();
+    User user2 = userService.createAnonymousUser();
 
-  @Test
-  @Transactional
-  public void testUserEffectiveSubjectExternal() {
-    String externalSubject = "oidc-user-999";
-    User user = userService.getOrCreateExternalUser(AuthenticationProvider.OIDC, externalSubject);
-    assertEquals(externalSubject, user.getEffectiveSubject());
-  }
-
-  @Test
-  @Transactional
-  public void testAnonymousAndExternalUsersAreSeparate() {
-    // Create anonymous user
-    User anonymousUser = userService.createAnonymousUser();
-
-    // Create external user with different subject
-    User externalUser =
-        userService.getOrCreateExternalUser(AuthenticationProvider.OIDC, "external-123");
-
-    // They should be different users
-    assertNotEquals(anonymousUser.getId(), externalUser.getId());
-    assertNotEquals(anonymousUser.getAuthProvider(), externalUser.getAuthProvider());
+    assertNotNull(user1.getId());
+    assertNotNull(user2.getId());
+    assertNotEquals(user1.getId(), user2.getId());
   }
 }

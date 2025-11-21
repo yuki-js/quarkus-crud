@@ -1,0 +1,37 @@
+ErrorResponse:
+  type: object
+  description: Error payload returned by the API.
+  required:
+    - error
+  properties:
+    error:
+      type: string
+      description: Human-readable description of the error.
+      example: Authentication required
+    details:
+      type: object
+      description: Optional structured details about the error.
+      additionalProperties: true
+LocalDateTime:
+  type: string
+  format: date-time
+  description: ISO-8601 timestamp with timezone information.
+  example: 2025-01-01T10:15:30Z
+HealthStatus:
+  type: object
+  description: Health check status response.
+  required:
+    - status
+    - service
+  properties:
+    status:
+      type: string
+      description: Overall health status of the service.
+      enum:
+        - UP
+        - DOWN
+      example: UP
+    service:
+      type: string
+      description: Service identifier.
+      example: quarkus-crud

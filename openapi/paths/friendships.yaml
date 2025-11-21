@@ -1,0 +1,89 @@
+paths:
+  /api/users/{userId}/friendship:
+    post:
+      tags:
+        - Friendships
+      summary: Share my profile card with another user
+      description: Record that the authenticated user has shared their profile card with the specified user.
+      operationId: receiveFriendship
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Identifier of the user whose card is being received.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        description: Sender information for the exchange.
+        content:
+          application/json:
+            schema:
+              type: object
+              required: []
+              
+              properties:
+                meta:
+                  type: object
+                  description: Free-form metadata captured for the exchange.
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Friendship created.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/friendship.yaml#/Friendship'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: The specified user was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '409':
+          description: Friendship already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+  /api/me/friendships/received:
+    get:
+      tags:
+        - Friendships
+      summary: List friendships received by me
+      description: List profile cards received by the authenticated user.
+      operationId: listReceivedFriendships
+      responses:
+        '200':
+          description: List of friendships received by the user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../components/schemas/friendship.yaml#/Friendship'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'

@@ -39,3 +39,7 @@ nb-configuration.xml
 /.quarkus/cli/plugins/
 # TLS Certificates
 .certs/
+.github/tools/*.jar
+
+# OpenAPI Generator CLI
+openapi-generator-cli.jar
