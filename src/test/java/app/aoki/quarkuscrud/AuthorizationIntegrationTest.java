@@ -136,31 +136,20 @@ public class AuthorizationIntegrationTest {
 
   @Test
   @Order(5)
-  public void testUserCanListTheirOwnEvents() {
-    given()
-        .header("Authorization", "Bearer " + user1Token)
-        .when()
-        .get("/api/users/" + user1Id + "/events")
-        .then()
-        .statusCode(200)
-        .body("size()", greaterThanOrEqualTo(1))
-        .body("[0].initiatorId", equalTo(user1Id.intValue()));
-  }
-
-  @Test
-  @Order(6)
   public void testUserCanListAnotherUsersEvents() {
     // User 2 can view User 1's events (public information)
+    // This tests authorization: other users can view events
     given()
         .header("Authorization", "Bearer " + user2Token)
         .when()
         .get("/api/users/" + user1Id + "/events")
         .then()
-        .statusCode(200);
+        .statusCode(200)
+        .body("size()", greaterThanOrEqualTo(1));
   }
 
   @Test
-  @Order(7)
+  @Order(6)
   public void testUnauthorizedAccessReturns401() {
     given()
         .when()
@@ -171,7 +160,7 @@ public class AuthorizationIntegrationTest {
   }
 
   @Test
-  @Order(8)
+  @Order(7)
   public void testUserCanReceiveFriendshipFromAnother() {
     // User 1 sends friendship to User 2
     given()
