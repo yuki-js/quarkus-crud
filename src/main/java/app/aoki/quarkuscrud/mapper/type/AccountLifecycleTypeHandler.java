@@ -20,7 +20,7 @@ public class AccountLifecycleTypeHandler extends BaseTypeHandler<AccountLifecycl
   public void setNonNullParameter(
       PreparedStatement ps, int i, AccountLifecycle parameter, JdbcType jdbcType)
       throws SQLException {
-    ps.setString(i, parameter.name());
+    ps.setString(i, parameter.getValue());
   }
 
   @Override

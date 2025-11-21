@@ -213,7 +213,7 @@ public class DataIntegrityIntegrationTest {
     // Create another user
     Response user2Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     String user2Token = user2Response.getHeader("Authorization").substring(7);
-    Long user2Id = user2Response.jsonPath().getLong("id");
+    long user2Id = user2Response.jsonPath().getLong("id");
 
     // Send friendship from user1 to user2
     given()
