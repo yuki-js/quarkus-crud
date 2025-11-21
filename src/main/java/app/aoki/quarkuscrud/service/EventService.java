@@ -57,7 +57,7 @@ public class EventService {
     eventMapper.insert(event);
 
     // Generate and insert invitation code
-    String invitationCode = generateUniqueInvitationCode();
+    String invitationCode = generateInvitationCode();
     EventInvitationCode code = new EventInvitationCode();
     code.setEventId(event.getId());
     code.setInvitationCode(invitationCode);
@@ -194,11 +194,14 @@ public class EventService {
   }
 
   /**
-   * Generates a unique invitation code.
+   * Generates a random invitation code.
+   *
+   * <p>Note: This generates a random code but does not check for uniqueness. In a production
+   * environment, you should implement retry logic or database constraints to ensure uniqueness.
    *
    * @return a random invitation code
    */
-  private String generateUniqueInvitationCode() {
+  private String generateInvitationCode() {
     StringBuilder code = new StringBuilder(INVITATION_CODE_LENGTH);
     SecureRandom rnd = new SecureRandom();
     for (int i = 0; i < INVITATION_CODE_LENGTH; i++) {

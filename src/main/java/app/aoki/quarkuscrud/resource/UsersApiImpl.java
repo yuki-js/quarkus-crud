@@ -4,7 +4,7 @@ import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.generated.api.UsersApi;
 import app.aoki.quarkuscrud.generated.model.UserPublic;
-import app.aoki.quarkuscrud.mapper.UserMapper;
+import app.aoki.quarkuscrud.service.UserService;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -20,7 +20,7 @@ import java.time.ZoneOffset;
 @Path("/api")
 public class UsersApiImpl implements UsersApi {
 
-  @Inject UserMapper userMapper;
+  @Inject UserService userService;
 
   @Override
   @Authenticated
@@ -28,7 +28,7 @@ public class UsersApiImpl implements UsersApi {
   @Path("/users/{userId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getUserById(@PathParam("userId") Long userId) {
-    return userMapper
+    return userService
         .findById(userId)
         .map(user -> Response.ok(toUserPublicResponse(user)).build())
         .orElse(

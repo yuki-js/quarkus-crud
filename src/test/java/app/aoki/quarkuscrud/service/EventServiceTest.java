@@ -1,6 +1,10 @@
 package app.aoki.quarkuscrud.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.aoki.quarkuscrud.entity.Event;
 import app.aoki.quarkuscrud.entity.EventAttendee;
@@ -160,7 +164,8 @@ public class EventServiceTest {
   @Test
   @Order(12)
   public void testToLocalDateTimeWithString() {
-    String dateTimeString = "2025-11-21T18:00:00Z";
+    OffsetDateTime futureDate = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1);
+    String dateTimeString = futureDate.toString();
     LocalDateTime ldt = eventService.toLocalDateTime(dateTimeString);
 
     assertNotNull(ldt);

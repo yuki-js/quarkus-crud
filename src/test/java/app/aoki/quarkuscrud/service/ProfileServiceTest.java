@@ -1,6 +1,10 @@
 package app.aoki.quarkuscrud.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.entity.UserProfile;
