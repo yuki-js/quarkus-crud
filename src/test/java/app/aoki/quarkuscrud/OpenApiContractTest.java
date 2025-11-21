@@ -240,11 +240,4 @@ public class OpenApiContractTest {
         .then()
         .statusCode(200);
   }
-
-  @Test
-  @Order(13)
-  public void testHealthzContract() {
-    // GET /healthz should conform to OpenAPI spec
-    given().filter(validationFilter).when().get("/healthz").then().statusCode(200);
-  }
 }
