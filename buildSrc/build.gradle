@@ -7,8 +7,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.swagger.parser.v3:swagger-parser-v3:2.1.22'
-    implementation 'io.swagger.core.v3:swagger-core:2.1.22'
+    compileOnly 'io.swagger.parser.v3:swagger-parser-v3:2.1.22'
+    compileOnly 'io.swagger.core.v3:swagger-core:2.1.22'
 }
 
 java {
