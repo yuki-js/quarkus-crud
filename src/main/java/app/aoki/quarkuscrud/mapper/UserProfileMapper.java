@@ -24,7 +24,9 @@ public interface UserProfileMapper {
   void insert(UserProfile userProfile);
 
   @Select(
-      "SELECT id, user_id, profile_data::text as profile_data, revision_meta::text as revision_meta, created_at, updated_at FROM user_profiles WHERE id = #{id}")
+      "SELECT id, user_id, profile_data::text as profile_data, "
+          + "revision_meta::text as revision_meta, created_at, updated_at "
+          + "FROM user_profiles WHERE id = #{id}")
   @Results(
       id = "userProfileResultMap",
       value = {
@@ -38,12 +40,17 @@ public interface UserProfileMapper {
   Optional<UserProfile> findById(@Param("id") Long id);
 
   @Select(
-      "SELECT id, user_id, profile_data::text as profile_data, revision_meta::text as revision_meta, created_at, updated_at FROM user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC")
+      "SELECT id, user_id, profile_data::text as profile_data, "
+          + "revision_meta::text as revision_meta, created_at, updated_at "
+          + "FROM user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC")
   @ResultMap("userProfileResultMap")
   List<UserProfile> findByUserId(@Param("userId") Long userId);
 
   @Select(
-      "SELECT id, user_id, profile_data::text as profile_data, revision_meta::text as revision_meta, created_at, updated_at FROM user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC LIMIT 1")
+      "SELECT id, user_id, profile_data::text as profile_data, "
+          + "revision_meta::text as revision_meta, created_at, updated_at "
+          + "FROM user_profiles WHERE user_id = #{userId} "
+          + "ORDER BY created_at DESC LIMIT 1")
   @ResultMap("userProfileResultMap")
   Optional<UserProfile> findLatestByUserId(@Param("userId") Long userId);
 

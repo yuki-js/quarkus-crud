@@ -40,3 +40,6 @@ nb-configuration.xml
 # TLS Certificates
 .certs/
 .github/tools/*.jar
+
+# OpenAPI Generator CLI
+openapi-generator-cli.jar

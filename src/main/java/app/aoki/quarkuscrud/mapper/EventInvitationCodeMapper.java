@@ -37,18 +37,22 @@ public interface EventInvitationCodeMapper {
   Optional<EventInvitationCode> findById(@Param("id") Long id);
 
   @Select(
-      "SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE event_id = #{eventId}")
+      "SELECT id, event_id, invitation_code, created_at, updated_at "
+          + "FROM event_invitation_codes WHERE event_id = #{eventId}")
   @ResultMap("eventInvitationCodeResultMap")
   List<EventInvitationCode> findByEventId(@Param("eventId") Long eventId);
 
   @Select(
-      "SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE invitation_code = #{invitationCode}")
+      "SELECT id, event_id, invitation_code, created_at, updated_at "
+          + "FROM event_invitation_codes WHERE invitation_code = #{invitationCode}")
   @ResultMap("eventInvitationCodeResultMap")
   Optional<EventInvitationCode> findByInvitationCode(
       @Param("invitationCode") String invitationCode);
 
   @Update(
-      "UPDATE event_invitation_codes SET event_id = #{eventId}, invitation_code = #{invitationCode}, updated_at = #{updatedAt} WHERE id = #{id}")
+      "UPDATE event_invitation_codes SET event_id = #{eventId}, "
+          + "invitation_code = #{invitationCode}, updated_at = #{updatedAt} "
+          + "WHERE id = #{id}")
   void update(EventInvitationCode eventInvitationCode);
 
   @Delete("DELETE FROM event_invitation_codes WHERE id = #{id}")

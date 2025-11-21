@@ -19,13 +19,17 @@ import org.apache.ibatis.annotations.Update;
 public interface AuthnProviderMapper {
 
   @Insert(
-      "INSERT INTO authn_providers (user_id, auth_method, auth_identifier, external_subject, created_at, updated_at) "
-          + "VALUES (#{userId}, #{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler}, #{authIdentifier}, #{externalSubject}, #{createdAt}, #{updatedAt})")
+      "INSERT INTO authn_providers (user_id, auth_method, auth_identifier, "
+          + "external_subject, created_at, updated_at) "
+          + "VALUES (#{userId}, "
+          + "#{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler}, "
+          + "#{authIdentifier}, #{externalSubject}, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(AuthnProvider authnProvider);
 
   @Select(
-      "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at, updated_at FROM authn_providers WHERE id = #{id}")
+      "SELECT id, user_id, auth_method, auth_identifier, external_subject, "
+          + "created_at, updated_at FROM authn_providers WHERE id = #{id}")
   @Results(
       id = "authnProviderResultMap",
       value = {
@@ -44,26 +48,34 @@ public interface AuthnProviderMapper {
   Optional<AuthnProvider> findById(@Param("id") Long id);
 
   @Select(
-      "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at, updated_at FROM authn_providers WHERE user_id = #{userId}")
+      "SELECT id, user_id, auth_method, auth_identifier, external_subject, "
+          + "created_at, updated_at FROM authn_providers WHERE user_id = #{userId}")
   @ResultMap("authnProviderResultMap")
   List<AuthnProvider> findByUserId(@Param("userId") Long userId);
 
   @Select(
-      "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at, updated_at FROM authn_providers WHERE auth_identifier = #{authIdentifier}")
+      "SELECT id, user_id, auth_method, auth_identifier, external_subject, "
+          + "created_at, updated_at FROM authn_providers "
+          + "WHERE auth_identifier = #{authIdentifier}")
   @ResultMap("authnProviderResultMap")
   Optional<AuthnProvider> findByAuthIdentifier(@Param("authIdentifier") String authIdentifier);
 
   @Select(
-      "SELECT id, user_id, auth_method, auth_identifier, external_subject, created_at, updated_at FROM authn_providers "
-          + "WHERE auth_method = #{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler} "
+      "SELECT id, user_id, auth_method, auth_identifier, external_subject, "
+          + "created_at, updated_at FROM authn_providers "
+          + "WHERE auth_method = "
+          + "#{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler} "
           + "AND external_subject = #{externalSubject}")
   @ResultMap("authnProviderResultMap")
   Optional<AuthnProvider> findByMethodAndExternalSubject(
       @Param("authMethod") AuthMethod authMethod, @Param("externalSubject") String externalSubject);
 
   @Update(
-      "UPDATE authn_providers SET user_id = #{userId}, auth_method = #{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler}, "
-          + "auth_identifier = #{authIdentifier}, external_subject = #{externalSubject}, updated_at = #{updatedAt} WHERE id = #{id}")
+      "UPDATE authn_providers SET user_id = #{userId}, "
+          + "auth_method = "
+          + "#{authMethod, typeHandler=app.aoki.quarkuscrud.mapper.AuthMethodTypeHandler}, "
+          + "auth_identifier = #{authIdentifier}, external_subject = #{externalSubject}, "
+          + "updated_at = #{updatedAt} WHERE id = #{id}")
   void update(AuthnProvider authnProvider);
 
   @Delete("DELETE FROM authn_providers WHERE id = #{id}")
