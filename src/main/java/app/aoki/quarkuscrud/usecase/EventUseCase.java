@@ -1,9 +1,11 @@
-package app.aoki.quarkuscrud.service;
+package app.aoki.quarkuscrud.usecase;
 
 import app.aoki.quarkuscrud.entity.Event;
 import app.aoki.quarkuscrud.entity.EventAttendee;
 import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
+import app.aoki.quarkuscrud.service.EventService;
+import app.aoki.quarkuscrud.service.UserService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -17,13 +19,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Use case service for event-related business flows.
+ * Use case for event-related business flows.
  *
- * <p>This service orchestrates complete business operations including validation, business logic,
+ * <p>This use case orchestrates complete business operations including validation, business logic,
  * and DTO mapping.
  */
 @ApplicationScoped
-public class EventUseCaseService {
+public class EventUseCase {
 
   @Inject EventService eventService;
   @Inject UserService userService;

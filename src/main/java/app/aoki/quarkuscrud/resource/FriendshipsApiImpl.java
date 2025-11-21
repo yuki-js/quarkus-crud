@@ -6,8 +6,8 @@ import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.FriendshipsApi;
 import app.aoki.quarkuscrud.generated.model.Friendship;
 import app.aoki.quarkuscrud.generated.model.ReceiveFriendshipRequest;
-import app.aoki.quarkuscrud.service.FriendshipUseCaseService;
 import app.aoki.quarkuscrud.support.ErrorResponse;
+import app.aoki.quarkuscrud.usecase.FriendshipUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
@@ -19,14 +19,14 @@ import org.postgresql.util.PSQLException;
 @Path("/api")
 public class FriendshipsApiImpl implements FriendshipsApi {
 
-  @Inject FriendshipUseCaseService friendshipUseCaseService;
+  @Inject FriendshipUseCase friendshipUseCase;
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
   @Authenticated
   public Response listReceivedFriendships() {
     User user = authenticatedUser.get();
-    List<Friendship> friendships = friendshipUseCaseService.listReceivedFriendships(user.getId());
+    List<Friendship> friendships = friendshipUseCase.listReceivedFriendships(user.getId());
     return Response.ok(friendships).build();
   }
 
@@ -36,7 +36,7 @@ public class FriendshipsApiImpl implements FriendshipsApi {
     User sender = authenticatedUser.get();
 
     try {
-      Friendship friendship = friendshipUseCaseService.createFriendship(sender.getId(), userId);
+      Friendship friendship = friendshipUseCase.createFriendship(sender.getId(), userId);
       return Response.status(Response.Status.CREATED).entity(friendship).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.NOT_FOUND)

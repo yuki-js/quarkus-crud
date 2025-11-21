@@ -1,7 +1,8 @@
-package app.aoki.quarkuscrud.service;
+package app.aoki.quarkuscrud.usecase;
 
 import app.aoki.quarkuscrud.entity.UserProfile;
 import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
+import app.aoki.quarkuscrud.service.ProfileService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,13 +14,13 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Use case service for profile-related business flows.
+ * Use case for profile-related business flows.
  *
- * <p>This service orchestrates complete business operations including validation, business logic,
+ * <p>This use case orchestrates complete business operations including validation, business logic,
  * and DTO mapping.
  */
 @ApplicationScoped
-public class ProfileUseCaseService {
+public class ProfileUseCase {
 
   @Inject ProfileService profileService;
   @Inject ObjectMapper objectMapper;

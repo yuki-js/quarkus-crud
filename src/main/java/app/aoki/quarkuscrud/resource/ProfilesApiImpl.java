@@ -6,8 +6,8 @@ import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.ProfilesApi;
 import app.aoki.quarkuscrud.generated.model.UserProfile;
 import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
-import app.aoki.quarkuscrud.service.ProfileUseCaseService;
 import app.aoki.quarkuscrud.support.ErrorResponse;
+import app.aoki.quarkuscrud.usecase.ProfileUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -23,7 +23,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/api")
 public class ProfilesApiImpl implements ProfilesApi {
 
-  @Inject ProfileUseCaseService profileUseCaseService;
+  @Inject ProfileUseCase profileUseCase;
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
@@ -33,7 +33,7 @@ public class ProfilesApiImpl implements ProfilesApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response getMyProfile() {
     User user = authenticatedUser.get();
-    return profileUseCaseService
+    return profileUseCase
         .getLatestProfile(user.getId())
         .map(profile -> Response.ok(profile).build())
         .orElse(
@@ -48,7 +48,7 @@ public class ProfilesApiImpl implements ProfilesApi {
   @Path("/users/{userId}/profile")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getUserProfile(@PathParam("userId") Long userId) {
-    return profileUseCaseService
+    return profileUseCase
         .getLatestProfile(userId)
         .map(profile -> Response.ok(profile).build())
         .orElse(
@@ -67,8 +67,7 @@ public class ProfilesApiImpl implements ProfilesApi {
     User user = authenticatedUser.get();
 
     try {
-      UserProfile profile =
-          profileUseCaseService.updateProfile(user.getId(), updateMyProfileRequest);
+      UserProfile profile = profileUseCase.updateProfile(user.getId(), updateMyProfileRequest);
       return Response.ok(profile).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

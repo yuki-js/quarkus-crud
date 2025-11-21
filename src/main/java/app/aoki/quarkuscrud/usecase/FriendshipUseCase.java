@@ -1,6 +1,8 @@
-package app.aoki.quarkuscrud.service;
+package app.aoki.quarkuscrud.usecase;
 
 import app.aoki.quarkuscrud.entity.Friendship;
+import app.aoki.quarkuscrud.service.FriendshipService;
+import app.aoki.quarkuscrud.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -9,13 +11,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Use case service for friendship-related business flows.
+ * Use case for friendship-related business flows.
  *
- * <p>This service orchestrates complete business operations including validation, business logic,
+ * <p>This use case orchestrates complete business operations including validation, business logic,
  * and DTO mapping.
  */
 @ApplicationScoped
-public class FriendshipUseCaseService {
+public class FriendshipUseCase {
 
   @Inject FriendshipService friendshipService;
   @Inject UserService userService;

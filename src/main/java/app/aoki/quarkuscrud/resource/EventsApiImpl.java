@@ -8,8 +8,8 @@ import app.aoki.quarkuscrud.generated.model.Event;
 import app.aoki.quarkuscrud.generated.model.EventAttendee;
 import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
-import app.aoki.quarkuscrud.service.EventUseCaseService;
 import app.aoki.quarkuscrud.support.ErrorResponse;
+import app.aoki.quarkuscrud.usecase.EventUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -27,7 +27,7 @@ import org.postgresql.util.PSQLException;
 @Path("/api")
 public class EventsApiImpl implements EventsApi {
 
-  @Inject EventUseCaseService eventUseCaseService;
+  @Inject EventUseCase eventUseCase;
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
@@ -40,7 +40,7 @@ public class EventsApiImpl implements EventsApi {
     User user = authenticatedUser.get();
 
     try {
-      Event event = eventUseCaseService.createEvent(user.getId(), createEventRequest);
+      Event event = eventUseCase.createEvent(user.getId(), createEventRequest);
       return Response.status(Response.Status.CREATED).entity(event).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -55,7 +55,7 @@ public class EventsApiImpl implements EventsApi {
   @Path("/events/{eventId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getEventById(@PathParam("eventId") Long eventId) {
-    return eventUseCaseService
+    return eventUseCase
         .getEventById(eventId)
         .map(event -> Response.ok(event).build())
         .orElse(
@@ -74,8 +74,7 @@ public class EventsApiImpl implements EventsApi {
     User user = authenticatedUser.get();
 
     try {
-      EventAttendee attendee =
-          eventUseCaseService.joinEventByCode(user.getId(), joinEventByCodeRequest);
+      EventAttendee attendee = eventUseCase.joinEventByCode(user.getId(), joinEventByCodeRequest);
       return Response.status(Response.Status.CREATED).entity(attendee).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.BAD_REQUEST)
@@ -105,7 +104,7 @@ public class EventsApiImpl implements EventsApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response listEventAttendees(@PathParam("eventId") Long eventId) {
     try {
-      List<EventAttendee> attendees = eventUseCaseService.listEventAttendees(eventId);
+      List<EventAttendee> attendees = eventUseCase.listEventAttendees(eventId);
       return Response.ok(attendees).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.NOT_FOUND)
@@ -121,7 +120,7 @@ public class EventsApiImpl implements EventsApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response listEventsByUser(@PathParam("userId") Long userId) {
     try {
-      List<Event> events = eventUseCaseService.listEventsByUser(userId);
+      List<Event> events = eventUseCase.listEventsByUser(userId);
       return Response.ok(events).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.NOT_FOUND)
@@ -136,7 +135,7 @@ public class EventsApiImpl implements EventsApi {
   @Path("/events/{eventId}/live")
   @Produces({MediaType.SERVER_SENT_EVENTS, MediaType.APPLICATION_JSON})
   public Response streamEventLive(@PathParam("eventId") Long eventId) {
-    if (!eventUseCaseService.eventExists(eventId)) {
+    if (!eventUseCase.eventExists(eventId)) {
       return Response.status(Response.Status.NOT_FOUND)
           .entity(new ErrorResponse("Event not found"))
           .build();
