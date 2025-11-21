@@ -1,13 +1,13 @@
 package app.aoki.quarkuscrud.resource;
 
 import app.aoki.quarkuscrud.entity.User;
-import app.aoki.quarkuscrud.filter.Authenticated;
-import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.EventsApi;
 import app.aoki.quarkuscrud.generated.model.Event;
 import app.aoki.quarkuscrud.generated.model.EventAttendee;
 import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
+import app.aoki.quarkuscrud.support.Authenticated;
+import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.EventUseCase;
 import jakarta.enterprise.context.ApplicationScoped;

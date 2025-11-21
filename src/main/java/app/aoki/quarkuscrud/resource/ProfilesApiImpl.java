@@ -1,11 +1,11 @@
 package app.aoki.quarkuscrud.resource;
 
 import app.aoki.quarkuscrud.entity.User;
-import app.aoki.quarkuscrud.filter.Authenticated;
-import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.ProfilesApi;
 import app.aoki.quarkuscrud.generated.model.UserProfile;
 import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
+import app.aoki.quarkuscrud.support.Authenticated;
+import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.ProfileUseCase;
 import jakarta.enterprise.context.ApplicationScoped;

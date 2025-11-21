@@ -1,11 +1,11 @@
 package app.aoki.quarkuscrud.resource;
 
 import app.aoki.quarkuscrud.entity.User;
-import app.aoki.quarkuscrud.filter.Authenticated;
-import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.FriendshipsApi;
 import app.aoki.quarkuscrud.generated.model.Friendship;
 import app.aoki.quarkuscrud.generated.model.ReceiveFriendshipRequest;
+import app.aoki.quarkuscrud.support.Authenticated;
+import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.FriendshipUseCase;
 import jakarta.enterprise.context.ApplicationScoped;

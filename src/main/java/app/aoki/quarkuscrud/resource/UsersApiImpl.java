@@ -1,10 +1,10 @@
 package app.aoki.quarkuscrud.resource;
 
 import app.aoki.quarkuscrud.entity.User;
-import app.aoki.quarkuscrud.filter.Authenticated;
 import app.aoki.quarkuscrud.generated.api.UsersApi;
 import app.aoki.quarkuscrud.generated.model.UserPublic;
 import app.aoki.quarkuscrud.service.UserService;
+import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
