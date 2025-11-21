@@ -6,8 +6,7 @@ import app.aoki.quarkuscrud.filter.AuthenticatedUser;
 import app.aoki.quarkuscrud.generated.api.ProfilesApi;
 import app.aoki.quarkuscrud.generated.model.UserProfile;
 import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
-import app.aoki.quarkuscrud.mapper.UserMapper;
-import app.aoki.quarkuscrud.mapper.UserProfileMapper;
+import app.aoki.quarkuscrud.service.ProfileService;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +20,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,8 +28,7 @@ import java.util.Map;
 @Path("/api")
 public class ProfilesApiImpl implements ProfilesApi {
 
-  @Inject UserProfileMapper userProfileMapper;
-  @Inject UserMapper userMapper;
+  @Inject ProfileService profileService;
   @Inject AuthenticatedUser authenticatedUser;
   @Inject ObjectMapper objectMapper;
 
@@ -42,7 +39,7 @@ public class ProfilesApiImpl implements ProfilesApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response getMyProfile() {
     User user = authenticatedUser.get();
-    return userProfileMapper
+    return profileService
         .findLatestByUserId(user.getId())
         .map(profile -> Response.ok(toProfileResponse(profile)).build())
         .orElse(
@@ -57,7 +54,7 @@ public class ProfilesApiImpl implements ProfilesApi {
   @Path("/users/{userId}/profile")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getUserProfile(@PathParam("userId") Long userId) {
-    return userProfileMapper
+    return profileService
         .findLatestByUserId(userId)
         .map(profile -> Response.ok(toProfileResponse(profile)).build())
         .orElse(
@@ -76,24 +73,9 @@ public class ProfilesApiImpl implements ProfilesApi {
     User user = authenticatedUser.get();
 
     try {
-      // Create new profile revision
+      String profileData = objectMapper.writeValueAsString(updateMyProfileRequest.getProfileData());
       app.aoki.quarkuscrud.entity.UserProfile newProfile =
-          new app.aoki.quarkuscrud.entity.UserProfile();
-      newProfile.setUserId(user.getId());
-      newProfile.setProfileData(
-          objectMapper.writeValueAsString(updateMyProfileRequest.getProfileData()));
-      newProfile.setRevisionMeta(null);
-      LocalDateTime now = LocalDateTime.now();
-      newProfile.setCreatedAt(now);
-      newProfile.setUpdatedAt(now);
-
-      userProfileMapper.insert(newProfile);
-
-      // Update user's current profile revision
-      user.setCurrentProfileRevision(newProfile.getId());
-      user.setUpdatedAt(now);
-      userMapper.update(user);
-
+          profileService.createProfileRevision(user.getId(), profileData, null);
       return Response.ok(toProfileResponse(newProfile)).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
