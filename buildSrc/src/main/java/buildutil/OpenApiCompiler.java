@@ -1,4 +1,4 @@
-package app.aoki.quarkuscrud.openapi;
+package buildutil;
 
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;

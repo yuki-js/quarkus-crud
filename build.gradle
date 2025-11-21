@@ -226,37 +226,25 @@ tasks.withType(Checkstyle) {
 // OpenAPI Generator configuration
 configurations {
     openApiGenerator
-    openApiCompiler
+    openApiCompilerRuntime
 }
 
 dependencies {
     openApiGenerator 'org.openapitools:openapi-generator-cli:7.10.0'
-    openApiCompiler 'io.swagger.parser.v3:swagger-parser-v3:2.1.22'
-    openApiCompiler 'io.swagger.core.v3:swagger-core:2.1.22'
-}
-
-def openApiCompilerClassesDir = file("$buildDir/openapi-compiler/classes")
-
-task compileOpenApiCompiler(type: JavaCompile) {
-    description = 'Compile OpenApiCompiler utility.'
-    source = file('src/main/java/app/aoki/quarkuscrud/openapi/OpenApiCompiler.java')
-    classpath = configurations.openApiCompiler
-    destinationDirectory = openApiCompilerClassesDir
-    options.release = 21
-    options.encoding = 'UTF-8'
+    openApiCompilerRuntime 'io.swagger.parser.v3:swagger-parser-v3:2.1.22'
+    openApiCompilerRuntime 'io.swagger.core.v3:swagger-core:2.1.22'
 }
 
 task compileOpenApi(type: JavaExec) {
     group = 'openapi'
-    description = 'Compile modular OpenAPI sources in openapi/ into META-INF/openapi.yaml'
+    description = 'Compile modular OpenAPI sources in openapi/ into build/openapi-compiled/openapi.yaml'
 
-    dependsOn compileOpenApiCompiler
+    classpath = files("$rootDir/buildSrc/build/libs/buildSrc.jar") + configurations.openApiCompilerRuntime
 
-    classpath = files(openApiCompilerClassesDir) + configurations.openApiCompiler
-    mainClass = 'app.aoki.quarkuscrud.openapi.OpenApiCompiler'
+    mainClass = 'buildutil.OpenApiCompiler'
 
     def inputSpec = file('openapi/openapi.yaml')
-    def outputSpec = file('src/main/resources/META-INF/openapi.yaml')
+    def outputSpec = file("$buildDir/openapi-compiled/openapi.yaml")
 
     inputs.file(inputSpec)
     outputs.file(outputSpec)
@@ -271,7 +259,7 @@ task generateOpenApiModels(type: JavaExec) {
     classpath = configurations.openApiGenerator
     mainClass = 'org.openapitools.codegen.OpenAPIGenerator'
     
-    def inputSpec = file('src/main/resources/META-INF/openapi.yaml')
+    def inputSpec = file("$buildDir/openapi-compiled/openapi.yaml")
     def outputDir = file('build/generated-src/openapi')
     
     inputs.file(inputSpec)
@@ -310,6 +298,17 @@ task generateOpenApiModels(type: JavaExec) {
 
 generateOpenApiModels.dependsOn compileOpenApi
 
+// Copy compiled OpenAPI spec to resources for SmallRye to pick up at runtime
+task copyOpenApiToResources(type: Copy) {
+    group = 'openapi'
+    description = 'Copy compiled OpenAPI specification to build resources for runtime access'
+    
+    from "$buildDir/openapi-compiled/openapi.yaml"
+    into "$buildDir/resources/main/META-INF"
+    
+    dependsOn compileOpenApi
+}
+
 // Add generated sources to source sets
 sourceSets {
     main {
@@ -322,6 +321,7 @@ sourceSets {
 // Clean generated sources on clean
 clean {
     delete 'build/generated-src'
+    delete "$buildDir/openapi-compiled"
 }
 
  // Make compileJava depend on generateOpenApiModels for automatic generation
@@ -335,5 +335,5 @@ compileJava.dependsOn generateOpenApiModels
 }
 
 tasks.named('processResources') {
-    dependsOn compileOpenApi
+    dependsOn copyOpenApiToResources
 }
