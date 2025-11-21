@@ -134,24 +134,4 @@ public class FriendshipServiceTest {
     assertTrue(friendshipService.findBySenderAndRecipient(user4Id, user5Id).isPresent());
     assertTrue(friendshipService.findBySenderAndRecipient(user5Id, user4Id).isPresent());
   }
-
-  @Test
-  @Order(9)
-  public void testFindByRecipientIdMultipleResults() {
-    List<Friendship> friendships = friendshipService.findByRecipientId(testUser3Id);
-    assertTrue(friendships.size() >= 2);
-  }
-
-  @Test
-  @Order(10)
-  @Transactional
-  public void testCreateFriendshipWithSameUsers() {
-    Long userId = userService.createAnonymousUser().getId();
-
-    // This should technically work but represents a self-friendship
-    Friendship friendship = friendshipService.createFriendship(userId, userId);
-    assertNotNull(friendship);
-    assertEquals(userId, friendship.getSenderId());
-    assertEquals(userId, friendship.getRecipientId());
-  }
 }

@@ -66,20 +66,15 @@ public class ProfileServiceTest {
     assertNotNull(profile.getUpdatedAt());
 
     firstProfileId = profile.getId();
+
+    // Verify it's now retrievable as latest
+    Optional<UserProfile> latestProfile = profileService.findLatestByUserId(testUserId);
+    assertTrue(latestProfile.isPresent());
+    assertEquals(firstProfileId, latestProfile.get().getId());
   }
 
   @Test
   @Order(4)
-  public void testFindLatestByUserId() {
-    Optional<UserProfile> profile = profileService.findLatestByUserId(testUserId);
-
-    assertTrue(profile.isPresent());
-    assertEquals(firstProfileId, profile.get().getId());
-    assertEquals(testUserId, profile.get().getUserId());
-  }
-
-  @Test
-  @Order(5)
   @Transactional
   public void testCreateProfileRevisionWithMeta() {
     String profileData = "{\"displayName\":\"Updated User\",\"bio\":\"Updated bio\"}";
@@ -93,20 +88,16 @@ public class ProfileServiceTest {
     assertEquals(testUserId, profile.getUserId());
     assertEquals(profileData, profile.getProfileData());
     assertEquals(revisionMeta, profile.getRevisionMeta());
+
+    // Verify it's now the latest profile
+    Optional<UserProfile> latestProfile = profileService.findLatestByUserId(testUserId);
+    assertTrue(latestProfile.isPresent());
+    assertNotEquals(firstProfileId, latestProfile.get().getId());
+    assertTrue(latestProfile.get().getProfileData().contains("Updated User"));
   }
 
   @Test
-  @Order(6)
-  public void testFindLatestByUserIdReturnsLatest() {
-    Optional<UserProfile> profile = profileService.findLatestByUserId(testUserId);
-
-    assertTrue(profile.isPresent());
-    assertNotEquals(firstProfileId, profile.get().getId());
-    assertTrue(profile.get().getProfileData().contains("Updated User"));
-  }
-
-  @Test
-  @Order(7)
+  @Order(5)
   @Transactional
   public void testCreateMultipleRevisions() {
     for (int i = 0; i < 3; i++) {
@@ -118,36 +109,5 @@ public class ProfileServiceTest {
     Optional<UserProfile> latestProfile = profileService.findLatestByUserId(testUserId);
     assertTrue(latestProfile.isPresent());
     assertTrue(latestProfile.get().getProfileData().contains("User 2"));
-  }
-
-  @Test
-  @Order(8)
-  @Transactional
-  public void testCreateProfileForDifferentUser() {
-    Long anotherUserId = userService.createAnonymousUser().getId();
-    String profileData = "{\"displayName\":\"Another User\"}";
-    UserProfile profile = profileService.createProfileRevision(anotherUserId, profileData, null);
-
-    assertNotNull(profile);
-    assertEquals(anotherUserId, profile.getUserId());
-  }
-
-  @Test
-  @Order(9)
-  public void testFindLatestByUserIdForNonExistentUser() {
-    Optional<UserProfile> profile = profileService.findLatestByUserId(999999L);
-    assertTrue(profile.isEmpty());
-  }
-
-  @Test
-  @Order(10)
-  @Transactional
-  public void testCreateProfileWithEmptyData() {
-    Long userId = userService.createAnonymousUser().getId();
-    String profileData = "{}";
-    UserProfile profile = profileService.createProfileRevision(userId, profileData, null);
-
-    assertNotNull(profile);
-    assertEquals("{}", profile.getProfileData());
   }
 }

@@ -153,41 +153,29 @@ public class EventServiceTest {
 
   @Test
   @Order(11)
-  public void testToLocalDateTimeWithOffsetDateTime() {
+  public void testToLocalDateTimeVariants() {
+    // Test with OffsetDateTime
     OffsetDateTime odt = OffsetDateTime.now(ZoneOffset.UTC);
-    LocalDateTime ldt = eventService.toLocalDateTime(odt);
+    LocalDateTime ldtFromOdt = eventService.toLocalDateTime(odt);
+    assertNotNull(ldtFromOdt);
+    assertEquals(odt.toLocalDateTime(), ldtFromOdt);
 
-    assertNotNull(ldt);
-    assertEquals(odt.toLocalDateTime(), ldt);
+    // Test with String
+    String dateTimeString = odt.toString();
+    LocalDateTime ldtFromString = eventService.toLocalDateTime(dateTimeString);
+    assertNotNull(ldtFromString);
+
+    // Test with null
+    LocalDateTime ldtFromNull = eventService.toLocalDateTime(null);
+    assertNull(ldtFromNull);
+
+    // Test with invalid string
+    LocalDateTime ldtFromInvalid = eventService.toLocalDateTime("invalid-date");
+    assertNull(ldtFromInvalid);
   }
 
   @Test
   @Order(12)
-  public void testToLocalDateTimeWithString() {
-    OffsetDateTime futureDate = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1);
-    String dateTimeString = futureDate.toString();
-    LocalDateTime ldt = eventService.toLocalDateTime(dateTimeString);
-
-    assertNotNull(ldt);
-  }
-
-  @Test
-  @Order(13)
-  public void testToLocalDateTimeWithNull() {
-    LocalDateTime ldt = eventService.toLocalDateTime(null);
-    assertNull(ldt);
-  }
-
-  @Test
-  @Order(14)
-  public void testToLocalDateTimeWithInvalidString() {
-    String invalidString = "invalid-date";
-    LocalDateTime ldt = eventService.toLocalDateTime(invalidString);
-    assertNull(ldt);
-  }
-
-  @Test
-  @Order(15)
   @Transactional
   public void testCreateEventWithNullMeta() {
     Long userId = userService.createAnonymousUser().getId();
@@ -198,7 +186,7 @@ public class EventServiceTest {
   }
 
   @Test
-  @Order(16)
+  @Order(13)
   @Transactional
   public void testAddAttendeeWithMeta() {
     Long userId = userService.createAnonymousUser().getId();
