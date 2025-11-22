@@ -23,6 +23,16 @@ public interface EventInvitationCodeMapper {
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(EventInvitationCode eventInvitationCode);
 
+  @Insert(
+      "INSERT INTO event_invitation_codes (event_id, invitation_code, created_at, updated_at) "
+          + "SELECT #{eventId}, #{invitationCode}, #{createdAt}, #{updatedAt} "
+          + "WHERE NOT EXISTS ("
+          + "    SELECT 1 FROM event_invitation_codes c "
+          + "    JOIN events e ON e.id = c.event_id "
+          + "    WHERE c.invitation_code = #{invitationCode} "
+          + "      AND LOWER(e.status) NOT IN ('expired', 'deleted'))")
+  int insertIfInvitationCodeAvailable(EventInvitationCode eventInvitationCode);
+
   @Select(
       "SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE id = #{id}")
   @Results(

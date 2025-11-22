@@ -7,9 +7,11 @@ import app.aoki.quarkuscrud.entity.EventStatus;
 import app.aoki.quarkuscrud.mapper.EventAttendeeMapper;
 import app.aoki.quarkuscrud.mapper.EventInvitationCodeMapper;
 import app.aoki.quarkuscrud.mapper.EventMapper;
+import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.sql.SQLException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -37,6 +39,7 @@ public class EventService {
   // active and deleted/expired events and introduce robust collision handling
   // logic
   private static final int INVITATION_CODE_LENGTH = 3;
+  private static final int EVENT_CREATION_MAX_ATTEMPTS = 256;
 
   @Inject EventMapper eventMapper;
   @Inject EventAttendeeMapper eventAttendeeMapper;
@@ -50,8 +53,25 @@ public class EventService {
    * @param expiresAt when the event expires
    * @return the created event
    */
-  @Transactional
   public Event createEvent(Long initiatorId, String meta, LocalDateTime expiresAt) {
+    for (int attempt = 1; attempt <= EVENT_CREATION_MAX_ATTEMPTS; attempt++) {
+      try {
+        return QuarkusTransaction.requiringNew()
+            .call(() -> createEventInTransaction(initiatorId, meta, expiresAt));
+      } catch (Exception e) {
+        if (shouldRetryTransaction(e) && attempt < EVENT_CREATION_MAX_ATTEMPTS) {
+          LOG.debugf("Retrying event creation due to transient issue (attempt %d)", attempt);
+          continue;
+        }
+        throw wrapAsRuntimeException(e);
+      }
+    }
+    throw new IllegalStateException("Unable to create event after serialization retries");
+  }
+
+  private Event createEventInTransaction(Long initiatorId, String meta, LocalDateTime expiresAt) {
+    eventMapper.ensureSerializableIsolationLevel();
+
     Event event = new Event();
     event.setInitiatorId(initiatorId);
     event.setStatus(EventStatus.CREATED);
@@ -63,14 +83,15 @@ public class EventService {
 
     eventMapper.insert(event);
 
-    // Generate and insert invitation code
-    String invitationCode = generateInvitationCode();
     EventInvitationCode code = new EventInvitationCode();
     code.setEventId(event.getId());
-    code.setInvitationCode(invitationCode);
+    code.setInvitationCode(generateInvitationCode());
     code.setCreatedAt(now);
     code.setUpdatedAt(now);
-    eventInvitationCodeMapper.insert(code);
+
+    if (eventInvitationCodeMapper.insertIfInvitationCodeAvailable(code) != 1) {
+      throw new InvitationCodeCollisionException();
+    }
 
     return event;
   }
@@ -203,10 +224,8 @@ public class EventService {
   /**
    * Generates a random invitation code.
    *
-   * <p>Note: This generates a random code but does not check for uniqueness. In a production
-   * environment, you should implement retry logic or database constraints to ensure uniqueness.
-   *
-   * @return a random invitation code
+   * <p>Uniqueness is enforced by {@link #persistUniqueInvitationCode(Long, LocalDateTime)} which
+   * retries database writes when collisions occur.
    */
   private String generateInvitationCode() {
     StringBuilder code = new StringBuilder(INVITATION_CODE_LENGTH);
@@ -215,5 +234,45 @@ public class EventService {
       code.append(INVITATION_CODE_CHARS.charAt(rnd.nextInt(INVITATION_CODE_CHARS.length())));
     }
     return code.toString();
+  }
+
+  private boolean shouldRetryTransaction(Exception exception) {
+    return isSerializationFailure(exception) || isInvitationCodeCollision(exception);
+  }
+
+  private boolean isSerializationFailure(Throwable throwable) {
+    Throwable current = throwable;
+    while (current != null) {
+      if (current instanceof SQLException sqlException) {
+        String sqlState = sqlException.getSQLState();
+        if ("40001".equals(sqlState)) {
+          return true;
+        }
+      }
+      current = current.getCause();
+    }
+    return false;
+  }
+
+  private boolean isInvitationCodeCollision(Throwable throwable) {
+    Throwable current = throwable;
+    while (current != null) {
+      if (current instanceof InvitationCodeCollisionException) {
+        return true;
+      }
+      current = current.getCause();
+    }
+    return false;
+  }
+
+  private RuntimeException wrapAsRuntimeException(Exception exception) {
+    if (exception instanceof RuntimeException runtimeException) {
+      return runtimeException;
+    }
+    return new RuntimeException("Failed to create event", exception);
+  }
+
+  private static final class InvitationCodeCollisionException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
   }
 }

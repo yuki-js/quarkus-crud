@@ -2,16 +2,19 @@ package app.aoki.quarkuscrud.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.aoki.quarkuscrud.entity.Event;
 import app.aoki.quarkuscrud.entity.EventAttendee;
+import app.aoki.quarkuscrud.entity.EventInvitationCode;
 import app.aoki.quarkuscrud.entity.EventStatus;
+import app.aoki.quarkuscrud.mapper.EventInvitationCodeMapper;
+import app.aoki.quarkuscrud.mapper.EventMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -35,6 +38,8 @@ public class EventServiceTest {
 
   @Inject EventService eventService;
   @Inject UserService userService;
+  @Inject EventMapper eventMapper;
+  @Inject EventInvitationCodeMapper eventInvitationCodeMapper;
 
   private static Long testUserId;
   private static Long testEventId;
@@ -42,7 +47,6 @@ public class EventServiceTest {
 
   @Test
   @Order(1)
-  @Transactional
   public void testCreateEvent() {
     // Create a test user first
     testUserId = userService.createAnonymousUser().getId();
@@ -117,7 +121,6 @@ public class EventServiceTest {
 
   @Test
   @Order(8)
-  @Transactional
   public void testAddAttendee() {
     // Create another user to be an attendee
     Long attendeeUserId = userService.createAnonymousUser().getId();
@@ -176,7 +179,6 @@ public class EventServiceTest {
 
   @Test
   @Order(12)
-  @Transactional
   public void testCreateEventWithNullMeta() {
     Long userId = userService.createAnonymousUser().getId();
     Event event = eventService.createEvent(userId, null, null);
@@ -187,7 +189,6 @@ public class EventServiceTest {
 
   @Test
   @Order(13)
-  @Transactional
   public void testAddAttendeeWithMeta() {
     Long userId = userService.createAnonymousUser().getId();
     Event event = eventService.createEvent(userId, null, null);
@@ -198,5 +199,100 @@ public class EventServiceTest {
 
     assertNotNull(attendee);
     assertEquals(meta, attendee.getMeta());
+  }
+
+  @Test
+  @Order(14)
+  public void testInvitationCodesAreUniqueForActiveEvents() {
+    Long firstUserId = userService.createAnonymousUser().getId();
+    Event firstEvent = eventService.createEvent(firstUserId, null, null);
+    String firstCode = eventService.getInvitationCode(firstEvent.getId()).orElseThrow();
+
+    Long secondUserId = userService.createAnonymousUser().getId();
+    Event secondEvent = eventService.createEvent(secondUserId, null, null);
+    String secondCode = eventService.getInvitationCode(secondEvent.getId()).orElseThrow();
+
+    assertNotEquals(
+        firstCode,
+        secondCode,
+        "Active events must never share the same invitation code");
+  }
+
+  @Test
+  @Order(15)
+  public void testInvitationCodeCanBeReusedAfterExpiration() {
+    Long firstUserId = userService.createAnonymousUser().getId();
+    Event firstEvent = eventService.createEvent(firstUserId, null, null);
+    EventInvitationCode firstCodeRecord =
+        eventInvitationCodeMapper.findByEventId(firstEvent.getId()).get(0);
+    String reusableCode = "かかか";
+    firstCodeRecord.setInvitationCode(reusableCode);
+    firstCodeRecord.setUpdatedAt(LocalDateTime.now());
+    eventInvitationCodeMapper.update(firstCodeRecord);
+
+    Long secondUserId = userService.createAnonymousUser().getId();
+    Event secondEvent = eventService.createEvent(secondUserId, null, null);
+    eventInvitationCodeMapper
+        .findByEventId(secondEvent.getId())
+        .forEach(code -> eventInvitationCodeMapper.deleteById(code.getId()));
+
+    EventInvitationCode duplicateRequest = new EventInvitationCode();
+    duplicateRequest.setEventId(secondEvent.getId());
+    duplicateRequest.setInvitationCode(reusableCode);
+    duplicateRequest.setCreatedAt(LocalDateTime.now());
+    duplicateRequest.setUpdatedAt(LocalDateTime.now());
+
+    int insertedWithActiveEvent =
+        eventInvitationCodeMapper.insertIfInvitationCodeAvailable(duplicateRequest);
+    assertEquals(0, insertedWithActiveEvent, "Active event should block duplicate codes");
+
+    firstEvent.setStatus(EventStatus.EXPIRED);
+    firstEvent.setUpdatedAt(LocalDateTime.now());
+    eventMapper.update(firstEvent);
+
+    duplicateRequest.setCreatedAt(LocalDateTime.now());
+    duplicateRequest.setUpdatedAt(LocalDateTime.now());
+    int insertedAfterExpiration =
+        eventInvitationCodeMapper.insertIfInvitationCodeAvailable(duplicateRequest);
+    assertEquals(1, insertedAfterExpiration, "Expired events must free up their codes");
+  }
+
+  @Test
+  @Order(16)
+  public void testInvitationCodeCanBeReusedAfterDeletion() {
+    Long firstUserId = userService.createAnonymousUser().getId();
+    Event firstEvent = eventService.createEvent(firstUserId, null, null);
+    EventInvitationCode firstCodeRecord =
+        eventInvitationCodeMapper.findByEventId(firstEvent.getId()).get(0);
+    String reusableCode = "さささ";
+    firstCodeRecord.setInvitationCode(reusableCode);
+    firstCodeRecord.setUpdatedAt(LocalDateTime.now());
+    eventInvitationCodeMapper.update(firstCodeRecord);
+
+    Long secondUserId = userService.createAnonymousUser().getId();
+    Event secondEvent = eventService.createEvent(secondUserId, null, null);
+    eventInvitationCodeMapper
+        .findByEventId(secondEvent.getId())
+        .forEach(code -> eventInvitationCodeMapper.deleteById(code.getId()));
+
+    EventInvitationCode duplicateRequest = new EventInvitationCode();
+    duplicateRequest.setEventId(secondEvent.getId());
+    duplicateRequest.setInvitationCode(reusableCode);
+    duplicateRequest.setCreatedAt(LocalDateTime.now());
+    duplicateRequest.setUpdatedAt(LocalDateTime.now());
+
+    int insertedWhileActive =
+        eventInvitationCodeMapper.insertIfInvitationCodeAvailable(duplicateRequest);
+    assertEquals(0, insertedWhileActive, "Active event should block duplicate codes");
+
+    firstEvent.setStatus(EventStatus.DELETED);
+    firstEvent.setUpdatedAt(LocalDateTime.now());
+    eventMapper.update(firstEvent);
+
+    duplicateRequest.setCreatedAt(LocalDateTime.now());
+    duplicateRequest.setUpdatedAt(LocalDateTime.now());
+    int insertedAfterDeletion =
+        eventInvitationCodeMapper.insertIfInvitationCodeAvailable(duplicateRequest);
+    assertEquals(1, insertedAfterDeletion, "Deleted events must free up their codes");
   }
 }

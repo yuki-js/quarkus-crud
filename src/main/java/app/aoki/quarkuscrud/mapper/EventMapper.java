@@ -19,6 +19,9 @@ import org.apache.ibatis.type.EnumTypeHandler;
 @Mapper
 public interface EventMapper {
 
+  @Update("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
+  void ensureSerializableIsolationLevel();
+
   @Insert(
       "INSERT INTO events (initiator_id, status, meta, expires_at, created_at, updated_at) "
           + "VALUES (#{initiatorId}, "
