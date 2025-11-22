@@ -151,6 +151,10 @@ public class EventService {
       return Optional.empty();
     }
 
+    if (e.getExpiresAt() != null && !e.getExpiresAt().isAfter(LocalDateTime.now())) {
+      return Optional.empty();
+    }
+
     return event;
   }
 

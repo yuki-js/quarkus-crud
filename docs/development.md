@@ -245,7 +245,7 @@ Requirements:
 │   │       ├── META-INF/
 │   │       │   └── openapi.yaml     # OpenAPI specification
 │   │       ├── application.properties
-│   │       └── keys/                # JWT signing keys
+│   │       └── dev-keys/            # Dev-only JWT signing keys
 │   └── test/
 │       ├── java/app/aoki/quarkuscrud/  # Test classes
 │       └── resources/               # Test resources

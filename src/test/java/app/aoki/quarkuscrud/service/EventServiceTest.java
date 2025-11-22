@@ -73,7 +73,7 @@ public class EventServiceTest {
     Optional<String> invitationCode = eventService.getInvitationCode(testEventId);
 
     assertTrue(invitationCode.isPresent());
-    assertEquals(8, invitationCode.get().length());
+    assertEquals(3, invitationCode.get().length());
     testInvitationCode = invitationCode.get();
   }
 

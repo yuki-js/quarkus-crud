@@ -19,35 +19,14 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
  * <p>This filter delegates authentication logic to AuthenticationService, maintaining separation of
  * concerns between filter and service layers.
  */
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Context;
+
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
 
-  // Paths that don't require authentication
-  private static final String[] PUBLIC_PATHS = {"/api/auth/guest", "/healthz", "/q/"};
-
-  private boolean isPublicEndpoint(ContainerRequestContext requestContext) {
-    String path = requestContext.getUriInfo().getPath();
-    String method = requestContext.getMethod();
-
-    // Check if path starts with any public path
-    for (String publicPath : PUBLIC_PATHS) {
-      if (path.startsWith(publicPath)) {
-        return true;
-      }
-    }
-
-    // Special handling for /api/rooms endpoints
-    // GET /api/rooms and GET /api/rooms/{id} are public
-    // Everything else requires authentication
-    if (path.startsWith("/api/rooms")) {
-      if ("GET".equals(method) && !path.contains("/my")) {
-        return true;
-      }
-    }
-
-    return false;
-  }
+  @Context ResourceInfo resourceInfo;
 
   @Inject AuthenticationService authenticationService;
 
@@ -57,17 +36,12 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
   @Override
   public void filter(ContainerRequestContext requestContext) {
-    // Skip authentication for public endpoints
-    if (isPublicEndpoint(requestContext)) {
+    if (!requiresAuthentication()) {
       return;
     }
 
     // Get Authorization header
     String authHeader = requestContext.getHeaderString("Authorization");
-
-    // Get path to customize error messages
-    String path = requestContext.getUriInfo().getPath();
-    boolean isAuthEndpoint = path.startsWith("/api/auth/") || path.equals("/api/me");
 
     if (!authenticationService.hasBearerToken(authHeader)) {
       requestContext.abortWith(
@@ -90,5 +64,19 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     authenticatedUser.set(user.get());
+  }
+
+  private boolean requiresAuthentication() {
+    if (resourceInfo == null) {
+      return true;
+    }
+
+    if (resourceInfo.getResourceMethod() != null
+        && resourceInfo.getResourceMethod().isAnnotationPresent(Authenticated.class)) {
+      return true;
+    }
+
+    return resourceInfo.getResourceClass() != null
+        && resourceInfo.getResourceClass().isAnnotationPresent(Authenticated.class);
   }
 }
