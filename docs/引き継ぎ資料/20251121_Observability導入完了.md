@@ -129,8 +129,7 @@ env:
 
 **効果**: 本番環境でのトレース送信先とサンプリング率を制御
 
-#### otel-collector.yaml - OpenTelemetry Collector のデプロイ
-
+#### otel-collector.yaml 
 新規ファイルを作成し、以下を含む：
 - ConfigMap: Collector の設定（receiver, processor, exporter）
 - Deployment: Collector コンテナのデプロイ
@@ -232,7 +231,7 @@ Issue で定義された受け入れ条件をすべて満たしています：
 
 ### 1. OpenTelemetry Collector のバックエンド設定
 
-`manifests/otel-collector.yaml` の ConfigMap を編集し、トレースのエクスポート先を設定してください：
+`(削除済み)` の ConfigMap を編集し、トレースのエクスポート先を設定してください：
 
 ```yaml
 exporters:
@@ -383,7 +382,7 @@ JSON ログには自動的に以下が含まれますが、機密情報（パス
 
 4. **OTel Collector のバックエンド設定**
    - トレースのエクスポート先（Jaeger, Tempo など）を設定してください
-   - `manifests/otel-collector.yaml` の ConfigMap を編集
+   - `(削除済み)` の ConfigMap を編集
 
 5. **プロファイリング方針の確定**
    - JVM: JFR または async-profiler を使用
@@ -417,3 +416,14 @@ JSON ログには自動的に以下が含まれますが、機密情報（パス
 - [Quarkus OpenTelemetry Guide](https://quarkus.io/guides/opentelemetry)
 - [Quarkus Micrometer Guide](https://quarkus.io/guides/micrometer)
 - [Quarkus Logging JSON Guide](https://quarkus.io/guides/logging#json-logging)
+
+
+## 更新履歴
+
+### 2025-11-22: OpenTelemetry 削除
+
+- OpenTelemetry 関連コンポーネントを削除（OTel Collector 未デプロイのため）
+- `quarkus-opentelemetry` 依存関係を削除
+- OTel 設定を `application.properties` から削除
+- `manifests/otel-collector.yaml` を削除
+- JSON ログとPrometheusメトリクスは引き続き利用可能

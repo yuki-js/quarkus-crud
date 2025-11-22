@@ -43,9 +43,6 @@ dependencies {
     // Observability: Metrics (Micrometer + Prometheus)
     implementation 'io.quarkus:quarkus-micrometer-registry-prometheus'
     
-    // Observability: Distributed tracing (OpenTelemetry)
-    implementation 'io.quarkus:quarkus-opentelemetry'
-    
     // Swagger annotations for generated API code
     implementation 'io.swagger:swagger-annotations:1.6.14'
     

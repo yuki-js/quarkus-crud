@@ -8,7 +8,7 @@
 
 1. **ログ（Logs）** - JSON 構造化ログ with トレース ID 相関
 2. **メトリクス（Metrics）** - Micrometer + Prometheus メトリクス収集
-3. **トレース（Traces）** - OpenTelemetry 分散トレーシング
+3. **トレース（Traces）** - (予定: 将来的に導入)
 
 ## アーキテクチャ
 
@@ -16,24 +16,21 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                     Quarkus Application                      │
 │                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   Logging    │  │   Metrics    │  │   Tracing    │     │
-│  │  (JSON Log)  │  │ (Micrometer) │  │ (OpenTelemetry)    │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │
-│         │                 │                  │              │
-└─────────┼─────────────────┼──────────────────┼──────────────┘
-          │                 │                  │
-          ▼                 ▼                  ▼
-     stdout/stderr    /q/metrics      OpenTelemetry
-                           │           Collector (OTLP)
-                           │                  │
-                           ▼                  ▼
-                      Prometheus         Jaeger/Tempo
-                           │                  │
-                           └──────────┬───────┘
-                                      │
-                                      ▼
-                                  Grafana
+│  ┌──────────────┐  ┌──────────────┐     │
+│  │   Logging    │  │   Metrics    │     │
+│  │  (JSON Log)  │  │ (Micrometer) │     │
+│  └──────┬───────┘  └──────┬───────┘     │
+│         │                 │              │
+└─────────┼─────────────────┼──────────────┘
+          │                 │
+          ▼                 ▼
+     stdout/stderr    /q/metrics
+                           │
+                           ▼
+                      Prometheus
+                           │
+                           ▼
+                       Grafana
 ```
 
 ## 1. ログ（Logs）
@@ -57,7 +54,7 @@ quarkus.log.category."app.aoki.quarkuscrud".level=INFO
 
 ### JSON ログの構造
 
-OpenTelemetry と統合することで、自動的に以下のフィールドがログに含まれます：
+以下のフィールドがログに含まれます：
 
 ```json
 {
@@ -70,21 +67,18 @@ OpenTelemetry と統合することで、自動的に以下のフィールドが
   "threadName": "executor-thread-1",
   "threadId": 42,
   "mdc": {},
-  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
-  "span_id": "00f067aa0ba902b7",
-  "trace_flags": "01",
   "service.name": "quarkus-crud",
   "service.version": "0.0.1"
 }
 ```
 
-### ログとトレースの相関
+### ログの確認
 
-OpenTelemetry を有効にすると、`trace_id` と `span_id` が自動的にログに追加されます。これにより、Grafana などで以下が可能になります：
+JSON 構造化ログにより、以下が可能になります：
 
-- トレースからログへのジャンプ
-- ログからトレースへのジャンプ
-- 特定のリクエストに関連するすべてのログの検索
+- フィールドベースの効率的な検索
+- ログレベルやサービス名によるフィルタリング
+- タイムスタンプベースの時系列分析
 
 ### 開発環境での確認
 
@@ -179,98 +173,9 @@ public class UserService {
 }
 ```
 
-## 3. トレース（Traces）
+## 3. トレース（Traces） - 未実装
 
-### 設定
-
-`application.properties`:
-```properties
-# OpenTelemetry を有効化
-quarkus.otel.sdk.disabled=false
-quarkus.otel.traces.enabled=true
-
-# OTLP exporter の設定
-quarkus.otel.exporter.otlp.traces.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
-quarkus.otel.exporter.otlp.traces.protocol=grpc
-
-# サンプリング設定
-quarkus.otel.traces.sampler=parentbased_traceidratio
-quarkus.otel.traces.sampler.arg=${OTEL_TRACES_SAMPLER_ARG:0.1}
-
-# リソース属性
-quarkus.otel.resource.attributes=service.name=quarkus-crud,service.version=0.0.1,deployment.environment=${DEPLOYMENT_ENVIRONMENT:development}
-
-# プロパゲーション
-quarkus.otel.propagators=tracecontext,baggage
-```
-
-### OpenTelemetry Collector
-
-トレースデータは OpenTelemetry Collector（`manifests/otel-collector.yaml`）を経由して収集されます。
-
-#### Collector の役割
-- トレースデータの受信（OTLP プロトコル）
-- バッチ処理によるネットワーク効率の向上
-- バックエンドへのエクスポート（Jaeger、Tempo など）
-
-#### Collector の設定
-
-本番環境では、`manifests/otel-collector.yaml` の ConfigMap を編集して、バックエンドへのエクスポート設定を追加します：
-
-```yaml
-exporters:
-  otlp:
-    endpoint: "jaeger-collector:4317"
-    tls:
-      insecure: true
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      exporters: [logging, otlp]  # otlp を追加
-```
-
-### サンプリング
-
-本番環境では、トレースのサンプリング率を調整してオーバーヘッドを抑えます：
-
-- **開発環境**: `OTEL_TRACES_SAMPLER_ARG=1.0` （100% サンプリング）
-- **本番環境**: `OTEL_TRACES_SAMPLER_ARG=0.1` （10% サンプリング）
-
-環境変数で動的に変更可能です。
-
-### 手動スパンの作成
-
-必要に応じて、カスタムスパンを作成できます：
-
-```java
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
-import jakarta.inject.Inject;
-
-public class UserService {
-    
-    @Inject
-    Tracer tracer;
-    
-    public void processUser(User user) {
-        Span span = tracer.spanBuilder("user.processing")
-            .startSpan();
-        
-        try {
-            span.setAttribute("user.id", user.getId());
-            span.setAttribute("user.type", user.getType());
-            
-            // 処理
-            
-        } finally {
-            span.end();
-        }
-    }
-}
-```
+現在、分散トレーシングは実装されていません。将来的な導入を検討中です。
 
 ## 4. Grafana ダッシュボード
 
@@ -341,7 +246,7 @@ groups:
 |------|-----------|----------------|
 | JSON ログ | ✅ 完全サポート | ✅ 完全サポート |
 | Micrometer メトリクス | ✅ 完全サポート | ✅ 完全サポート |
-| OpenTelemetry | ✅ 完全サポート | ✅ 完全サポート |
+| ~~OpenTelemetry~~ | ❌ 未実装 | ❌ 未実装 |
 | JFR プロファイリング | ✅ 利用可能 | ❌ 利用不可 |
 | async-profiler | ✅ 利用可能 | ⚠️ 制限あり |
 
@@ -413,10 +318,8 @@ kubectl describe pod -n quarkus-crud <pod-name> | grep OTEL_EXPORTER
 
 ## 7. 参考資料
 
-- [Quarkus OpenTelemetry Guide](https://quarkus.io/guides/opentelemetry)
 - [Quarkus Micrometer Guide](https://quarkus.io/guides/micrometer)
 - [Quarkus Logging JSON Guide](https://quarkus.io/guides/logging#json-logging)
-- [OpenTelemetry Specification](https://opentelemetry.io/docs/specs/otel/)
 - [Prometheus Best Practices](https://prometheus.io/docs/practices/naming/)
 
 ## 8. 今後の拡張

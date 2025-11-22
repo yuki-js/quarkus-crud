@@ -55,10 +55,6 @@ spec:
             # Observability environment variables
             - name: DEPLOYMENT_ENVIRONMENT
               value: production
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://otel-collector:4317
-            - name: OTEL_TRACES_SAMPLER_ARG
-              value: "0.1"
           volumeMounts:
             - name: config
               mountPath: /deployments/config

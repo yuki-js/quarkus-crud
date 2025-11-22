@@ -5,7 +5,6 @@ namespace: quarkus-crud
 
 resources:
   - backend.yaml
-  - otel-collector.yaml
   - common-secret.yaml
   - jwt-keys.yaml
   - ingress.yaml

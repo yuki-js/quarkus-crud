@@ -164,7 +164,7 @@ public class EventsApiImpl implements EventsApi {
   @Authenticated
   @GET
   @Path("/events/{eventId}/live")
-  @Produces(MediaType.TEXT_EVENT_STREAM)
+  @Produces("text/event-stream")
   public Response streamEventLive(@PathParam("eventId") Long eventId) {
     if (!eventUseCase.eventExists(eventId)) {
       return Response.status(Response.Status.NOT_FOUND)

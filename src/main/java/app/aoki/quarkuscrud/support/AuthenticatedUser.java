@@ -23,9 +23,8 @@ public class AuthenticatedUser {
    * Gets the authenticated user from the request context.
    *
    * @return the authenticated user
-   * @throws IllegalStateException if no authenticated user is found (should not
-   *                               happen
-   *                               if @Authenticated is used correctly)
+   * @throws IllegalStateException if no authenticated user is found (should not happen
+   *     if @Authenticated is used correctly)
    */
   public User get() {
     User user = USER_THREAD_LOCAL.get();

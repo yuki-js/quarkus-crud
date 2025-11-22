@@ -9,6 +9,5 @@ import java.lang.annotation.Target;
 /** Annotation to mark endpoints that require authentication. */
 @NameBinding
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
-public @interface Authenticated {
-}
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface Authenticated {}

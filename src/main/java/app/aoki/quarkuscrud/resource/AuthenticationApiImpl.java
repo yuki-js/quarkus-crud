@@ -6,7 +6,6 @@ import app.aoki.quarkuscrud.service.JwtService;
 import app.aoki.quarkuscrud.service.UserService;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
