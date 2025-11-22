@@ -6,9 +6,10 @@ import app.aoki.quarkuscrud.service.JwtService;
 import app.aoki.quarkuscrud.service.UserService;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
@@ -28,20 +29,36 @@ public class AuthenticationApiImpl implements AuthenticationApi {
   @Inject JwtService jwtService;
   @Inject AuthenticatedUser authenticatedUser;
   @Inject ObjectMapper objectMapper;
+  @Inject MeterRegistry meterRegistry;
 
   @Override
   public Response createGuestUser() {
-    // Create a new user with anonymous authentication
-    app.aoki.quarkuscrud.entity.User user = userService.createAnonymousUser();
-    String token = jwtService.generateAnonymousToken(user);
+    LOG.info("Request received: create guest user");
+    Timer.Sample sample = Timer.start(meterRegistry);
 
-    return Response.ok(toUserResponse(user)).header("Authorization", "Bearer " + token).build();
+    try {
+      // Create a new user with anonymous authentication
+      app.aoki.quarkuscrud.entity.User user = userService.createAnonymousUser();
+      String token = jwtService.generateAnonymousToken(user);
+
+      meterRegistry.counter("api.guests.created").increment();
+
+      LOG.infof("Successfully created guest user with ID: %d", user.getId());
+      return Response.ok(toUserResponse(user)).header("Authorization", "Bearer " + token).build();
+    } catch (Exception e) {
+      LOG.errorf(e, "Failed to create guest user");
+      meterRegistry.counter("api.guests.errors").increment();
+      throw e;
+    } finally {
+      sample.stop(meterRegistry.timer("api.guests.creation.time"));
+    }
   }
 
   @Override
   @Authenticated
   public Response getCurrentUser() {
     app.aoki.quarkuscrud.entity.User user = authenticatedUser.get();
+    LOG.debugf("Request received: get current user (ID: %d)", user.getId());
     return Response.ok(toUserResponse(user)).build();
   }
 

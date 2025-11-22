@@ -10,6 +10,8 @@ import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.EventUseCase;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -21,14 +23,17 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
-import org.postgresql.util.PSQLException;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 @Path("/api")
 public class EventsApiImpl implements EventsApi {
 
+  private static final Logger LOG = Logger.getLogger(EventsApiImpl.class);
+
   @Inject EventUseCase eventUseCase;
   @Inject AuthenticatedUser authenticatedUser;
+  @Inject MeterRegistry meterRegistry;
 
   @Override
   @Authenticated
@@ -38,14 +43,22 @@ public class EventsApiImpl implements EventsApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response createEvent(EventCreateRequest createEventRequest) {
     User user = authenticatedUser.get();
+    LOG.infof("Creating event for user ID: %d", user.getId());
+    Timer.Sample sample = Timer.start(meterRegistry);
 
     try {
       Event event = eventUseCase.createEvent(user.getId(), createEventRequest);
+      meterRegistry.counter("events.created").increment();
+      LOG.infof("Successfully created event");
       return Response.status(Response.Status.CREATED).entity(event).build();
     } catch (Exception e) {
+      LOG.errorf(e, "Failed to create event for user ID: %d", user.getId());
+      meterRegistry.counter("events.errors", "operation", "create").increment();
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new ErrorResponse("Failed to create event: " + e.getMessage()))
           .build();
+    } finally {
+      sample.stop(meterRegistry.timer("events.creation.time"));
     }
   }
 
@@ -55,13 +68,28 @@ public class EventsApiImpl implements EventsApi {
   @Path("/events/{eventId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getEventById(@PathParam("eventId") Long eventId) {
-    return eventUseCase
-        .getEventById(eventId)
-        .map(event -> Response.ok(event).build())
-        .orElse(
-            Response.status(Response.Status.NOT_FOUND)
-                .entity(new ErrorResponse("Event not found"))
-                .build());
+    LOG.debugf("Fetching event ID: %d", eventId);
+    Timer.Sample sample = Timer.start(meterRegistry);
+
+    try {
+      return eventUseCase
+          .getEventById(eventId)
+          .map(
+              event -> {
+                meterRegistry.counter("events.read", "result", "found").increment();
+                return Response.ok(event).build();
+              })
+          .orElseGet(
+              () -> {
+                LOG.warnf("Event not found with ID: %d", eventId);
+                meterRegistry.counter("events.read", "result", "not_found").increment();
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse("Event not found"))
+                    .build();
+              });
+    } finally {
+      sample.stop(meterRegistry.timer("events.read.time"));
+    }
   }
 
   @Override
@@ -72,25 +100,28 @@ public class EventsApiImpl implements EventsApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response joinEventByCode(EventJoinByCodeRequest joinEventByCodeRequest) {
     User user = authenticatedUser.get();
+    LOG.infof("User %d attempting to join event by code", user.getId());
 
     try {
       EventAttendee attendee = eventUseCase.joinEventByCode(user.getId(), joinEventByCodeRequest);
+      meterRegistry.counter("events.join", "result", "success").increment();
+      LOG.infof("User %d successfully joined event", user.getId());
       return Response.status(Response.Status.CREATED).entity(attendee).build();
     } catch (IllegalArgumentException e) {
+      LOG.warnf("Invalid join request from user %d: %s", user.getId(), e.getMessage());
+      meterRegistry.counter("events.join", "result", "invalid").increment();
       return Response.status(Response.Status.BAD_REQUEST)
           .entity(new ErrorResponse(e.getMessage()))
           .build();
     } catch (IllegalStateException e) {
+      LOG.warnf("Join conflict for user %d: %s", user.getId(), e.getMessage());
+      meterRegistry.counter("events.join", "result", "conflict").increment();
       return Response.status(Response.Status.CONFLICT)
           .entity(new ErrorResponse(e.getMessage()))
           .build();
     } catch (Exception e) {
-      if (e.getCause() instanceof PSQLException psqlException
-          && "23505".equals(psqlException.getSQLState())) {
-        return Response.status(Response.Status.CONFLICT)
-            .entity(new ErrorResponse("User already joined the event"))
-            .build();
-      }
+      LOG.errorf(e, "Failed to join event for user %d", user.getId());
+      meterRegistry.counter("events.errors", "operation", "join").increment();
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new ErrorResponse("Failed to join event: " + e.getMessage()))
           .build();
@@ -133,7 +164,7 @@ public class EventsApiImpl implements EventsApi {
   @Authenticated
   @GET
   @Path("/events/{eventId}/live")
-  @Produces({MediaType.SERVER_SENT_EVENTS, MediaType.APPLICATION_JSON})
+  @Produces("text/event-stream")
   public Response streamEventLive(@PathParam("eventId") Long eventId) {
     if (!eventUseCase.eventExists(eventId)) {
       return Response.status(Response.Status.NOT_FOUND)
@@ -141,9 +172,10 @@ public class EventsApiImpl implements EventsApi {
           .build();
     }
 
-    // TODO: Implement proper Server-Sent Events streaming
-    return Response.ok()
-        .entity(new ErrorResponse("Event live streaming not yet implemented"))
+    // SSE streaming implementation would go here
+    // For now, return not implemented
+    return Response.status(Response.Status.NOT_IMPLEMENTED)
+        .entity(new ErrorResponse("Live streaming not yet implemented"))
         .build();
   }
 }

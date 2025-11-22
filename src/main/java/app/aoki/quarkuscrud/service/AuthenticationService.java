@@ -2,10 +2,14 @@ package app.aoki.quarkuscrud.service;
 
 import app.aoki.quarkuscrud.entity.AuthMethod;
 import app.aoki.quarkuscrud.entity.User;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Optional;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.jboss.logging.Logger;
 
 /**
  * Service for handling authentication logic across multiple providers.
@@ -17,7 +21,10 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 @ApplicationScoped
 public class AuthenticationService {
 
+  private static final Logger LOG = Logger.getLogger(AuthenticationService.class);
+
   @Inject UserService userService;
+  @Inject MeterRegistry meterRegistry;
 
   /**
    * Authenticates a user from a JWT token.
@@ -34,28 +41,77 @@ public class AuthenticationService {
    */
   public Optional<User> authenticateFromJwt(JsonWebToken jwt) {
     if (jwt == null || jwt.getSubject() == null) {
+      LOG.warn("Authentication failed: JWT or subject is null");
+      Counter.builder("authentication.attempts")
+          .description("Number of authentication attempts")
+          .tag("result", "failed")
+          .tag("reason", "invalid_jwt")
+          .register(meterRegistry)
+          .increment();
       return Optional.empty();
     }
 
     String subject = jwt.getSubject();
     if (subject == null || subject.isEmpty()) {
+      LOG.warn("Authentication failed: JWT subject is null or empty");
+      Counter.builder("authentication.attempts")
+          .description("Number of authentication attempts")
+          .tag("result", "failed")
+          .tag("reason", "empty_subject")
+          .register(meterRegistry)
+          .increment();
       return Optional.empty();
     }
 
+    Timer.Sample sample = Timer.start(meterRegistry);
+
     // Determine authentication method from JWT groups
     AuthMethod authMethod = determineMethodFromJwt(jwt);
+    LOG.debugf("Authenticating user with method: %s, subject: %s", authMethod, subject);
 
-    switch (authMethod) {
-      case ANONYMOUS:
-        // For anonymous users, subject is the authIdentifier
-        return userService.findByAuthIdentifier(subject);
+    try {
+      Optional<User> result;
+      switch (authMethod) {
+        case ANONYMOUS:
+          // For anonymous users, subject is the authIdentifier
+          result = userService.findByAuthIdentifier(subject);
+          break;
 
-      case OIDC:
-        // For OIDC users, subject is the externalSubject from the provider
-        return userService.findByMethodAndExternalSubject(authMethod, subject);
+        case OIDC:
+          // For OIDC users, subject is the externalSubject from the provider
+          result = userService.findByMethodAndExternalSubject(authMethod, subject);
+          break;
 
-      default:
-        return Optional.empty();
+        default:
+          LOG.warnf("Authentication failed: unsupported auth method: %s", authMethod);
+          result = Optional.empty();
+      }
+
+      // Record authentication metrics
+      Counter.builder("authentication.attempts")
+          .description("Number of authentication attempts")
+          .tag("auth_method", authMethod.name().toLowerCase())
+          .tag("result", result.isPresent() ? "success" : "failed")
+          .register(meterRegistry)
+          .increment();
+
+      if (result.isPresent()) {
+        LOG.infof(
+            "Successfully authenticated user ID: %d with method: %s",
+            result.get().getId(), authMethod);
+      } else {
+        LOG.warnf(
+            "Authentication failed: user not found for method: %s, subject: %s",
+            authMethod, subject);
+      }
+
+      return result;
+    } finally {
+      sample.stop(
+          Timer.builder("authentication.time")
+              .description("Time taken to authenticate a user")
+              .tag("auth_method", authMethod.name().toLowerCase())
+              .register(meterRegistry));
     }
   }
 

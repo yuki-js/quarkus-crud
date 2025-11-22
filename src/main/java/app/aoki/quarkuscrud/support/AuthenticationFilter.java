@@ -13,13 +13,10 @@ import java.util.Optional;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
- * JAX-RS filter for authenticating requests using JWT Bearer tokens.
- * Automatically applied to
+ * JAX-RS filter for authenticating requests using JWT Bearer tokens. Automatically applied to
  * endpoints annotated with @Authenticated.
  *
- * <p>
- * This filter delegates authentication logic to AuthenticationService,
- * maintaining separation of
+ * <p>This filter delegates authentication logic to AuthenticationService, maintaining separation of
  * concerns between filter and service layers.
  */
 @Provider
@@ -27,7 +24,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 public class AuthenticationFilter implements ContainerRequestFilter {
 
   // Paths that don't require authentication
-  private static final String[] PUBLIC_PATHS = { "/api/auth/guest", "/healthz", "/q/" };
+  private static final String[] PUBLIC_PATHS = {"/api/auth/guest", "/healthz", "/q/"};
 
   private boolean isPublicEndpoint(ContainerRequestContext requestContext) {
     String path = requestContext.getUriInfo().getPath();
@@ -52,11 +49,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     return false;
   }
 
-  @Inject
-  AuthenticationService authenticationService;
+  @Inject AuthenticationService authenticationService;
 
-  @Inject
-  JsonWebToken jwt;
+  @Inject JsonWebToken jwt;
 
   @Override
   public void filter(ContainerRequestContext requestContext) {

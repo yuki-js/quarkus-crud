@@ -37,6 +37,12 @@ dependencies {
     implementation 'io.quarkus:quarkus-smallrye-jwt'
     implementation 'io.quarkus:quarkus-smallrye-jwt-build'
     
+    // Observability: JSON structured logging
+    implementation 'io.quarkus:quarkus-logging-json'
+    
+    // Observability: Metrics (Micrometer + Prometheus)
+    implementation 'io.quarkus:quarkus-micrometer-registry-prometheus'
+    
     // Swagger annotations for generated API code
     implementation 'io.swagger:swagger-annotations:1.6.14'
     
