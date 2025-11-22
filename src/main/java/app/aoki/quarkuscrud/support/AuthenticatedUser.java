@@ -7,16 +7,11 @@ import jakarta.enterprise.context.RequestScoped;
 @RequestScoped
 public class AuthenticatedUser {
 
-  private static final ThreadLocal<User> USER_THREAD_LOCAL = new ThreadLocal<>();
+  private User user;
 
   // Package-private setter for AuthenticationFilter to set the user
-  static void setUser(User user) {
-    USER_THREAD_LOCAL.set(user);
-  }
-
-  // Package-private method to clear the user (for cleanup)
-  static void clear() {
-    USER_THREAD_LOCAL.remove();
+  void set(User user) {
+    this.user = user;
   }
 
   /**
@@ -27,7 +22,6 @@ public class AuthenticatedUser {
    *     if @Authenticated is used correctly)
    */
   public User get() {
-    User user = USER_THREAD_LOCAL.get();
     if (user == null) {
       throw new IllegalStateException("No authenticated user found in request context");
     }

@@ -53,6 +53,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
   @Inject JsonWebToken jwt;
 
+  @Inject AuthenticatedUser authenticatedUser;
+
   @Override
   public void filter(ContainerRequestContext requestContext) {
     // Skip authentication for public endpoints
@@ -87,7 +89,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
 
-    // Store the authenticated user in the ThreadLocal
-    AuthenticatedUser.setUser(user.get());
+    authenticatedUser.set(user.get());
   }
 }
