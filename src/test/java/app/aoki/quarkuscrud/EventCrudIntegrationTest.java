@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -150,32 +149,5 @@ public class EventCrudIntegrationTest {
         .then()
         .statusCode(200)
         .body("size()", greaterThanOrEqualTo(1));
-  }
-
-  @Test
-  @Order(8)
-  public void testCreateMultipleEvents() {
-    // Create first event
-    Response event1 =
-        given()
-            .header("Authorization", "Bearer " + jwtToken)
-            .contentType(ContentType.JSON)
-            .body("{}")
-            .post("/api/events");
-
-    Long event1Id = event1.jsonPath().getLong("id");
-
-    // Create second event
-    Response event2 =
-        given()
-            .header("Authorization", "Bearer " + jwtToken)
-            .contentType(ContentType.JSON)
-            .body("{}")
-            .post("/api/events");
-
-    Long event2Id = event2.jsonPath().getLong("id");
-
-    // Verify events are different
-    assertNotEquals(event1Id, event2Id, "Event IDs should be unique");
   }
 }

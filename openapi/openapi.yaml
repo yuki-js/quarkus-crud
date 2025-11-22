@@ -24,8 +24,6 @@ tags:
     description: Profile card exchanges between users
   - name: Events
     description: Event management, attendees, and live updates
-  - name: Health
-    description: Health check endpoints
 paths:
   /api/auth/guest:
     $ref: './paths/auth.yaml#/paths/~1api~1auth~1guest'
@@ -53,8 +51,6 @@ paths:
     $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}~1attendees'
   /api/events/{eventId}/live:
     $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}~1live'
-  /healthz:
-    $ref: './paths/health.yaml#/paths/~1healthz'
 components:
   securitySchemes:
     bearerAuth:
@@ -86,7 +82,5 @@ components:
       $ref: './components/schemas/common.yaml#/ErrorResponse'
     LocalDateTime:
       $ref: './components/schemas/common.yaml#/LocalDateTime'
-    HealthStatus:
-      $ref: './components/schemas/common.yaml#/HealthStatus'
 security:
   - bearerAuth: []

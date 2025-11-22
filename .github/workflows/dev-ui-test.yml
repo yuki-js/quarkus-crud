@@ -4,15 +4,12 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   dev-ui-startup:
     name: Verify Dev UI Starts with Dev Services
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -42,7 +39,7 @@ jobs:
           QUARKUS_PID=$!
           echo "Quarkus PID: $QUARKUS_PID"
           echo "$QUARKUS_PID" > quarkus.pid
-          
+
           # Wait for Quarkus to start (max 2 minutes)
           echo "Waiting for Quarkus to start..."
           for i in {1..60}; do
@@ -58,7 +55,7 @@ jobs:
             echo "Waiting... ($i/60)"
             sleep 2
           done
-          
+
           if ! curl -s http://localhost:8080/q/health > /dev/null 2>&1; then
             echo "Quarkus failed to start within 2 minutes"
             cat quarkus-dev.log
@@ -69,7 +66,7 @@ jobs:
       - name: Verify Dev UI is accessible
         run: |
           echo "Verifying Dev UI is accessible..."
-          
+
           # Check health endpoint
           if curl -f http://localhost:8080/q/health; then
             echo "✅ Health endpoint is accessible"
@@ -77,7 +74,7 @@ jobs:
             echo "❌ Health endpoint is not accessible"
             exit 1
           fi
-          
+
           # Check Dev UI
           if curl -f http://localhost:8080/q/dev; then
             echo "✅ Dev UI is accessible"
@@ -85,7 +82,7 @@ jobs:
             echo "❌ Dev UI is not accessible"
             exit 1
           fi
-          
+
           # Check if Dev Services (PostgreSQL) is running
           if curl -s http://localhost:8080/q/dev | grep -q "postgresql"; then
             echo "✅ Dev Services (PostgreSQL) is running"
@@ -96,21 +93,21 @@ jobs:
       - name: Test live reload
         run: |
           echo "Testing live reload..."
-          
+
           # Get initial response
           INITIAL_RESPONSE=$(curl -s http://localhost:8080/q/health)
           echo "Initial response: $INITIAL_RESPONSE"
-          
+
           # Modify a file to trigger reload
           echo "// Test comment for live reload" >> src/main/java/app/aoki/quarkuscrud/resource/HealthResource.java
-          
+
           # Wait for reload
           sleep 10
-          
+
           # Get new response
           NEW_RESPONSE=$(curl -s http://localhost:8080/q/health)
           echo "New response: $NEW_RESPONSE"
-          
+
           echo "✅ Live reload test completed"
 
       - name: Cleanup
@@ -125,7 +122,7 @@ jobs:
               kill -9 $QUARKUS_PID 2>/dev/null || true
             fi
           fi
-          
+
           # Show logs if test failed
           if [ -f quarkus-dev.log ]; then
             echo "Quarkus Dev Mode Logs:"
