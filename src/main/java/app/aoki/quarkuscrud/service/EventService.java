@@ -27,9 +27,16 @@ import org.jboss.logging.Logger;
 public class EventService {
 
   private static final Logger LOG = Logger.getLogger(EventService.class);
-  private static final String INVITATION_CODE_CHARS =
-      "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding confusing characters
-  private static final int INVITATION_CODE_LENGTH = 8;
+  
+  // Invitation code character set, so that Japanese users can easily use it. We
+  // never change this
+  private static final String INVITATION_CODE_CHARS = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめも";
+
+  // Invitation code length so that it is short enough to be memorable. We never
+  // change this. Collision probability is high, so we permit collision between
+  // active and deleted/expired events and introduce robust collision handling
+  // logic
+  private static final int INVITATION_CODE_LENGTH = 3;
 
   @Inject EventMapper eventMapper;
   @Inject EventAttendeeMapper eventAttendeeMapper;
