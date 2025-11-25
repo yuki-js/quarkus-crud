@@ -11,8 +11,8 @@ import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import java.sql.SQLException;
 import java.security.SecureRandom;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -29,7 +29,7 @@ import org.jboss.logging.Logger;
 public class EventService {
 
   private static final Logger LOG = Logger.getLogger(EventService.class);
-  
+
   // Invitation code character set, so that Japanese users can easily use it. We
   // never change this
   private static final String INVITATION_CODE_CHARS = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめも";

@@ -213,9 +213,7 @@ public class EventServiceTest {
     String secondCode = eventService.getInvitationCode(secondEvent.getId()).orElseThrow();
 
     assertNotEquals(
-        firstCode,
-        secondCode,
-        "Active events must never share the same invitation code");
+        firstCode, secondCode, "Active events must never share the same invitation code");
   }
 
   @Test
