@@ -4,28 +4,60 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Paths filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'src/**'
+              - 'build.gradle*'
+              - 'settings.gradle*'
+              - 'gradle/**'
+              - 'application.properties'
+              - 'config/**'
   dev-ui-startup:
     name: Verify Dev UI Starts with Dev Services
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - name: Shared setup (Java/Gradle)
+        uses: ./.github/actions/shared-setup
         with:
-          java-version: 21
-          distribution: temurin
-          cache: gradle
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+          setup-gradle: 'true'
+          java-version: '21'
+          distribution: 'temurin'
 
       - name: Pre-build to avoid delays during dev mode
         run: |
@@ -101,8 +133,11 @@ jobs:
           # Modify a file to trigger reload
           echo "// Test comment for live reload" >> src/main/java/app/aoki/quarkuscrud/resource/HealthResource.java
 
-          # Wait for reload
-          sleep 10
+          # Wait for reload (retry loop)
+          for i in {1..20}; do
+            curl -fsS http://localhost:8080/q/health >/dev/null 2>&1 && break || true
+            sleep 1
+          done
 
           # Get new response
           NEW_RESPONSE=$(curl -s http://localhost:8080/q/health)
@@ -141,3 +176,6 @@ jobs:
           echo "- ✅ Health endpoint is working" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Live reload is functional" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Dev Services (PostgreSQL) is running" >> $GITHUB_STEP_SUMMARY
+
+
+

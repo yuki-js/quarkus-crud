@@ -1,0 +1,100 @@
+name: Shared Setup
+description: Reusable setup for Java/Gradle/Node and optional OpenAPI tooling
+inputs:
+  java-version:
+    description: Java version to install
+    default: '21'
+  distribution:
+    description: JDK distribution (temurin, zulu, etc.)
+    default: 'temurin'
+  gradle-cache:
+    description: Enable Gradle cache in setup-java
+    default: 'true'
+  setup-gradle:
+    description: Setup Gradle toolchain
+    default: 'true'
+  setup-node:
+    description: Setup Node.js runtime
+    default: 'false'
+  node-version:
+    description: Node.js version to install
+    default: '22'
+  cache-npm-global:
+    description: Cache ~/.npm-global to speed up global CLI installs
+    default: 'false'
+  setup-spectral:
+    description: Install Spectral CLI
+    default: 'false'
+  spectral-cache-key:
+    description: Cache key suffix for npm global spectral cache
+    default: 'npm-global-spectral-v1'
+  setup-openapi-generator:
+    description: Cache/download OpenAPI Generator CLI jar
+    default: 'false'
+  openapi-generator-version:
+    description: OpenAPI Generator version
+    default: '7.10.0'
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{ inputs.distribution }}
+        java-version: ${{ inputs.java-version }}
+        cache: gradle
+
+    - name: Setup Gradle toolchain
+      if: ${{ inputs.setup-gradle == 'true' }}
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Make gradlew executable
+      shell: bash
+      run: |
+        if [ -f "./gradlew" ]; then chmod +x ./gradlew; fi
+
+    - name: Set up Node.js
+      if: ${{ inputs.setup-node == 'true' }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Cache npm global modules
+      if: ${{ inputs.cache-npm-global == 'true' || inputs.setup-spectral == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm-global
+        key: ${{ runner.os }}-${{ inputs.spectral-cache-key }}
+
+    - name: Install Spectral CLI
+      if: ${{ inputs.setup-spectral == 'true' }}
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+        npm config set prefix ~/.npm-global
+        npm install -g @stoplight/spectral-cli
+        echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
+        spectral --version || true
+
+    - name: Cache OpenAPI Generator CLI
+      if: ${{ inputs.setup-openapi-generator == 'true' }}
+      id: cache-openapi-generator
+      uses: actions/cache@v4
+      with:
+        path: ~/openapi-generator-cli.jar
+        key: ${{ runner.os }}-openapi-generator-${{ inputs.openapi-generator-version }}
+
+    - name: Download OpenAPI Generator CLI
+      if: ${{ inputs.setup-openapi-generator == 'true' && steps.cache-openapi-generator.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        wget -q https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${{ inputs.openapi-generator-version }}/openapi-generator-cli-${{ inputs.openapi-generator-version }}.jar -O ~/openapi-generator-cli.jar
+
+    - name: Verify OpenAPI Generator
+      if: ${{ inputs.setup-openapi-generator == 'true' }}
+      shell: bash
+      run: |
+        java -jar ~/openapi-generator-cli.jar version || true

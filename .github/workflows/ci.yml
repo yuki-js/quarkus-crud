@@ -4,11 +4,62 @@ name: CI build
 
 on:
   push:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      openapi: ${{ steps.filter.outputs.openapi }}
+      backend: ${{ steps.filter.outputs.backend }}
+      publish: ${{ steps.filter.outputs.publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Paths filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            openapi:
+              - 'openapi/**'
+              - 'src/**'
+              - '.spectral.yaml'
+            backend:
+              - 'src/**'
+              - 'build.gradle*'
+              - 'settings.gradle*'
+              - 'gradle/**'
+              - 'config/**'
+            publish:
+              - 'src/**'
+              - 'build.gradle*'
+              - 'settings.gradle*'
+              - 'gradle/**'
   openapi-validation:
     name: OpenAPI Specification Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: changes
+    if: ${{ needs.changes.outputs.openapi == 'true' }}
 
     steps:
       - name: Checkout code
@@ -34,15 +85,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # duplicate spectral cache step removed
+
 
       - name: Install Spectral
-        run: npm install -g @stoplight/spectral-cli
+        run: |
+          set -Eeuo pipefail
+          npm config set prefix ~/.npm-global
+          npm install -g @stoplight/spectral-cli
+          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
 
       - name: Validate OpenAPI spec with Spectral
         run: spectral lint build/openapi-compiled/openapi.yaml --ruleset .spectral.yaml
         continue-on-error: true
 
+      - name: Cache OpenAPI Generator CLI
+        id: cache-openapi-generator
+        uses: actions/cache@v4
+        with:
+          path: openapi-generator-cli.jar
+          key: ${{ runner.os }}-openapi-generator-7.10.0
+
       - name: Download OpenAPI Generator CLI
+        if: steps.cache-openapi-generator.outputs.cache-hit != 'true'
         run: |
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar -O openapi-generator-cli.jar
 
@@ -53,6 +118,9 @@ jobs:
   build:
     name: Build and Test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
 
     services:
       postgres:
@@ -199,3 +267,5 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Some tests failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
           fi
+
+

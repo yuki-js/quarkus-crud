@@ -2,7 +2,22 @@ name: Build and Publish with Jib
 
 on:
   push:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
 
 permissions:
   contents: read
@@ -15,9 +30,29 @@ env:
   DEBUG_BASE_IMAGE: eclipse-temurin:21-jre
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.filter.outputs.publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Paths filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            publish:
+              - 'src/**'
+              - 'build.gradle*'
+              - 'settings.gradle*'
+              - 'gradle/**'
+              - 'jib/**'
   prepare:
     name: Prepare build information
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       short_sha: ${{ steps.sha.outputs.short_sha }}
       image_base: ${{ steps.image.outputs.image_base }}
@@ -42,8 +77,10 @@ jobs:
   build-and-push-jvm:
     name: Build and push JVM images
     runs-on: ubuntu-latest
-    needs: prepare
-    
+    timeout-minutes: 25
+    needs: [prepare, changes]
+    if: ${{ needs.changes.outputs.publish == 'true' }}
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -57,20 +94,14 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - name: Shared setup (Java/Gradle)
+        uses: ./.github/actions/shared-setup
         with:
-          java-version: 21
-          distribution: temurin
-          cache: gradle
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+          setup-gradle: "true"
+          java-version: "21"
+          distribution: "temurin"
 
       - name: Build application once
         run: ./gradlew build
@@ -82,21 +113,21 @@ jobs:
         run: |
           # Build and push all variants using a single Gradle daemon
           # This reuses the build artifacts from the previous step
-          
+
           # Normal image with SHA tag
           ./gradlew jib \
             -Djib.from.image=${{ env.NORMAL_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm \
             -Djib.to.auth.username=${{ github.actor }} \
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
-          
+
           # Debug image with SHA tag
           ./gradlew jib \
             -Djib.from.image=${{ env.DEBUG_BASE_IMAGE }} \
             -Djib.to.image=${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug \
             -Djib.to.auth.username=${{ github.actor }} \
             -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
-          
+
           # Latest tag (only on main branch)
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             ./gradlew jib \
@@ -105,7 +136,7 @@ jobs:
               -Djib.to.auth.username=${{ github.actor }} \
               -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
           fi
-          
+
           # Semver tag (only on version tags)
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
@@ -116,12 +147,13 @@ jobs:
               -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }}
           fi
 
- 
   verify-images:
     name: Verify built images
     runs-on: ubuntu-latest
-    needs: [prepare, build-and-push-jvm]
-    
+    timeout-minutes: 15
+    needs: [prepare, changes, build-and-push-jvm]
+    if: ${{ needs.changes.outputs.publish == 'true' }}
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -135,7 +167,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
