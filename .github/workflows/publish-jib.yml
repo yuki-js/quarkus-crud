@@ -255,7 +255,7 @@ jobs:
             ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm &
           CONTAINER_PID=$!
           sleep 10
-          curl -f http://localhost:8080/q/health || exit 1
+          curl -f http://localhost:8080/healthz || exit 1
           kill $CONTAINER_PID || true
 
       - name: Pull and verify JVM debug image
@@ -268,7 +268,7 @@ jobs:
             ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug &
           CONTAINER_PID=$!
           sleep 10
-          curl -f http://localhost:8080/q/health || exit 1
+          curl -f http://localhost:8080/healthz || exit 1
           kill $CONTAINER_PID || true
 
       - name: Pull and verify Native normal image
@@ -281,7 +281,7 @@ jobs:
             ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native &
           CONTAINER_PID=$!
           sleep 5
-          curl -f http://localhost:8080/q/health || exit 1
+          curl -f http://localhost:8080/healthz || exit 1
           kill $CONTAINER_PID || true
 
       - name: Pull and verify Native debug image
@@ -294,7 +294,7 @@ jobs:
             ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-native-debug &
           CONTAINER_PID=$!
           sleep 5
-          curl -f http://localhost:8080/q/health || exit 1
+          curl -f http://localhost:8080/healthz || exit 1
           kill $CONTAINER_PID || true
 
       - name: Summary
