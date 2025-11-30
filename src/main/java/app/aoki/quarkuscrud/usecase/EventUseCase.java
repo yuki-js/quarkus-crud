@@ -2,9 +2,12 @@ package app.aoki.quarkuscrud.usecase;
 
 import app.aoki.quarkuscrud.entity.Event;
 import app.aoki.quarkuscrud.entity.EventAttendee;
+import app.aoki.quarkuscrud.entity.EventUserData;
 import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
+import app.aoki.quarkuscrud.generated.model.EventUserDataUpdateRequest;
 import app.aoki.quarkuscrud.service.EventService;
+import app.aoki.quarkuscrud.service.EventUserDataService;
 import app.aoki.quarkuscrud.service.UserService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 public class EventUseCase {
 
   @Inject EventService eventService;
+  @Inject EventUserDataService eventUserDataService;
   @Inject UserService userService;
   @Inject ObjectMapper objectMapper;
 
@@ -147,6 +151,53 @@ public class EventUseCase {
     return eventService.findById(eventId).isPresent();
   }
 
+  /**
+   * Checks if a user is an attendee of an event.
+   *
+   * @param eventId the event ID
+   * @param userId the user ID
+   * @return true if user is an attendee
+   */
+  public boolean isUserAttendee(Long eventId, Long userId) {
+    return eventService.isUserAttendee(eventId, userId);
+  }
+
+  /**
+   * Gets the latest user data for an event and user.
+   *
+   * @param eventId the event ID
+   * @param userId the user ID
+   * @return an Optional containing the user data DTO if found
+   */
+  public Optional<app.aoki.quarkuscrud.generated.model.EventUserData> getEventUserData(
+      Long eventId, Long userId) {
+    return eventUserDataService
+        .findLatestByEventIdAndUserId(eventId, userId)
+        .map(this::toUserDataDto);
+  }
+
+  /**
+   * Updates the user data for an event and user.
+   *
+   * @param eventId the event ID
+   * @param userId the user ID
+   * @param request the update request
+   * @return the updated user data as DTO
+   * @throws Exception if update fails
+   */
+  @Transactional
+  public app.aoki.quarkuscrud.generated.model.EventUserData updateEventUserData(
+      Long eventId, Long userId, EventUserDataUpdateRequest request) throws Exception {
+    String userData = objectMapper.writeValueAsString(request.getUserData());
+    String revisionMeta = null;
+    if (request.getRevisionMeta() != null) {
+      revisionMeta = objectMapper.writeValueAsString(request.getRevisionMeta());
+    }
+    EventUserData newData =
+        eventUserDataService.createRevision(eventId, userId, userData, revisionMeta);
+    return toUserDataDto(newData);
+  }
+
   private app.aoki.quarkuscrud.generated.model.Event toEventDto(
       Event event, String invitationCode) {
     app.aoki.quarkuscrud.generated.model.Event response =
@@ -203,6 +254,44 @@ public class EventUseCase {
       }
     } else {
       response.setMeta(new HashMap<>());
+    }
+
+    return response;
+  }
+
+  private app.aoki.quarkuscrud.generated.model.EventUserData toUserDataDto(EventUserData data) {
+    app.aoki.quarkuscrud.generated.model.EventUserData response =
+        new app.aoki.quarkuscrud.generated.model.EventUserData();
+    response.setId(data.getId());
+    response.setEventId(data.getEventId());
+    response.setUserId(data.getUserId());
+    response.setCreatedAt(data.getCreatedAt().atOffset(ZoneOffset.UTC));
+    if (data.getUpdatedAt() != null) {
+      response.setUpdatedAt(data.getUpdatedAt().atOffset(ZoneOffset.UTC));
+    }
+
+    if (data.getUserData() != null) {
+      try {
+        Map<String, Object> userData =
+            objectMapper.readValue(data.getUserData(), new TypeReference<>() {});
+        response.setUserData(userData);
+      } catch (Exception e) {
+        response.setUserData(new HashMap<>());
+      }
+    } else {
+      response.setUserData(new HashMap<>());
+    }
+
+    if (data.getRevisionMeta() != null) {
+      try {
+        Map<String, Object> revisionMeta =
+            objectMapper.readValue(data.getRevisionMeta(), new TypeReference<>() {});
+        response.setRevisionMeta(revisionMeta);
+      } catch (Exception e) {
+        response.setRevisionMeta(new HashMap<>());
+      }
+    } else {
+      response.setRevisionMeta(new HashMap<>());
     }
 
     return response;
