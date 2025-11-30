@@ -29,7 +29,15 @@ spec:
         - name: derive-jwt-public-key
           image: frapsoft/openssl:latest
           command: ["openssl"]
-          args: ["pkey","-in","/keys-src/privateKey.pem","-pubout","-out","/keys/publicKey.pem"]
+          args:
+            [
+              "pkey",
+              "-in",
+              "/keys-src/privateKey.pem",
+              "-pubout",
+              "-out",
+              "/keys/publicKey.pem",
+            ]
           volumeMounts:
             - name: jwt-keys
               mountPath: /keys-src
@@ -74,7 +82,7 @@ spec:
               cpu: "500m"
           livenessProbe:
             httpGet:
-              path: /q/health/live
+              path: /healthz/live
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 30
@@ -84,7 +92,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /q/health/ready
+              path: /healthz/ready
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 10
@@ -94,7 +102,7 @@ spec:
             failureThreshold: 3
           startupProbe:
             httpGet:
-              path: /q/health/started
+              path: /healthz/started
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 0
