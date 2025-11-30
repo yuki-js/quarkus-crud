@@ -68,7 +68,7 @@ public class EventUseCase {
             event -> {
               // Only include invitation code if the requesting user is the event owner
               String invitationCode = null;
-              if (event.getInitiatorId().equals(requestingUserId)) {
+              if (requestingUserId != null && requestingUserId.equals(event.getInitiatorId())) {
                 invitationCode = eventService.getInvitationCode(eventId).orElse(null);
               }
               return toEventDto(event, invitationCode);
@@ -148,7 +148,7 @@ public class EventUseCase {
             event -> {
               // Only include invitation code if the requesting user is the event owner
               String invitationCode = null;
-              if (event.getInitiatorId().equals(requestingUserId)) {
+              if (requestingUserId != null && requestingUserId.equals(event.getInitiatorId())) {
                 invitationCode = eventService.getInvitationCode(event.getId()).orElse(null);
               }
               return toEventDto(event, invitationCode);
