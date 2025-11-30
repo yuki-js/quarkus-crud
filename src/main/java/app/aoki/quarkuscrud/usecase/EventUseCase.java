@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 /**
  * Use case for event-related business flows.
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 public class EventUseCase {
+
+  private static final Logger LOG = Logger.getLogger(EventUseCase.class);
 
   @Inject EventService eventService;
   @Inject EventUserDataService eventUserDataService;
@@ -276,6 +279,12 @@ public class EventUseCase {
             objectMapper.readValue(data.getUserData(), new TypeReference<>() {});
         response.setUserData(userData);
       } catch (Exception e) {
+        LOG.warnf(
+            e,
+            "Failed to parse userData JSON for EventUserData id=%d, eventId=%d, userId=%d",
+            data.getId(),
+            data.getEventId(),
+            data.getUserId());
         response.setUserData(new HashMap<>());
       }
     } else {
@@ -288,6 +297,12 @@ public class EventUseCase {
             objectMapper.readValue(data.getRevisionMeta(), new TypeReference<>() {});
         response.setRevisionMeta(revisionMeta);
       } catch (Exception e) {
+        LOG.warnf(
+            e,
+            "Failed to parse revisionMeta JSON for EventUserData id=%d, eventId=%d, userId=%d",
+            data.getId(),
+            data.getEventId(),
+            data.getUserId());
         response.setRevisionMeta(new HashMap<>());
       }
     } else {

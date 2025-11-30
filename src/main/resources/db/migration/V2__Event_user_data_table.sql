@@ -1,5 +1,9 @@
 -- Migration to add event_user_data table for storing per-event, per-user data with revisions
 -- Similar to user_profiles but scoped to an event
+-- 
+-- Design note: This table stores multiple revisions per event_id/user_id pair by design.
+-- The latest revision is retrieved using ORDER BY created_at DESC LIMIT 1.
+-- This allows tracking history of user data changes within an event.
 
 -- ============================================================================
 -- Event User Data Table
