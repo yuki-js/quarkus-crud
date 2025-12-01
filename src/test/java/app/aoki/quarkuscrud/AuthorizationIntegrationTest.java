@@ -292,4 +292,39 @@ public class AuthorizationIntegrationTest {
         .then()
         .statusCode(403);
   }
+
+  /**
+   * Test CWE-284 fix: Attendee (non-owner) can see attendees after joining. This tests that
+   * attendees who are not the event owner can still access the attendee list.
+   */
+  @Test
+  @Order(14)
+  public void testAttendeeNonOwnerCanSeeAttendeesAfterJoining() {
+    // First get the invitation code as the owner
+    Response eventResponse =
+        given()
+            .header("Authorization", "Bearer " + user1Token)
+            .when()
+            .get("/api/events/" + user1EventId);
+    String invitationCode = eventResponse.jsonPath().getString("invitationCode");
+
+    // User 2 joins the event using the invitation code
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .contentType(ContentType.JSON)
+        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
+        .when()
+        .post("/api/events/join-by-code")
+        .then()
+        .statusCode(anyOf(is(200), is(201), is(409))); // 409 if already joined
+
+    // User 2 (now an attendee but not owner) should be able to see attendees
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .when()
+        .get("/api/events/" + user1EventId + "/attendees")
+        .then()
+        .statusCode(200)
+        .body("size()", greaterThanOrEqualTo(1));
+  }
 }
