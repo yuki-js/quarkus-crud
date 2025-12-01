@@ -128,12 +128,14 @@ public class EventUseCase {
             .orElseThrow(() -> new IllegalArgumentException("Event not found"));
 
     // Check if requesting user is the event owner or an attendee
+    // Short-circuit: if owner, skip the attendee check to avoid unnecessary DB query
     boolean isOwner = requestingUserId != null && requestingUserId.equals(event.getInitiatorId());
-    boolean isAttendee =
-        requestingUserId != null && eventService.isUserAttendee(eventId, requestingUserId);
-
-    if (!isOwner && !isAttendee) {
-      throw new SecurityException("Not authorized to view attendees");
+    if (!isOwner) {
+      boolean isAttendee =
+          requestingUserId != null && eventService.isUserAttendee(eventId, requestingUserId);
+      if (!isAttendee) {
+        throw new SecurityException("Not authorized to view attendees");
+      }
     }
 
     return eventService.listAttendees(eventId).stream()
