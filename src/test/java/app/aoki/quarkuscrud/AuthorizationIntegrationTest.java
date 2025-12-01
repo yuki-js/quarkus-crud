@@ -5,6 +5,8 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -179,6 +181,148 @@ public class AuthorizationIntegrationTest {
         .header("Authorization", "Bearer " + user2Token)
         .when()
         .get("/api/me/friendships/received")
+        .then()
+        .statusCode(200)
+        .body("size()", greaterThanOrEqualTo(1));
+  }
+
+  // ==================== CWE-284 Access Control Tests ====================
+
+  /**
+   * Test CWE-284 fix: Event owner can see their own invitation code. This verifies that the owner
+   * still has access to the invitation code after the access control fix.
+   */
+  @Test
+  @Order(8)
+  public void testEventOwnerCanSeeInvitationCode() {
+    // User 1 (owner) should see the invitation code for their own event
+    given()
+        .header("Authorization", "Bearer " + user1Token)
+        .when()
+        .get("/api/events/" + user1EventId)
+        .then()
+        .statusCode(200)
+        .body("id", equalTo(user1EventId.intValue()))
+        .body("initiatorId", equalTo(user1Id.intValue()))
+        .body("invitationCode", notNullValue());
+  }
+
+  /**
+   * Test CWE-284 fix: Non-owner cannot see another user's event invitation code. This is the core
+   * test for the CWE-284 vulnerability fix - invitation codes should be hidden from non-owners.
+   */
+  @Test
+  @Order(9)
+  public void testNonOwnerCannotSeeInvitationCode() {
+    // User 2 (non-owner) should NOT see the invitation code for User 1's event
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .when()
+        .get("/api/events/" + user1EventId)
+        .then()
+        .statusCode(200)
+        .body("id", equalTo(user1EventId.intValue()))
+        .body("invitationCode", nullValue());
+  }
+
+  /**
+   * Test CWE-284 fix: Owner can see invitation codes when listing their own events. Verifies that
+   * the listEventsByUser endpoint also respects access control.
+   */
+  @Test
+  @Order(10)
+  public void testOwnerCanSeeInvitationCodeInEventList() {
+    // User 1 listing their own events should see invitation codes
+    given()
+        .header("Authorization", "Bearer " + user1Token)
+        .when()
+        .get("/api/users/" + user1Id + "/events")
+        .then()
+        .statusCode(200)
+        .body("size()", greaterThanOrEqualTo(1))
+        .body("[0].invitationCode", notNullValue());
+  }
+
+  /**
+   * Test CWE-284 fix: Non-owner cannot see invitation codes when listing another user's events.
+   * This verifies that the listEventsByUser endpoint also protects invitation codes.
+   */
+  @Test
+  @Order(11)
+  public void testNonOwnerCannotSeeInvitationCodeInEventList() {
+    // User 2 listing User 1's events should NOT see invitation codes
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .when()
+        .get("/api/users/" + user1Id + "/events")
+        .then()
+        .statusCode(200)
+        .body("size()", greaterThanOrEqualTo(1))
+        .body("[0].invitationCode", nullValue());
+  }
+
+  /**
+   * Test CWE-284 fix: Event owner can see attendees of their own event. Verifies access control for
+   * the attendee list endpoint.
+   */
+  @Test
+  @Order(12)
+  public void testEventOwnerCanSeeAttendees() {
+    // User 1 (owner) should be able to see attendees of their event
+    given()
+        .header("Authorization", "Bearer " + user1Token)
+        .when()
+        .get("/api/events/" + user1EventId + "/attendees")
+        .then()
+        .statusCode(200);
+  }
+
+  /**
+   * Test CWE-284 fix: Non-owner and non-attendee cannot see attendees of an event. This tests the
+   * access control for the attendee list - only owners and attendees should see the list.
+   */
+  @Test
+  @Order(13)
+  public void testNonOwnerNonAttendeeCannotSeeAttendees() {
+    // User 2 (non-owner, non-attendee) should NOT be able to see attendees
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .when()
+        .get("/api/events/" + user1EventId + "/attendees")
+        .then()
+        .statusCode(403);
+  }
+
+  /**
+   * Test CWE-284 fix: Attendee (non-owner) can see attendees after joining. This tests that
+   * attendees who are not the event owner can still access the attendee list.
+   */
+  @Test
+  @Order(14)
+  public void testAttendeeNonOwnerCanSeeAttendeesAfterJoining() {
+    // First get the invitation code as the owner
+    Response eventResponse =
+        given()
+            .header("Authorization", "Bearer " + user1Token)
+            .when()
+            .get("/api/events/" + user1EventId);
+    String invitationCode = eventResponse.jsonPath().getString("invitationCode");
+
+    // User 2 joins the event using the invitation code
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .contentType(ContentType.JSON)
+        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
+        .when()
+        .post("/api/events/join-by-code")
+        .then()
+        .statusCode(anyOf(is(200), is(201), is(409))); // 409 if already joined
+
+    // User 2 (now an attendee but not owner) should be able to see attendees
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .when()
+        .get("/api/events/" + user1EventId + "/attendees")
         .then()
         .statusCode(200)
         .body("size()", greaterThanOrEqualTo(1));

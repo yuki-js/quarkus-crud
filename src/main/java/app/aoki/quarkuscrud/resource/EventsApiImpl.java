@@ -68,12 +68,13 @@ public class EventsApiImpl implements EventsApi {
   @Path("/events/{eventId}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getEventById(@PathParam("eventId") Long eventId) {
-    LOG.debugf("Fetching event ID: %d", eventId);
+    User user = authenticatedUser.get();
+    LOG.debugf("Fetching event ID: %d for user ID: %d", eventId, user.getId());
     Timer.Sample sample = Timer.start(meterRegistry);
 
     try {
       return eventUseCase
-          .getEventById(eventId)
+          .getEventById(eventId, user.getId())
           .map(
               event -> {
                 meterRegistry.counter("events.read", "result", "found").increment();
@@ -134,11 +135,16 @@ public class EventsApiImpl implements EventsApi {
   @Path("/events/{eventId}/attendees")
   @Produces(MediaType.APPLICATION_JSON)
   public Response listEventAttendees(@PathParam("eventId") Long eventId) {
+    User user = authenticatedUser.get();
     try {
-      List<EventAttendee> attendees = eventUseCase.listEventAttendees(eventId);
+      List<EventAttendee> attendees = eventUseCase.listEventAttendees(eventId, user.getId());
       return Response.ok(attendees).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
           .entity(new ErrorResponse(e.getMessage()))
           .build();
     }
@@ -150,8 +156,9 @@ public class EventsApiImpl implements EventsApi {
   @Path("/users/{userId}/events")
   @Produces(MediaType.APPLICATION_JSON)
   public Response listEventsByUser(@PathParam("userId") Long userId) {
+    User user = authenticatedUser.get();
     try {
-      List<Event> events = eventUseCase.listEventsByUser(userId);
+      List<Event> events = eventUseCase.listEventsByUser(userId, user.getId());
       return Response.ok(events).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.NOT_FOUND)
