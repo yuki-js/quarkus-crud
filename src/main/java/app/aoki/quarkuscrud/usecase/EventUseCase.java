@@ -109,15 +109,31 @@ public class EventUseCase {
   }
 
   /**
-   * Lists all attendees for an event.
+   * Lists all attendees for an event with access control.
+   *
+   * <p>Only the event owner or attendees can view the attendee list. This prevents unauthorized
+   * users from discovering who is attending an event (CWE-284 fix).
    *
    * @param eventId the event ID
+   * @param requestingUserId the ID of the user making the request
    * @return list of attendee DTOs
    * @throws IllegalArgumentException if event not found
+   * @throws SecurityException if user is not authorized to view attendees
    */
-  public List<app.aoki.quarkuscrud.generated.model.EventAttendee> listEventAttendees(Long eventId) {
-    if (eventService.findById(eventId).isEmpty()) {
-      throw new IllegalArgumentException("Event not found");
+  public List<app.aoki.quarkuscrud.generated.model.EventAttendee> listEventAttendees(
+      Long eventId, Long requestingUserId) {
+    Event event =
+        eventService
+            .findById(eventId)
+            .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+    // Check if requesting user is the event owner or an attendee
+    boolean isOwner = requestingUserId != null && requestingUserId.equals(event.getInitiatorId());
+    boolean isAttendee =
+        requestingUserId != null && eventService.isUserAttendee(eventId, requestingUserId);
+
+    if (!isOwner && !isAttendee) {
+      throw new SecurityException("Not authorized to view attendees");
     }
 
     return eventService.listAttendees(eventId).stream()

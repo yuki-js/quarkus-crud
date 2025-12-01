@@ -135,11 +135,16 @@ public class EventsApiImpl implements EventsApi {
   @Path("/events/{eventId}/attendees")
   @Produces(MediaType.APPLICATION_JSON)
   public Response listEventAttendees(@PathParam("eventId") Long eventId) {
+    User user = authenticatedUser.get();
     try {
-      List<EventAttendee> attendees = eventUseCase.listEventAttendees(eventId);
+      List<EventAttendee> attendees = eventUseCase.listEventAttendees(eventId, user.getId());
       return Response.ok(attendees).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
           .entity(new ErrorResponse(e.getMessage()))
           .build();
     }
