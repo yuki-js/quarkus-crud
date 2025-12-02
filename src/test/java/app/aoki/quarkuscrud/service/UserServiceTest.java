@@ -30,7 +30,6 @@ public class UserServiceTest {
 
     assertNotNull(user.getId());
     assertEquals(AccountLifecycle.CREATED, user.getAccountLifecycle());
-    assertNull(user.getCurrentProfileRevision());
     assertNull(user.getMeta());
     assertNotNull(user.getCreatedAt());
     assertNotNull(user.getUpdatedAt());

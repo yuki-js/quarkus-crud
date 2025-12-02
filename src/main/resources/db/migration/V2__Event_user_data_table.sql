@@ -6,6 +6,14 @@
 -- This allows tracking history of user data changes within an event.
 
 -- ============================================================================
+-- Remove unused current_profile_revision column from users table
+-- ============================================================================
+-- Since we now always lookup the latest profile revision using 
+-- ORDER BY created_at DESC LIMIT 1, this cached pointer column is no longer needed.
+ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_current_profile;
+ALTER TABLE users DROP COLUMN IF EXISTS current_profile_revision;
+
+-- ============================================================================
 -- Event User Data Table
 -- ============================================================================
 CREATE TABLE event_user_data (

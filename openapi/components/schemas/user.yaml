@@ -21,12 +21,6 @@ User:
         - paused
         - deleted
       example: active
-    currentProfileRevision:
-      type: integer
-      format: int64
-      description: Identifier of the user's current profile revision.
-      nullable: true
-      example: 101
     meta:
       type: object
       description: Flexible metadata associated with the user.

@@ -68,7 +68,6 @@ public class AuthenticationApiImpl implements AuthenticationApi {
     response.setCreatedAt(user.getCreatedAt().atOffset(ZoneOffset.UTC));
     response.setUpdatedAt(
         user.getUpdatedAt() != null ? user.getUpdatedAt().atOffset(ZoneOffset.UTC) : null);
-    response.setCurrentProfileRevision(user.getCurrentProfileRevision());
     response.setMeta(parseMeta(user.getMeta()));
     if (user.getAccountLifecycle() != null) {
       response.setAccountLifecycle(
