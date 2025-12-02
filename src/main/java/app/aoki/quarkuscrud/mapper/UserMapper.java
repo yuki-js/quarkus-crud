@@ -17,11 +17,14 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface UserMapper {
 
-  @Insert("INSERT INTO users (account_lifecycle, current_profile_revision, meta, created_at, updated_at) VALUES (#{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, #{currentProfileRevision}, #{meta}::jsonb, #{createdAt}, #{updatedAt})")
+  @Insert(
+      "INSERT INTO users (account_lifecycle, meta, created_at, updated_at) "
+          + "VALUES (#{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, #{meta}::jsonb, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(User user);
 
-  @Select("SELECT id, account_lifecycle, current_profile_revision, meta::text as meta, created_at, updated_at FROM users WHERE id = #{id}")
+  @Select(
+      "SELECT id, account_lifecycle, meta::text as meta, created_at, updated_at FROM users WHERE id = #{id}")
   @Results(
       id = "userResultMap",
       value = {
@@ -31,14 +34,17 @@ public interface UserMapper {
             column = "account_lifecycle",
             javaType = AccountLifecycle.class,
             typeHandler = AccountLifecycleTypeHandler.class),
-        @Result(property = "currentProfileRevision", column = "current_profile_revision"),
         @Result(property = "meta", column = "meta"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at")
       })
   Optional<User> findById(@Param("id") Long id);
 
-  @Update("UPDATE users SET account_lifecycle = #{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, current_profile_revision = #{currentProfileRevision}, meta = #{meta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
+  @Update(
+      "UPDATE users SET "
+          + "account_lifecycle = "
+          + "#{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, "
+          + "meta = #{meta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
   void update(User user);
 
   @Delete("DELETE FROM users WHERE id = #{id}")

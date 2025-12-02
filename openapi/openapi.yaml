@@ -51,6 +51,8 @@ paths:
     $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}~1attendees'
   /api/events/{eventId}/live:
     $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}~1live'
+  /api/events/{eventId}/users/{userId}:
+    $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}~1users~1{userId}'
 components:
   securitySchemes:
     bearerAuth:
@@ -78,6 +80,10 @@ components:
       $ref: './components/schemas/event.yaml#/EventLiveEvent'
     EventAttendee:
       $ref: './components/schemas/eventAttendee.yaml#/EventAttendee'
+    EventUserData:
+      $ref: './components/schemas/eventUserData.yaml#/EventUserData'
+    EventUserDataUpdateRequest:
+      $ref: './components/schemas/eventUserData.yaml#/EventUserDataUpdateRequest'
     ErrorResponse:
       $ref: './components/schemas/common.yaml#/ErrorResponse'
     LocalDateTime:

@@ -4,9 +4,11 @@ import app.aoki.quarkuscrud.entity.Event;
 import app.aoki.quarkuscrud.entity.EventAttendee;
 import app.aoki.quarkuscrud.entity.EventInvitationCode;
 import app.aoki.quarkuscrud.entity.EventStatus;
+import app.aoki.quarkuscrud.entity.EventUserData;
 import app.aoki.quarkuscrud.mapper.EventAttendeeMapper;
 import app.aoki.quarkuscrud.mapper.EventInvitationCodeMapper;
 import app.aoki.quarkuscrud.mapper.EventMapper;
+import app.aoki.quarkuscrud.mapper.EventUserDataMapper;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -44,6 +46,7 @@ public class EventService {
   @Inject EventMapper eventMapper;
   @Inject EventAttendeeMapper eventAttendeeMapper;
   @Inject EventInvitationCodeMapper eventInvitationCodeMapper;
+  @Inject EventUserDataMapper eventUserDataMapper;
 
   /**
    * Creates a new event with an invitation code.
@@ -223,6 +226,46 @@ public class EventService {
       }
     }
     return null;
+  }
+
+  // ============================================================================
+  // Event User Data Operations
+  // ============================================================================
+
+  /**
+   * Finds the latest user data for an event and user.
+   *
+   * @param eventId the event ID
+   * @param userId the user ID
+   * @return an Optional containing the user data if found
+   */
+  public Optional<EventUserData> findLatestUserData(Long eventId, Long userId) {
+    return eventUserDataMapper.findLatestByEventIdAndUserId(eventId, userId);
+  }
+
+  /**
+   * Creates a new user data revision for an event and user.
+   *
+   * @param eventId the event ID
+   * @param userId the user ID
+   * @param userData JSON user data
+   * @param revisionMeta optional JSON metadata about the revision
+   * @return the created user data
+   */
+  @Transactional
+  public EventUserData createUserDataRevision(
+      Long eventId, Long userId, String userData, String revisionMeta) {
+    EventUserData newData = new EventUserData();
+    newData.setEventId(eventId);
+    newData.setUserId(userId);
+    newData.setUserData(userData);
+    newData.setRevisionMeta(revisionMeta);
+    LocalDateTime now = LocalDateTime.now();
+    newData.setCreatedAt(now);
+    newData.setUpdatedAt(now);
+
+    eventUserDataMapper.insert(newData);
+    return newData;
   }
 
   /**

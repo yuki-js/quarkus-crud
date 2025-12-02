@@ -1,4 +1,121 @@
 paths:
+  /api/events/{eventId}/users/{userId}:
+    get:
+      tags:
+        - Events
+      summary: Get user data in event
+      description: Retrieve the current user data for a specific user in an event. Requires authentication and the requester must be an attendee of the same event.
+      operationId: getEventUserData
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          description: Identifier of the event.
+          schema:
+            type: integer
+            format: int64
+        - name: userId
+          in: path
+          required: true
+          description: Identifier of the user whose data is requested.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User data found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/eventUserData.yaml#/EventUserData'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '403':
+          description: Access denied. Requester is not an attendee of the event.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: Event, user, or user data not found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+    put:
+      tags:
+        - Events
+      summary: Update user data in event
+      description: Update the user's event-specific data. Creates a new revision. Requires authentication and the user can only update their own data.
+      operationId: updateEventUserData
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          description: Identifier of the event.
+          schema:
+            type: integer
+            format: int64
+        - name: userId
+          in: path
+          required: true
+          description: Identifier of the user whose data is being updated.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/eventUserData.yaml#/EventUserDataUpdateRequest'
+      responses:
+        '200':
+          description: User data updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/eventUserData.yaml#/EventUserData'
+        '400':
+          description: Invalid data supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '403':
+          description: Access denied. User can only update their own data.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: Event or user not found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
   /api/events:
     post:
       tags:

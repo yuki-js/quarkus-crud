@@ -6,6 +6,8 @@ import app.aoki.quarkuscrud.generated.model.Event;
 import app.aoki.quarkuscrud.generated.model.EventAttendee;
 import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
+import app.aoki.quarkuscrud.generated.model.EventUserData;
+import app.aoki.quarkuscrud.generated.model.EventUserDataUpdateRequest;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
@@ -17,6 +19,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -184,5 +187,88 @@ public class EventsApiImpl implements EventsApi {
     return Response.status(Response.Status.NOT_IMPLEMENTED)
         .entity(new ErrorResponse("Live streaming not yet implemented"))
         .build();
+  }
+
+  @Override
+  @Authenticated
+  @GET
+  @Path("/events/{eventId}/users/{userId}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getEventUserData(
+      @PathParam("eventId") Long eventId, @PathParam("userId") Long userId) {
+    User currentUser = authenticatedUser.get();
+    LOG.debugf(
+        "User %d requesting event user data for event %d, user %d",
+        currentUser.getId(), eventId, userId);
+
+    // Check if event exists
+    if (!eventUseCase.eventExists(eventId)) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse("Event not found"))
+          .build();
+    }
+
+    // Check if requester is an attendee of the event
+    if (!eventUseCase.isUserAttendee(eventId, currentUser.getId())) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse("Access denied. You are not an attendee of this event."))
+          .build();
+    }
+
+    // Get user data
+    return eventUseCase
+        .getEventUserData(eventId, userId)
+        .map(data -> Response.ok(data).build())
+        .orElse(
+            Response.status(Response.Status.NOT_FOUND)
+                .entity(new ErrorResponse("User data not found"))
+                .build());
+  }
+
+  @Override
+  @Authenticated
+  @PUT
+  @Path("/events/{eventId}/users/{userId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateEventUserData(
+      @PathParam("eventId") Long eventId,
+      @PathParam("userId") Long userId,
+      EventUserDataUpdateRequest updateRequest) {
+    User currentUser = authenticatedUser.get();
+    LOG.infof(
+        "User %d updating event user data for event %d, user %d",
+        currentUser.getId(), eventId, userId);
+
+    // Check if event exists
+    if (!eventUseCase.eventExists(eventId)) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse("Event not found"))
+          .build();
+    }
+
+    // Check if user can only update their own data
+    if (!currentUser.getId().equals(userId)) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse("Access denied. You can only update your own data."))
+          .build();
+    }
+
+    // Check if user is an attendee of the event
+    if (!eventUseCase.isUserAttendee(eventId, userId)) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse("Access denied. You are not an attendee of this event."))
+          .build();
+    }
+
+    try {
+      EventUserData data = eventUseCase.updateEventUserData(eventId, userId, updateRequest);
+      return Response.ok(data).build();
+    } catch (Exception e) {
+      LOG.errorf(e, "Failed to update event user data for event %d, user %d", eventId, userId);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(new ErrorResponse("Failed to update user data: " + e.getMessage()))
+          .build();
+    }
   }
 }
