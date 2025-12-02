@@ -16,14 +16,11 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface FriendshipMapper {
 
-  @Insert(
-      "INSERT INTO friendships (sender_id, recipient_id, created_at, updated_at) "
-          + "VALUES (#{senderId}, #{recipientId}, #{createdAt}, #{updatedAt})")
+  @Insert("INSERT INTO friendships (sender_id, recipient_id, created_at, updated_at) VALUES (#{senderId}, #{recipientId}, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(Friendship friendship);
 
-  @Select(
-      "SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships WHERE id = #{id}")
+  @Select("SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships WHERE id = #{id}")
   @Results(
       id = "friendshipResultMap",
       value = {
@@ -35,19 +32,15 @@ public interface FriendshipMapper {
       })
   Optional<Friendship> findById(@Param("id") Long id);
 
-  @Select(
-      "SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships WHERE sender_id = #{senderId}")
+  @Select("SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships WHERE sender_id = #{senderId}")
   @ResultMap("friendshipResultMap")
   List<Friendship> findBySenderId(@Param("senderId") Long senderId);
 
-  @Select(
-      "SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships WHERE recipient_id = #{recipientId}")
+  @Select("SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships WHERE recipient_id = #{recipientId}")
   @ResultMap("friendshipResultMap")
   List<Friendship> findByRecipientId(@Param("recipientId") Long recipientId);
 
-  @Select(
-      "SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships "
-          + "WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
+  @Select("SELECT id, sender_id, recipient_id, created_at, updated_at FROM friendships WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
   @ResultMap("friendshipResultMap")
   Optional<Friendship> findBySenderAndRecipient(
       @Param("senderId") Long senderId, @Param("recipientId") Long recipientId);

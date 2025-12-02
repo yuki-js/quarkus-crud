@@ -32,6 +32,12 @@
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
+    <!-- Suppress LineLength check for Mapper files (SQL annotations benefit from single-line formatting) -->
+    <module name="SuppressionSingleFilter">
+        <property name="files" value=".*[/\\]mapper[/\\].*Mapper\.java$"/>
+        <property name="checks" value="LineLength"/>
+    </module>
+
     <module name="TreeWalker">
         <!-- Checks for imports                              -->
         <!-- See https://checkstyle.org/checks/imports/ -->

@@ -17,24 +17,14 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface EventInvitationCodeMapper {
 
-  @Insert(
-      "INSERT INTO event_invitation_codes (event_id, invitation_code, created_at, updated_at) "
-          + "VALUES (#{eventId}, #{invitationCode}, #{createdAt}, #{updatedAt})")
+  @Insert("INSERT INTO event_invitation_codes (event_id, invitation_code, created_at, updated_at) VALUES (#{eventId}, #{invitationCode}, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(EventInvitationCode eventInvitationCode);
 
-  @Insert(
-      "INSERT INTO event_invitation_codes (event_id, invitation_code, created_at, updated_at) "
-          + "SELECT #{eventId}, #{invitationCode}, #{createdAt}, #{updatedAt} "
-          + "WHERE NOT EXISTS ("
-          + "    SELECT 1 FROM event_invitation_codes c "
-          + "    JOIN events e ON e.id = c.event_id "
-          + "    WHERE c.invitation_code = #{invitationCode} "
-          + "      AND LOWER(e.status) NOT IN ('expired', 'deleted'))")
+  @Insert("INSERT INTO event_invitation_codes (event_id, invitation_code, created_at, updated_at) SELECT #{eventId}, #{invitationCode}, #{createdAt}, #{updatedAt} WHERE NOT EXISTS (SELECT 1 FROM event_invitation_codes c JOIN events e ON e.id = c.event_id WHERE c.invitation_code = #{invitationCode} AND LOWER(e.status) NOT IN ('expired', 'deleted'))")
   int insertIfInvitationCodeAvailable(EventInvitationCode eventInvitationCode);
 
-  @Select(
-      "SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE id = #{id}")
+  @Select("SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE id = #{id}")
   @Results(
       id = "eventInvitationCodeResultMap",
       value = {
@@ -46,23 +36,16 @@ public interface EventInvitationCodeMapper {
       })
   Optional<EventInvitationCode> findById(@Param("id") Long id);
 
-  @Select(
-      "SELECT id, event_id, invitation_code, created_at, updated_at "
-          + "FROM event_invitation_codes WHERE event_id = #{eventId}")
+  @Select("SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE event_id = #{eventId}")
   @ResultMap("eventInvitationCodeResultMap")
   List<EventInvitationCode> findByEventId(@Param("eventId") Long eventId);
 
-  @Select(
-      "SELECT id, event_id, invitation_code, created_at, updated_at "
-          + "FROM event_invitation_codes WHERE invitation_code = #{invitationCode}")
+  @Select("SELECT id, event_id, invitation_code, created_at, updated_at FROM event_invitation_codes WHERE invitation_code = #{invitationCode}")
   @ResultMap("eventInvitationCodeResultMap")
   Optional<EventInvitationCode> findByInvitationCode(
       @Param("invitationCode") String invitationCode);
 
-  @Update(
-      "UPDATE event_invitation_codes SET event_id = #{eventId}, "
-          + "invitation_code = #{invitationCode}, updated_at = #{updatedAt} "
-          + "WHERE id = #{id}")
+  @Update("UPDATE event_invitation_codes SET event_id = #{eventId}, invitation_code = #{invitationCode}, updated_at = #{updatedAt} WHERE id = #{id}")
   void update(EventInvitationCode eventInvitationCode);
 
   @Delete("DELETE FROM event_invitation_codes WHERE id = #{id}")

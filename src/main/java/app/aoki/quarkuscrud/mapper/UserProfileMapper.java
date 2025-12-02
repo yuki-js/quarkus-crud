@@ -17,16 +17,11 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface UserProfileMapper {
 
-  @Insert(
-      "INSERT INTO user_profiles (user_id, profile_data, revision_meta, created_at, updated_at) "
-          + "VALUES (#{userId}, #{profileData}::jsonb, #{revisionMeta}::jsonb, #{createdAt}, #{updatedAt})")
+  @Insert("INSERT INTO user_profiles (user_id, profile_data, revision_meta, created_at, updated_at) VALUES (#{userId}, #{profileData}::jsonb, #{revisionMeta}::jsonb, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(UserProfile userProfile);
 
-  @Select(
-      "SELECT id, user_id, profile_data::text as profile_data, "
-          + "revision_meta::text as revision_meta, created_at, updated_at "
-          + "FROM user_profiles WHERE id = #{id}")
+  @Select("SELECT id, user_id, profile_data::text as profile_data, revision_meta::text as revision_meta, created_at, updated_at FROM user_profiles WHERE id = #{id}")
   @Results(
       id = "userProfileResultMap",
       value = {
@@ -39,23 +34,15 @@ public interface UserProfileMapper {
       })
   Optional<UserProfile> findById(@Param("id") Long id);
 
-  @Select(
-      "SELECT id, user_id, profile_data::text as profile_data, "
-          + "revision_meta::text as revision_meta, created_at, updated_at "
-          + "FROM user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC")
+  @Select("SELECT id, user_id, profile_data::text as profile_data, revision_meta::text as revision_meta, created_at, updated_at FROM user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC")
   @ResultMap("userProfileResultMap")
   List<UserProfile> findByUserId(@Param("userId") Long userId);
 
-  @Select(
-      "SELECT id, user_id, profile_data::text as profile_data, "
-          + "revision_meta::text as revision_meta, created_at, updated_at "
-          + "FROM user_profiles WHERE user_id = #{userId} "
-          + "ORDER BY created_at DESC LIMIT 1")
+  @Select("SELECT id, user_id, profile_data::text as profile_data, revision_meta::text as revision_meta, created_at, updated_at FROM user_profiles WHERE user_id = #{userId} ORDER BY created_at DESC LIMIT 1")
   @ResultMap("userProfileResultMap")
   Optional<UserProfile> findLatestByUserId(@Param("userId") Long userId);
 
-  @Update(
-      "UPDATE user_profiles SET revision_meta = #{revisionMeta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
+  @Update("UPDATE user_profiles SET revision_meta = #{revisionMeta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
   void updateRevisionMeta(UserProfile userProfile);
 
   @Delete("DELETE FROM user_profiles WHERE id = #{id}")

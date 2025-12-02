@@ -189,8 +189,10 @@ spotless {
         // Use Google Java Format for formatting
         googleJavaFormat('1.19.2')
         
-        // Apply formatting to all Java source files
+        // Apply formatting to all Java source files except Mapper files
+        // (Mapper files contain SQL annotations that benefit from single-line formatting)
         target 'src/**/*.java'
+        targetExclude 'src/**/mapper/*Mapper.java'
         
         // Add license header (optional - remove if not needed)
         // licenseHeader '/* Copyright (c) 2024 */'
