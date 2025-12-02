@@ -1,8 +1,6 @@
 package app.aoki.quarkuscrud.service;
 
-import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.entity.UserProfile;
-import app.aoki.quarkuscrud.mapper.UserMapper;
 import app.aoki.quarkuscrud.mapper.UserProfileMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -14,13 +12,13 @@ import java.util.Optional;
  * Service for managing user profiles.
  *
  * <p>This service handles profile creation, retrieval, and updates. User profiles are versioned,
- * with each update creating a new revision.
+ * with each update creating a new revision. The latest revision is always retrieved using ORDER BY
+ * created_at DESC LIMIT 1, without relying on a cached pointer field.
  */
 @ApplicationScoped
 public class ProfileService {
 
   @Inject UserProfileMapper userProfileMapper;
-  @Inject UserMapper userMapper;
 
   /**
    * Finds the latest profile for a user.
@@ -51,12 +49,6 @@ public class ProfileService {
     newProfile.setUpdatedAt(now);
 
     userProfileMapper.insert(newProfile);
-
-    // Update user's current profile revision
-    User user = userMapper.findById(userId).orElseThrow();
-    user.setCurrentProfileRevision(newProfile.getId());
-    user.setUpdatedAt(now);
-    userMapper.update(user);
 
     return newProfile;
   }
