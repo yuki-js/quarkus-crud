@@ -6,14 +6,14 @@ import java.time.LocalDateTime;
 /**
  * User entity representing all users in the system.
  *
- * <p>Users track account lifecycle, profile revisions, and flexible metadata. Authentication is
- * handled separately in the authn_providers table.
+ * <p>Users track account lifecycle and flexible metadata. Authentication is handled separately in
+ * the authn_providers table. Profile revisions are stored in user_profiles and the latest is always
+ * retrieved via query (ORDER BY created_at DESC LIMIT 1).
  */
 @RegisterForReflection
 public class User {
   private Long id;
   private AccountLifecycle accountLifecycle;
-  private Long currentProfileRevision;
   private String meta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
@@ -23,13 +23,11 @@ public class User {
   public User(
       Long id,
       AccountLifecycle accountLifecycle,
-      Long currentProfileRevision,
       String meta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
     this.accountLifecycle = accountLifecycle;
-    this.currentProfileRevision = currentProfileRevision;
     this.meta = meta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -49,14 +47,6 @@ public class User {
 
   public void setAccountLifecycle(AccountLifecycle accountLifecycle) {
     this.accountLifecycle = accountLifecycle;
-  }
-
-  public Long getCurrentProfileRevision() {
-    return currentProfileRevision;
-  }
-
-  public void setCurrentProfileRevision(Long currentProfileRevision) {
-    this.currentProfileRevision = currentProfileRevision;
   }
 
   public String getMeta() {
