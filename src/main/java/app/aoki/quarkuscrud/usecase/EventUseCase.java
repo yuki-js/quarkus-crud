@@ -7,7 +7,6 @@ import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
 import app.aoki.quarkuscrud.generated.model.EventUserDataUpdateRequest;
 import app.aoki.quarkuscrud.service.EventService;
-import app.aoki.quarkuscrud.service.EventUserDataService;
 import app.aoki.quarkuscrud.service.UserService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +33,6 @@ public class EventUseCase {
   private static final Logger LOG = Logger.getLogger(EventUseCase.class);
 
   @Inject EventService eventService;
-  @Inject EventUserDataService eventUserDataService;
   @Inject UserService userService;
   @Inject ObjectMapper objectMapper;
 
@@ -174,9 +172,7 @@ public class EventUseCase {
    */
   public Optional<app.aoki.quarkuscrud.generated.model.EventUserData> getEventUserData(
       Long eventId, Long userId) {
-    return eventUserDataService
-        .findLatestByEventIdAndUserId(eventId, userId)
-        .map(this::toUserDataDto);
+    return eventService.findLatestUserData(eventId, userId).map(this::toUserDataDto);
   }
 
   /**
@@ -197,7 +193,7 @@ public class EventUseCase {
       revisionMeta = objectMapper.writeValueAsString(request.getRevisionMeta());
     }
     EventUserData newData =
-        eventUserDataService.createRevision(eventId, userId, userData, revisionMeta);
+        eventService.createUserDataRevision(eventId, userId, userData, revisionMeta);
     return toUserDataDto(newData);
   }
 
