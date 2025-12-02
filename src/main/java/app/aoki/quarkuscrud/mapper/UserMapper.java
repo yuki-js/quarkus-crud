@@ -19,16 +19,12 @@ public interface UserMapper {
 
   @Insert(
       "INSERT INTO users (account_lifecycle, meta, created_at, updated_at) "
-          + "VALUES ("
-          + "#{accountLifecycle, "
-          + "typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, "
-          + "#{meta}::jsonb, #{createdAt}, #{updatedAt})")
+          + "VALUES (#{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, #{meta}::jsonb, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(User user);
 
   @Select(
-      "SELECT id, account_lifecycle, meta::text as meta, "
-          + "created_at, updated_at FROM users WHERE id = #{id}")
+      "SELECT id, account_lifecycle, meta::text as meta, created_at, updated_at FROM users WHERE id = #{id}")
   @Results(
       id = "userResultMap",
       value = {
@@ -47,8 +43,7 @@ public interface UserMapper {
   @Update(
       "UPDATE users SET "
           + "account_lifecycle = "
-          + "#{accountLifecycle, "
-          + "typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, "
+          + "#{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, "
           + "meta = #{meta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
   void update(User user);
 
