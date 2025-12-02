@@ -56,17 +56,26 @@ public class EventUseCase {
   }
 
   /**
-   * Gets an event by ID.
+   * Gets an event by ID for a specific requesting user.
+   *
+   * <p>The invitation code is only included if the requesting user is the event owner (initiator).
+   * This prevents unauthorized users from obtaining the invitation code (CWE-284 fix).
    *
    * @param eventId the event ID
+   * @param requestingUserId the ID of the user making the request
    * @return an Optional containing the event DTO if found
    */
-  public Optional<app.aoki.quarkuscrud.generated.model.Event> getEventById(Long eventId) {
+  public Optional<app.aoki.quarkuscrud.generated.model.Event> getEventById(
+      Long eventId, Long requestingUserId) {
     return eventService
         .findById(eventId)
         .map(
             event -> {
-              String invitationCode = eventService.getInvitationCode(eventId).orElse(null);
+              // Only include invitation code if the requesting user is the event owner
+              String invitationCode = null;
+              if (requestingUserId != null && requestingUserId.equals(event.getInitiatorId())) {
+                invitationCode = eventService.getInvitationCode(eventId).orElse(null);
+              }
               return toEventDto(event, invitationCode);
             });
   }
@@ -105,15 +114,33 @@ public class EventUseCase {
   }
 
   /**
-   * Lists all attendees for an event.
+   * Lists all attendees for an event with access control.
+   *
+   * <p>Only the event owner or attendees can view the attendee list. This prevents unauthorized
+   * users from discovering who is attending an event (CWE-284 fix).
    *
    * @param eventId the event ID
+   * @param requestingUserId the ID of the user making the request
    * @return list of attendee DTOs
    * @throws IllegalArgumentException if event not found
+   * @throws SecurityException if user is not authorized to view attendees
    */
-  public List<app.aoki.quarkuscrud.generated.model.EventAttendee> listEventAttendees(Long eventId) {
-    if (eventService.findById(eventId).isEmpty()) {
-      throw new IllegalArgumentException("Event not found");
+  public List<app.aoki.quarkuscrud.generated.model.EventAttendee> listEventAttendees(
+      Long eventId, Long requestingUserId) {
+    Event event =
+        eventService
+            .findById(eventId)
+            .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+    // Check if requesting user is the event owner or an attendee
+    // Short-circuit: if owner, skip the attendee check to avoid unnecessary DB query
+    boolean isOwner = requestingUserId != null && requestingUserId.equals(event.getInitiatorId());
+    if (!isOwner) {
+      boolean isAttendee =
+          requestingUserId != null && eventService.isUserAttendee(eventId, requestingUserId);
+      if (!isAttendee) {
+        throw new SecurityException("Not authorized to view attendees");
+      }
     }
 
     return eventService.listAttendees(eventId).stream()
@@ -122,13 +149,19 @@ public class EventUseCase {
   }
 
   /**
-   * Lists all events for a user.
+   * Lists all events for a user with access control for invitation codes.
    *
-   * @param userId the user ID
+   * <p>The invitation code is only included for each event if the requesting user is the event
+   * owner (initiator). This prevents unauthorized users from obtaining invitation codes (CWE-284
+   * fix).
+   *
+   * @param userId the user ID whose events to list
+   * @param requestingUserId the ID of the user making the request
    * @return list of event DTOs
    * @throws IllegalArgumentException if user not found
    */
-  public List<app.aoki.quarkuscrud.generated.model.Event> listEventsByUser(Long userId) {
+  public List<app.aoki.quarkuscrud.generated.model.Event> listEventsByUser(
+      Long userId, Long requestingUserId) {
     if (userService.findById(userId).isEmpty()) {
       throw new IllegalArgumentException("User not found");
     }
@@ -136,7 +169,11 @@ public class EventUseCase {
     return eventService.findByInitiatorId(userId).stream()
         .map(
             event -> {
-              String invitationCode = eventService.getInvitationCode(event.getId()).orElse(null);
+              // Only include invitation code if the requesting user is the event owner
+              String invitationCode = null;
+              if (requestingUserId != null && requestingUserId.equals(event.getInitiatorId())) {
+                invitationCode = eventService.getInvitationCode(event.getId()).orElse(null);
+              }
               return toEventDto(event, invitationCode);
             })
         .collect(Collectors.toList());
