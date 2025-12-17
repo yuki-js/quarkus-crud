@@ -1,6 +1,6 @@
 Friendship:
   type: object
-  description: Record of a one-way profile card exchange between two users.
+  description: Record of a profile card exchange between two users. When a friendship is created, both directions (sender→recipient and recipient→sender) are established automatically, creating a mutual relationship.
   required:
     - id
     - senderUserId

@@ -4,7 +4,7 @@ paths:
       tags:
         - Friendships
       summary: Share my profile card with another user
-      description: Record that the authenticated user has shared their profile card with the specified user.
+      description: Record that the authenticated user has shared their profile card with the specified user. This operation creates a mutual (bidirectional) friendship, establishing both A→B and B→A relationships automatically.
       operationId: receiveFriendship
       parameters:
         - name: userId
@@ -48,7 +48,7 @@ paths:
               schema:
                 $ref: '../components/schemas/common.yaml#/ErrorResponse'
         '409':
-          description: Friendship already exists.
+          description: Friendship already exists (checked in both directions).
           content:
             application/json:
               schema:
