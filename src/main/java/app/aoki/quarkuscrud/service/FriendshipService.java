@@ -6,8 +6,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Service for managing friendships between users.
@@ -49,26 +47,5 @@ public class FriendshipService {
     friendshipMapper.insert(reverseFriendship);
 
     return friendship;
-  }
-
-  /**
-   * Finds a friendship by sender and recipient IDs.
-   *
-   * @param senderId the sender user ID
-   * @param recipientId the recipient user ID
-   * @return optional friendship if found
-   */
-  public Optional<Friendship> findBySenderAndRecipient(Long senderId, Long recipientId) {
-    return friendshipMapper.findBySenderAndRecipient(senderId, recipientId);
-  }
-
-  /**
-   * Finds all friendships where the user is the recipient.
-   *
-   * @param recipientId the recipient user ID
-   * @return list of friendships
-   */
-  public List<Friendship> findByRecipientId(Long recipientId) {
-    return friendshipMapper.findByRecipientId(recipientId);
   }
 }

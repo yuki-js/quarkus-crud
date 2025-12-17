@@ -45,6 +45,9 @@ public interface FriendshipMapper {
   Optional<Friendship> findBySenderAndRecipient(
       @Param("senderId") Long senderId, @Param("recipientId") Long recipientId);
 
+  @Select("SELECT EXISTS(SELECT 1 FROM friendships WHERE (sender_id = #{userId1} AND recipient_id = #{userId2}) OR (sender_id = #{userId2} AND recipient_id = #{userId1}))")
+  boolean existsBetweenUsers(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
+
   @Delete("DELETE FROM friendships WHERE id = #{id}")
   void deleteById(@Param("id") Long id);
 

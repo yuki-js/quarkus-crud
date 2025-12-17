@@ -55,8 +55,7 @@ public class FriendshipUseCase {
     }
 
     // Check if friendship already exists in either direction
-    if (friendshipMapper.findBySenderAndRecipient(senderId, recipientId).isPresent()
-        || friendshipMapper.findBySenderAndRecipient(recipientId, senderId).isPresent()) {
+    if (friendshipMapper.existsBetweenUsers(senderId, recipientId)) {
       throw new IllegalStateException("Friendship already exists");
     }
 
