@@ -60,6 +60,11 @@ spec:
               value: /keys/publicKey.pem
             - name: SMALLRYE_JWT_SIGN_KEY_LOCATION
               value: /keys-src/privateKey.pem
+            # JWT token lifespan configuration
+            - name: SMALLRYE_JWT_NEW_TOKEN_LIFESPAN_ANONYMOUS
+              value: "31536000"  # 365 days for anonymous users
+            - name: SMALLRYE_JWT_NEW_TOKEN_LIFESPAN_OIDC
+              value: "3600"  # 1 hour for OIDC users
             # Observability environment variables
             - name: DEPLOYMENT_ENVIRONMENT
               value: production
