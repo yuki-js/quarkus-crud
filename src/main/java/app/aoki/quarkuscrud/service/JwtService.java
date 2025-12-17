@@ -94,7 +94,7 @@ public class JwtService {
   /**
    * Get the appropriate token lifespan based on authentication method.
    *
-   * <p>Anonymous users get a longer lifespan (default: 30 days) since they cannot re-authenticate,
+   * <p>Anonymous users get a longer lifespan (default: 365 days) since they cannot re-authenticate,
    * while OIDC users get a shorter lifespan (default: 1 hour) following OAuth best practices.
    *
    * @param authMethod the authentication method
