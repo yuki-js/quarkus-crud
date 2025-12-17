@@ -24,8 +24,11 @@ public class JwtService {
   @ConfigProperty(name = "smallrye.jwt.new-token.issuer")
   String issuer;
 
-  @ConfigProperty(name = "smallrye.jwt.new-token.lifespan")
-  Long tokenLifespan;
+  @ConfigProperty(name = "smallrye.jwt.new-token.lifespan.anonymous")
+  Long anonymousTokenLifespan;
+
+  @ConfigProperty(name = "smallrye.jwt.new-token.lifespan.oidc")
+  Long oidcTokenLifespan;
 
   @Inject AuthnProviderMapper authnProviderMapper;
 
@@ -40,7 +43,7 @@ public class JwtService {
    *       others)
    *   <li>User Principal Name (upn): Same as subject for consistency
    *   <li>Groups: Authentication method value (e.g., "anonymous")
-   *   <li>Expiration: Configurable lifespan
+   *   <li>Expiration: Configurable lifespan based on authentication method
    * </ul>
    *
    * @param user the user to generate a token for
@@ -58,11 +61,14 @@ public class JwtService {
     String subject = primaryAuthn.getEffectiveSubject();
     String group = primaryAuthn.getAuthMethod().getValue();
 
+    // Select appropriate token lifespan based on authentication method
+    Long lifespan = getTokenLifespan(primaryAuthn.getAuthMethod());
+
     return Jwt.issuer(issuer)
         .upn(subject) // User principal name - effective subject
         .subject(subject) // Subject - effective subject
         .groups(group) // Authentication method as group
-        .expiresIn(tokenLifespan)
+        .expiresIn(lifespan)
         .jws()
         .algorithm(SignatureAlgorithm.ES256) // ECDSA with SHA-256
         .sign();
@@ -83,5 +89,21 @@ public class JwtService {
       throw new IllegalArgumentException("User is not authenticated anonymously");
     }
     return generateToken(user);
+  }
+
+  /**
+   * Get the appropriate token lifespan based on authentication method.
+   *
+   * <p>Anonymous users get a longer lifespan (default: 30 days) since they cannot re-authenticate,
+   * while OIDC users get a shorter lifespan (default: 1 hour) following OAuth best practices.
+   *
+   * @param authMethod the authentication method
+   * @return the token lifespan in seconds
+   */
+  private Long getTokenLifespan(AuthMethod authMethod) {
+    return switch (authMethod) {
+      case ANONYMOUS -> anonymousTokenLifespan;
+      case OIDC -> oidcTokenLifespan;
+    };
   }
 }
