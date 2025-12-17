@@ -126,7 +126,7 @@ public class FriendshipIntegrationTest {
         .when()
         .post("/api/users/" + user1Id + "/friendship")
         .then()
-        .statusCode(anyOf(is(409), is(200), is(201)));
+        .statusCode(409);
 
     // User 1 should have a received friendship from User 2
     given()
