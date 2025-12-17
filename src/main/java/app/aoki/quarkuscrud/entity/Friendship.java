@@ -4,10 +4,10 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.LocalDateTime;
 
 /**
- * Friendship entity representing unidirectional profile card exchange.
+ * Friendship entity representing mutual profile card exchange.
  *
  * <p>This represents a many-to-many relationship where users can send and receive profile cards.
- * The relationship is unidirectional (sender -> recipient).
+ * The relationship is bidirectional - when created, both directions are established automatically.
  */
 @RegisterForReflection
 public class Friendship {

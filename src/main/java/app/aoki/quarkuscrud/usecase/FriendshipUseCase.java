@@ -1,8 +1,8 @@
 package app.aoki.quarkuscrud.usecase;
 
 import app.aoki.quarkuscrud.entity.Friendship;
-import app.aoki.quarkuscrud.service.FriendshipService;
 import app.aoki.quarkuscrud.mapper.FriendshipMapper;
+import app.aoki.quarkuscrud.service.FriendshipService;
 import app.aoki.quarkuscrud.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -38,13 +38,14 @@ public class FriendshipUseCase {
   }
 
   /**
-   * Creates a friendship from sender to recipient.
+   * Creates a mutual friendship between sender and recipient. This will create bidirectional
+   * relationships automatically.
    *
    * @param senderId the sender user ID
    * @param recipientId the recipient user ID
    * @return the created friendship as DTO
    * @throws IllegalArgumentException if recipient user not found
-   * @throws IllegalStateException if friendship already exists
+   * @throws IllegalStateException if friendship already exists in either direction
    */
   @Transactional
   public app.aoki.quarkuscrud.generated.model.Friendship createFriendship(
@@ -53,7 +54,8 @@ public class FriendshipUseCase {
       throw new IllegalArgumentException("User not found");
     }
 
-    if (friendshipMapper.findBySenderAndRecipient(senderId, recipientId).isPresent()) {
+    // Check if friendship already exists in either direction
+    if (friendshipMapper.existsBetweenUsers(senderId, recipientId)) {
       throw new IllegalStateException("Friendship already exists");
     }
 

@@ -99,7 +99,7 @@ CREATE TABLE friendships (
 );
 
 -- Comments for documentation
-COMMENT ON TABLE friendships IS 'Unidirectional m:n relationship for profile card exchange';
+COMMENT ON TABLE friendships IS 'Bidirectional m:n relationship for profile card exchange (both directions created automatically)';
 COMMENT ON COLUMN friendships.sender_id IS 'User who sent their profile card';
 COMMENT ON COLUMN friendships.recipient_id IS 'User who received the profile card';
 

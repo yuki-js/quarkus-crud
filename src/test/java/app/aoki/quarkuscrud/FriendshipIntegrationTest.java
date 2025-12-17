@@ -115,8 +115,10 @@ public class FriendshipIntegrationTest {
 
   @Test
   @Order(5)
-  public void testBidirectionalFriendship() {
-    // User 2 sends profile card back to User 1
+  public void testMutualFriendshipAlreadyExists() {
+    // With mutual friendships, when user 1 sent profile card to user 2 in test order 2,
+    // both directions were created automatically. So user 2 trying to send to user 1
+    // should result in a conflict.
     given()
         .header("Authorization", "Bearer " + user2Token)
         .contentType(ContentType.JSON)
@@ -124,11 +126,9 @@ public class FriendshipIntegrationTest {
         .when()
         .post("/api/users/" + user1Id + "/friendship")
         .then()
-        .statusCode(anyOf(is(200), is(201)))
-        .body("senderUserId", equalTo(user2Id.intValue()))
-        .body("recipientUserId", equalTo(user1Id.intValue()));
+        .statusCode(409);
 
-    // User 1 should now have a received friendship from User 2
+    // User 1 should have a received friendship from User 2
     given()
         .header("Authorization", "Bearer " + user1Token)
         .when()

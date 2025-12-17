@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.aoki.quarkuscrud.entity.Friendship;
 import app.aoki.quarkuscrud.entity.User;
+import app.aoki.quarkuscrud.mapper.FriendshipMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class FriendshipServiceTest {
 
   @Inject FriendshipService friendshipService;
+  @Inject FriendshipMapper friendshipMapper;
   @Inject UserService userService;
 
   private static Long testUser1Id;
@@ -67,7 +69,7 @@ public class FriendshipServiceTest {
   @Order(3)
   public void testFindBySenderAndRecipient() {
     Optional<Friendship> friendship =
-        friendshipService.findBySenderAndRecipient(testUser1Id, testUser2Id);
+        friendshipMapper.findBySenderAndRecipient(testUser1Id, testUser2Id);
 
     assertTrue(friendship.isPresent());
     assertEquals(testUser1Id, friendship.get().getSenderId());
@@ -76,16 +78,19 @@ public class FriendshipServiceTest {
 
   @Test
   @Order(4)
-  public void testFindBySenderAndRecipientNotFound() {
+  public void testFindBySenderAndRecipientReverse() {
+    // With mutual friendships, the reverse direction should also exist
     Optional<Friendship> friendship =
-        friendshipService.findBySenderAndRecipient(testUser2Id, testUser1Id);
-    assertTrue(friendship.isEmpty());
+        friendshipMapper.findBySenderAndRecipient(testUser2Id, testUser1Id);
+    assertTrue(friendship.isPresent());
+    assertEquals(testUser2Id, friendship.get().getSenderId());
+    assertEquals(testUser1Id, friendship.get().getRecipientId());
   }
 
   @Test
   @Order(5)
   public void testFindByRecipientId() {
-    List<Friendship> friendships = friendshipService.findByRecipientId(testUser2Id);
+    List<Friendship> friendships = friendshipMapper.findByRecipientId(testUser2Id);
 
     assertFalse(friendships.isEmpty());
     assertTrue(friendships.stream().anyMatch(f -> f.getSenderId().equals(testUser1Id)));
@@ -93,9 +98,11 @@ public class FriendshipServiceTest {
 
   @Test
   @Order(6)
-  public void testFindByRecipientIdEmpty() {
-    List<Friendship> friendships = friendshipService.findByRecipientId(testUser1Id);
-    assertTrue(friendships.isEmpty());
+  public void testFindByRecipientIdMutual() {
+    // With mutual friendships, user1 should also have received friendships
+    List<Friendship> friendships = friendshipMapper.findByRecipientId(testUser1Id);
+    assertFalse(friendships.isEmpty());
+    assertTrue(friendships.stream().anyMatch(f -> f.getSenderId().equals(testUser2Id)));
   }
 
   @Test
@@ -111,14 +118,14 @@ public class FriendshipServiceTest {
     assertNotNull(friendship2);
 
     // Verify user3 has two friendships
-    List<Friendship> friendships = friendshipService.findByRecipientId(testUser3Id);
+    List<Friendship> friendships = friendshipMapper.findByRecipientId(testUser3Id);
     assertEquals(2, friendships.size());
   }
 
   @Test
   @Order(8)
   @Transactional
-  public void testCreateBidirectionalFriendship() {
+  public void testCreateMutualFriendshipAutomatically() {
     Long user4Id = userService.createAnonymousUser().getId();
     Long user5Id = userService.createAnonymousUser().getId();
 
@@ -126,12 +133,8 @@ public class FriendshipServiceTest {
     Friendship friendship1 = friendshipService.createFriendship(user4Id, user5Id);
     assertNotNull(friendship1);
 
-    // Create friendship from user5 to user4 (bidirectional)
-    Friendship friendship2 = friendshipService.createFriendship(user5Id, user4Id);
-    assertNotNull(friendship2);
-
-    // Verify both directions exist
-    assertTrue(friendshipService.findBySenderAndRecipient(user4Id, user5Id).isPresent());
-    assertTrue(friendshipService.findBySenderAndRecipient(user5Id, user4Id).isPresent());
+    // Verify both directions exist automatically
+    assertTrue(friendshipMapper.findBySenderAndRecipient(user4Id, user5Id).isPresent());
+    assertTrue(friendshipMapper.findBySenderAndRecipient(user5Id, user4Id).isPresent());
   }
 }
