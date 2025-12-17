@@ -31,7 +31,7 @@ public class FriendshipService {
   @Transactional
   public Friendship createFriendship(Long senderId, Long recipientId) {
     LocalDateTime now = LocalDateTime.now();
-    
+
     // Create friendship from sender to recipient
     Friendship friendship = new Friendship();
     friendship.setSenderId(senderId);
@@ -39,7 +39,7 @@ public class FriendshipService {
     friendship.setCreatedAt(now);
     friendship.setUpdatedAt(now);
     friendshipMapper.insert(friendship);
-    
+
     // Create reverse friendship from recipient to sender
     Friendship reverseFriendship = new Friendship();
     reverseFriendship.setSenderId(recipientId);
