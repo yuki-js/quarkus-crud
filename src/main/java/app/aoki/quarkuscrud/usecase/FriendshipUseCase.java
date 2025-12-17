@@ -1,8 +1,8 @@
 package app.aoki.quarkuscrud.usecase;
 
 import app.aoki.quarkuscrud.entity.Friendship;
-import app.aoki.quarkuscrud.service.FriendshipService;
 import app.aoki.quarkuscrud.mapper.FriendshipMapper;
+import app.aoki.quarkuscrud.service.FriendshipService;
 import app.aoki.quarkuscrud.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -38,8 +38,8 @@ public class FriendshipUseCase {
   }
 
   /**
-   * Creates a mutual friendship between sender and recipient.
-   * This will create bidirectional relationships automatically.
+   * Creates a mutual friendship between sender and recipient. This will create bidirectional
+   * relationships automatically.
    *
    * @param senderId the sender user ID
    * @param recipientId the recipient user ID

@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 /**
  * Service for managing friendships between users.
  *
- * <p>This service handles friendship creation and retrieval. Friendships are mutual
- * (bidirectional) relationships between users.
+ * <p>This service handles friendship creation and retrieval. Friendships are mutual (bidirectional)
+ * relationships between users.
  */
 @ApplicationScoped
 public class FriendshipService {
@@ -19,8 +19,8 @@ public class FriendshipService {
   @Inject FriendshipMapper friendshipMapper;
 
   /**
-   * Creates a new mutual friendship between sender and recipient.
-   * This creates two directional relationships: sender->recipient and recipient->sender.
+   * Creates a new mutual friendship between sender and recipient. This creates two directional
+   * relationships: sender->recipient and recipient->sender.
    *
    * @param senderId the sender user ID
    * @param recipientId the recipient user ID
