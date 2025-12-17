@@ -2,6 +2,7 @@ package app.aoki.quarkuscrud.usecase;
 
 import app.aoki.quarkuscrud.entity.Friendship;
 import app.aoki.quarkuscrud.service.FriendshipService;
+import app.aoki.quarkuscrud.mapper.FriendshipMapper;
 import app.aoki.quarkuscrud.service.UserService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -21,6 +22,7 @@ public class FriendshipUseCase {
 
   @Inject FriendshipService friendshipService;
   @Inject UserService userService;
+  @Inject FriendshipMapper friendshipMapper;
 
   /**
    * Lists received friendships for a user.
@@ -30,7 +32,7 @@ public class FriendshipUseCase {
    */
   public List<app.aoki.quarkuscrud.generated.model.Friendship> listReceivedFriendships(
       Long userId) {
-    return friendshipService.findByRecipientId(userId).stream()
+    return friendshipMapper.findByRecipientId(userId).stream()
         .map(this::toFriendshipDto)
         .collect(Collectors.toList());
   }
@@ -51,7 +53,7 @@ public class FriendshipUseCase {
       throw new IllegalArgumentException("User not found");
     }
 
-    if (friendshipService.findBySenderAndRecipient(senderId, recipientId).isPresent()) {
+    if (friendshipMapper.findBySenderAndRecipient(senderId, recipientId).isPresent()) {
       throw new IllegalStateException("Friendship already exists");
     }
 

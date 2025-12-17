@@ -21,16 +21,6 @@ public class FriendshipService {
   @Inject FriendshipMapper friendshipMapper;
 
   /**
-   * Lists all friendships where the user is the recipient.
-   *
-   * @param recipientId the recipient user ID
-   * @return list of friendships
-   */
-  public List<Friendship> findByRecipientId(Long recipientId) {
-    return friendshipMapper.findByRecipientId(recipientId);
-  }
-
-  /**
    * Creates a new friendship from sender to recipient.
    *
    * @param senderId the sender user ID
@@ -48,16 +38,5 @@ public class FriendshipService {
 
     friendshipMapper.insert(friendship);
     return friendship;
-  }
-
-  /**
-   * Checks if a friendship exists from sender to recipient.
-   *
-   * @param senderId the sender user ID
-   * @param recipientId the recipient user ID
-   * @return an Optional containing the friendship if it exists
-   */
-  public Optional<Friendship> findBySenderAndRecipient(Long senderId, Long recipientId) {
-    return friendshipMapper.findBySenderAndRecipient(senderId, recipientId);
   }
 }
