@@ -14,9 +14,17 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 /**
  * Service for generating JWT tokens for internally-authenticated users.
  *
- * <p>This service handles JWT token generation for users authenticated by this service (currently
- * anonymous users). When users are authenticated by external providers (OIDC), this service is NOT
- * used - those tokens come directly from the external provider.
+ * <p>This service handles JWT token generation for users authenticated by this service. Currently
+ * supports:
+ *
+ * <ul>
+ *   <li>Anonymous users: Long-lived tokens (365 days) since they cannot re-authenticate
+ *   <li>OIDC users: Short-lived tokens (1 hour) following OAuth2 best practices
+ * </ul>
+ *
+ * <p>Note: When users are authenticated by external OIDC providers, tokens may come directly from
+ * the external provider. This service provides an alternative token generation mechanism with
+ * configurable lifespans per authentication method.
  */
 @ApplicationScoped
 public class JwtService {
@@ -105,6 +113,8 @@ public class JwtService {
     return switch (authMethod) {
       case ANONYMOUS -> anonymousTokenLifespan;
       case OIDC -> oidcTokenLifespan;
+        // Default case for future-proofing: if new authentication methods are added to the enum,
+        // this will prevent silent failures and make it explicit that configuration is needed
       default ->
           throw new IllegalArgumentException("Unsupported authentication method: " + authMethod);
     };
