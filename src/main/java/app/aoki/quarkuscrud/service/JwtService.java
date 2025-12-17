@@ -99,11 +99,14 @@ public class JwtService {
    *
    * @param authMethod the authentication method
    * @return the token lifespan in seconds
+   * @throws IllegalArgumentException if the authentication method is not supported
    */
   private Long getTokenLifespan(AuthMethod authMethod) {
     return switch (authMethod) {
       case ANONYMOUS -> anonymousTokenLifespan;
       case OIDC -> oidcTokenLifespan;
+      default ->
+          throw new IllegalArgumentException("Unsupported authentication method: " + authMethod);
     };
   }
 }
