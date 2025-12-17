@@ -76,10 +76,13 @@ public class FriendshipServiceTest {
 
   @Test
   @Order(4)
-  public void testFindBySenderAndRecipientNotFound() {
+  public void testFindBySenderAndRecipientReverse() {
+    // With mutual friendships, the reverse direction should also exist
     Optional<Friendship> friendship =
         friendshipService.findBySenderAndRecipient(testUser2Id, testUser1Id);
-    assertTrue(friendship.isEmpty());
+    assertTrue(friendship.isPresent());
+    assertEquals(testUser2Id, friendship.get().getSenderId());
+    assertEquals(testUser1Id, friendship.get().getRecipientId());
   }
 
   @Test
@@ -93,9 +96,11 @@ public class FriendshipServiceTest {
 
   @Test
   @Order(6)
-  public void testFindByRecipientIdEmpty() {
+  public void testFindByRecipientIdMutual() {
+    // With mutual friendships, user1 should also have received friendships
     List<Friendship> friendships = friendshipService.findByRecipientId(testUser1Id);
-    assertTrue(friendships.isEmpty());
+    assertFalse(friendships.isEmpty());
+    assertTrue(friendships.stream().anyMatch(f -> f.getSenderId().equals(testUser2Id)));
   }
 
   @Test
@@ -118,7 +123,7 @@ public class FriendshipServiceTest {
   @Test
   @Order(8)
   @Transactional
-  public void testCreateBidirectionalFriendship() {
+  public void testCreateMutualFriendshipAutomatically() {
     Long user4Id = userService.createAnonymousUser().getId();
     Long user5Id = userService.createAnonymousUser().getId();
 
@@ -126,11 +131,7 @@ public class FriendshipServiceTest {
     Friendship friendship1 = friendshipService.createFriendship(user4Id, user5Id);
     assertNotNull(friendship1);
 
-    // Create friendship from user5 to user4 (bidirectional)
-    Friendship friendship2 = friendshipService.createFriendship(user5Id, user4Id);
-    assertNotNull(friendship2);
-
-    // Verify both directions exist
+    // Verify both directions exist automatically
     assertTrue(friendshipService.findBySenderAndRecipient(user4Id, user5Id).isPresent());
     assertTrue(friendshipService.findBySenderAndRecipient(user5Id, user4Id).isPresent());
   }
