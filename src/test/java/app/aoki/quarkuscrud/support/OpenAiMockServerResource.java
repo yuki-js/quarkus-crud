@@ -51,9 +51,14 @@ public class OpenAiMockServerResource implements QuarkusTestResourceLifecycleMan
   }
 
   private void setupDefaultStubs() {
-    // Default stub for chat completions - returns a simple fake names response
+    // Default stub for chat completions - matches OpenAI API specification
+    // This stub validates the request has required headers and body structure
     wireMockServer.stubFor(
         post(urlPathMatching("/chat/completions"))
+            .withHeader("Authorization", matching("Bearer .*"))
+            .withHeader("Content-Type", equalTo("application/json"))
+            .withRequestBody(matchingJsonPath("$.model"))
+            .withRequestBody(matchingJsonPath("$.messages"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -61,7 +66,7 @@ public class OpenAiMockServerResource implements QuarkusTestResourceLifecycleMan
                     .withBody(
                         """
                         {
-                          "id": "chatcmpl-test",
+                          "id": "chatcmpl-test-123456",
                           "object": "chat.completion",
                           "created": 1234567890,
                           "model": "gpt-3.5-turbo",
@@ -77,6 +82,25 @@ public class OpenAiMockServerResource implements QuarkusTestResourceLifecycleMan
                             "prompt_tokens": 50,
                             "completion_tokens": 30,
                             "total_tokens": 80
+                          }
+                        }
+                        """)));
+
+    // Stub for requests without proper authentication
+    wireMockServer.stubFor(
+        post(urlPathMatching("/chat/completions"))
+            .withHeader("Authorization", absent())
+            .willReturn(
+                aResponse()
+                    .withStatus(401)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(
+                        """
+                        {
+                          "error": {
+                            "message": "Invalid authentication",
+                            "type": "invalid_request_error",
+                            "code": "invalid_api_key"
                           }
                         }
                         """)));
