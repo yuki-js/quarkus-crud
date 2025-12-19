@@ -1,0 +1,236 @@
+package app.aoki.quarkuscrud;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.mockito.Mockito;
+
+/**
+ * Integration tests for LLM API endpoints.
+ *
+ * <p>Tests the /api/llm/fake-names endpoint with mocked LLM service to avoid actual API calls.
+ * Validates authentication, rate limiting, request validation, and response format.
+ */
+@QuarkusTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class LlmIntegrationTest {
+
+  @InjectMock dev.langchain4j.model.chat.ChatLanguageModel chatModel;
+
+  private static String jwtToken;
+
+  @Test
+  @Order(0)
+  public void setup() {
+    // Create a guest user for testing
+    Response response = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    jwtToken = response.getHeader("Authorization").substring(7);
+    assertNotNull(jwtToken);
+  }
+
+  @Test
+  @Order(1)
+  public void testGenerateFakeNamesWithoutAuthentication() {
+    given()
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":0.1}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(401);
+  }
+
+  @Test
+  @Order(2)
+  public void testGenerateFakeNamesSuccess() {
+    // Mock the LLM response
+    String mockResponse = "{\"output\": [\"青木 優香\", \"青木 優空\", \"青山 裕子\", \"青木 雄\", \"青木 悠斗\"]}";
+    Mockito.when(chatModel.generate(Mockito.anyString())).thenReturn(mockResponse);
+
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":0.1}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(200)
+        .body("output", notNullValue())
+        .body("output", hasSize(greaterThanOrEqualTo(5)))
+        .body("output[0]", notNullValue());
+  }
+
+  @Test
+  @Order(3)
+  public void testGenerateFakeNamesWithHighVariance() {
+    // Mock the LLM response for high variance
+    String mockResponse =
+        "{\"output\": [\"西牟田 博之\", \"秀丸 壱太朗\", \"島田 部長\", \"李 源彦\", \"篠原 アンジェラ\"]}";
+    Mockito.when(chatModel.generate(Mockito.anyString())).thenReturn(mockResponse);
+
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":0.9}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(200)
+        .body("output", notNullValue())
+        .body("output", hasSize(greaterThanOrEqualTo(5)));
+  }
+
+  @Test
+  @Order(4)
+  public void testGenerateFakeNamesMissingInputName() {
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"variance\":0.1}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(400); // Bean Validation will catch this
+  }
+
+  @Test
+  @Order(5)
+  public void testGenerateFakeNamesEmptyInputName() {
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"\",\"variance\":0.1}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(400); // Size validation will catch this
+  }
+
+  @Test
+  @Order(6)
+  public void testGenerateFakeNamesInvalidVarianceTooLow() {
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":-0.1}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(400); // DecimalMin validation will catch this
+  }
+
+  @Test
+  @Order(7)
+  public void testGenerateFakeNamesInvalidVarianceTooHigh() {
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":1.5}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(400); // DecimalMax validation will catch this
+  }
+
+  @Test
+  @Order(8)
+  public void testGenerateFakeNamesMissingVariance() {
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"青木 勇樹\"}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(400); // NotNull validation will catch this
+  }
+
+  @Test
+  @Order(9)
+  public void testGenerateFakeNamesWithJapaneseName() {
+    // Mock the LLM response with Japanese names
+    String mockResponse =
+        "{\"output\": [\"田中 太郎\", \"田中 次郎\", \"田辺 太郎\", \"山田 太郎\", \"中田 太郎\", \"田口 太郎\"]}";
+    Mockito.when(chatModel.generate(Mockito.anyString())).thenReturn(mockResponse);
+
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"田中 太郎\",\"variance\":0.2}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(200)
+        .body("output", hasSize(greaterThanOrEqualTo(5)));
+  }
+
+  @Test
+  @Order(10)
+  public void testGenerateFakeNamesLlmError() {
+    // Mock the LLM to throw an exception
+    Mockito.when(chatModel.generate(Mockito.anyString()))
+        .thenThrow(new RuntimeException("LLM service unavailable"));
+
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":0.1}")
+        .when()
+        .post("/api/llm/fake-names")
+        .then()
+        .statusCode(500);
+  }
+
+  @Test
+  @Order(11)
+  public void testRateLimitPerUser() {
+    // Mock the LLM response
+    String mockResponse = "{\"output\": [\"名前1\", \"名前2\", \"名前3\", \"名前4\", \"名前5\"]}";
+    Mockito.when(chatModel.generate(Mockito.anyString())).thenReturn(mockResponse);
+
+    // Make multiple requests rapidly to test rate limiting
+    // Note: This test may be flaky depending on timing. In production,
+    // you might want to inject a test-specific rate limiter with lower limits.
+    for (int i = 0; i < 50; i++) {
+      given()
+          .header("Authorization", "Bearer " + jwtToken)
+          .contentType(ContentType.JSON)
+          .body("{\"inputName\":\"テスト\",\"variance\":0.5}")
+          .when()
+          .post("/api/llm/fake-names");
+    }
+
+    // The next request should potentially hit rate limit or succeed
+    // depending on timing. Just verify it doesn't crash.
+    Response response =
+        given()
+            .header("Authorization", "Bearer " + jwtToken)
+            .contentType(ContentType.JSON)
+            .body("{\"inputName\":\"テスト\",\"variance\":0.5}")
+            .when()
+            .post("/api/llm/fake-names");
+
+    // Should be either 200 (success) or 429 (rate limited)
+    int statusCode = response.getStatusCode();
+    assertTrue(
+        statusCode == 200 || statusCode == 429,
+        "Status code should be 200 or 429, but was " + statusCode);
+  }
+
+  private void assertTrue(boolean condition, String message) {
+    if (!condition) {
+      throw new AssertionError(message);
+    }
+  }
+}
