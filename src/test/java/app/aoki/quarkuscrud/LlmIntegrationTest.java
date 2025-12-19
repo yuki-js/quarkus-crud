@@ -1,10 +1,13 @@
 package app.aoki.quarkuscrud;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import io.quarkus.test.InjectMock;
+import app.aoki.quarkuscrud.support.OpenAiMockServerResource;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -13,20 +16,25 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.mockito.Mockito;
 
 /**
  * Integration tests for LLM API endpoints.
  *
- * <p>Tests the /api/llm/fake-names endpoint with mocked LLM service to avoid actual API calls.
- * Validates authentication, rate limiting, request validation, and response format.
+ * <p>Tests the /api/llm/fake-names endpoint with WireMock server acting as OpenAI API. Validates
+ * authentication, rate limiting, request validation, and response format.
  */
 @QuarkusTest
+@QuarkusTestResource(OpenAiMockServerResource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class LlmIntegrationTest {
+public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockServerAware {
 
-  @InjectMock dev.langchain4j.model.chat.ChatLanguageModel chatModel;
+  private WireMockServer wireMockServer;
+
+  @Override
+  public void setWireMockServer(WireMockServer wireMockServer) {
+    this.wireMockServer = wireMockServer;
+  }
 
   private static String jwtToken;
 
@@ -54,10 +62,7 @@ public class LlmIntegrationTest {
   @Test
   @Order(2)
   public void testGenerateFakeNamesSuccess() {
-    // Mock the LLM response
-    String mockResponse = "{\"output\": [\"青木 優香\", \"青木 優空\", \"青山 裕子\", \"青木 雄\", \"青木 悠斗\"]}";
-    Mockito.when(chatModel.generate(Mockito.anyString())).thenReturn(mockResponse);
-
+    // The default stub in OpenAiMockServerResource already returns a good response
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
@@ -74,10 +79,35 @@ public class LlmIntegrationTest {
   @Test
   @Order(3)
   public void testGenerateFakeNamesWithHighVariance() {
-    // Mock the LLM response for high variance
-    String mockResponse =
-        "{\"output\": [\"西牟田 博之\", \"秀丸 壱太朗\", \"島田 部長\", \"李 源彦\", \"篠原 アンジェラ\"]}";
-    Mockito.when(chatModel.generate(Mockito.anyString())).thenReturn(mockResponse);
+    // Configure WireMock to return high variance names
+    wireMockServer.stubFor(
+        post(urlPathMatching("/chat/completions"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(
+                        """
+                        {
+                          "id": "chatcmpl-test",
+                          "object": "chat.completion",
+                          "created": 1234567890,
+                          "model": "gpt-3.5-turbo",
+                          "choices": [{
+                            "index": 0,
+                            "message": {
+                              "role": "assistant",
+                              "content": "{\\"output\\": [\\"西牟田 博之\\", \\"秀丸 壱太朗\\", \\"島田 部長\\", \\"李 源彦\\", \\"篠原 アンジェラ\\"]}"
+                            },
+                            "finish_reason": "stop"
+                          }],
+                          "usage": {
+                            "prompt_tokens": 50,
+                            "completion_tokens": 30,
+                            "total_tokens": 80
+                          }
+                        }
+                        """)));
 
     given()
         .header("Authorization", "Bearer " + jwtToken)
@@ -159,10 +189,35 @@ public class LlmIntegrationTest {
   @Test
   @Order(9)
   public void testGenerateFakeNamesWithJapaneseName() {
-    // Mock the LLM response with Japanese names
-    String mockResponse =
-        "{\"output\": [\"田中 太郎\", \"田中 次郎\", \"田辺 太郎\", \"山田 太郎\", \"中田 太郎\", \"田口 太郎\"]}";
-    Mockito.when(chatModel.generate(Mockito.anyString())).thenReturn(mockResponse);
+    // Configure WireMock to return Japanese names
+    wireMockServer.stubFor(
+        post(urlPathMatching("/chat/completions"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(
+                        """
+                        {
+                          "id": "chatcmpl-test",
+                          "object": "chat.completion",
+                          "created": 1234567890,
+                          "model": "gpt-3.5-turbo",
+                          "choices": [{
+                            "index": 0,
+                            "message": {
+                              "role": "assistant",
+                              "content": "{\\"output\\": [\\"田中 太郎\\", \\"田中 次郎\\", \\"田辺 太郎\\", \\"山田 太郎\\", \\"中田 太郎\\", \\"田口 太郎\\"]}"
+                            },
+                            "finish_reason": "stop"
+                          }],
+                          "usage": {
+                            "prompt_tokens": 50,
+                            "completion_tokens": 30,
+                            "total_tokens": 80
+                          }
+                        }
+                        """)));
 
     given()
         .header("Authorization", "Bearer " + jwtToken)
@@ -178,9 +233,10 @@ public class LlmIntegrationTest {
   @Test
   @Order(10)
   public void testGenerateFakeNamesLlmError() {
-    // Mock the LLM to throw an exception
-    Mockito.when(chatModel.generate(Mockito.anyString()))
-        .thenThrow(new RuntimeException("LLM service unavailable"));
+    // Configure WireMock to return an error
+    wireMockServer.stubFor(
+        post(urlPathMatching("/chat/completions"))
+            .willReturn(aResponse().withStatus(500).withBody("Internal Server Error")));
 
     given()
         .header("Authorization", "Bearer " + jwtToken)
@@ -195,9 +251,36 @@ public class LlmIntegrationTest {
   @Test
   @Order(11)
   public void testRateLimitPerUser() {
-    // Mock the LLM response
-    String mockResponse = "{\"output\": [\"名前1\", \"名前2\", \"名前3\", \"名前4\", \"名前5\"]}";
-    Mockito.when(chatModel.generate(Mockito.anyString())).thenReturn(mockResponse);
+    // Reset WireMock to default successful response
+    wireMockServer.resetAll();
+    wireMockServer.stubFor(
+        post(urlPathMatching("/chat/completions"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(
+                        """
+                        {
+                          "id": "chatcmpl-test",
+                          "object": "chat.completion",
+                          "created": 1234567890,
+                          "model": "gpt-3.5-turbo",
+                          "choices": [{
+                            "index": 0,
+                            "message": {
+                              "role": "assistant",
+                              "content": "{\\"output\\": [\\"名前1\\", \\"名前2\\", \\"名前3\\", \\"名前4\\", \\"名前5\\"]}"
+                            },
+                            "finish_reason": "stop"
+                          }],
+                          "usage": {
+                            "prompt_tokens": 50,
+                            "completion_tokens": 30,
+                            "total_tokens": 80
+                          }
+                        }
+                        """)));
 
     // Make multiple requests rapidly to test rate limiting
     // Note: This test may be flaky depending on timing. In production,
