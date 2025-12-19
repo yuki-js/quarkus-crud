@@ -126,7 +126,10 @@ public class EventService {
    * @return an Optional containing the invitation code if found
    */
   public Optional<String> getInvitationCode(Long eventId) {
-    return eventInvitationCodeMapper.findByEventId(eventId).stream()
+    LOG.debugf("Getting invitation code for event ID: %d", eventId);
+    List<EventInvitationCode> codes = eventInvitationCodeMapper.findByEventId(eventId);
+    LOG.debugf("Found %d invitation codes for event ID: %d", codes.size(), eventId);
+    return codes.stream()
         .findFirst()
         .map(EventInvitationCode::getInvitationCode);
   }

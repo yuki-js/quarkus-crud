@@ -51,7 +51,9 @@ public class EventUseCase {
     Event event =
         eventService.createEvent(
             userId, meta, eventService.toLocalDateTime(request.getExpiresAt()));
+    LOG.debugf("Event created with ID: %d, fetching invitation code", event.getId());
     String invitationCode = eventService.getInvitationCode(event.getId()).orElse(null);
+    LOG.debugf("Invitation code retrieved: %s", invitationCode);
     return toEventDto(event, invitationCode);
   }
 
@@ -243,6 +245,7 @@ public class EventUseCase {
     response.setStatus(
         app.aoki.quarkuscrud.generated.model.Event.StatusEnum.fromValue(
             event.getStatus().getValue()));
+    LOG.debugf("Setting invitation code on response: %s", invitationCode);
     if (invitationCode != null) {
       response.setInvitationCode(invitationCode);
     }
