@@ -129,9 +129,7 @@ public class EventService {
     LOG.debugf("Getting invitation code for event ID: %d", eventId);
     List<EventInvitationCode> codes = eventInvitationCodeMapper.findByEventId(eventId);
     LOG.debugf("Found %d invitation codes for event ID: %d", codes.size(), eventId);
-    return codes.stream()
-        .findFirst()
-        .map(EventInvitationCode::getInvitationCode);
+    return codes.stream().findFirst().map(EventInvitationCode::getInvitationCode);
   }
 
   /**

@@ -33,7 +33,7 @@ public class InvitationCodeDebugTest {
     String responseBody = eventResponse.getBody().asString();
     System.out.println("Event Response Body: " + responseBody);
     System.out.println("Event Response Headers: " + eventResponse.getHeaders());
-    
+
     // Check if invitationCode is present
     String invitationCode = eventResponse.jsonPath().getString("invitationCode");
     System.out.println("Invitation Code from response: " + invitationCode);
