@@ -43,6 +43,9 @@ dependencies {
     // Observability: Metrics (Micrometer + Prometheus)
     implementation 'io.quarkus:quarkus-micrometer-registry-prometheus'
     
+    // LangChain4j for LLM integration
+    implementation 'io.quarkiverse.langchain4j:quarkus-langchain4j-openai:0.21.0'
+    
     // Swagger annotations for generated API code
     implementation 'io.swagger:swagger-annotations:1.6.14'
     
@@ -52,6 +55,9 @@ dependencies {
     
     // OpenAPI contract validation for tests
     testImplementation 'com.atlassian.oai:swagger-request-validator-restassured:2.41.0'
+    
+    // WireMock for mocking OpenAI API
+    testImplementation 'org.wiremock:wiremock-standalone:3.9.2'
     
     // Dev Services - provides automatic containerized PostgreSQL for dev mode
     // This enables Quarkus to start a PostgreSQL container automatically when running in dev mode

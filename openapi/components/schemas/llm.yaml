@@ -1,0 +1,40 @@
+FakeNamesRequest:
+  type: object
+  description: Request payload for generating fake names similar to the input name.
+  required:
+    - inputName
+    - variance
+  properties:
+    inputName:
+      type: string
+      description: The name to base fake name generation on.
+      example: 青木 勇樹
+      minLength: 1
+      maxLength: 100
+    variance:
+      type: number
+      format: double
+      description: Diversity factor (0-1). 0 = very similar names, 1 = more diverse names.
+      minimum: 0.0
+      maximum: 1.0
+      example: 0.1
+
+FakeNamesResponse:
+  type: object
+  description: Response containing generated fake names.
+  required:
+    - output
+  properties:
+    output:
+      type: array
+      description: List of generated fake names.
+      items:
+        type: string
+      minItems: 5
+      uniqueItems: true
+      example:
+        - 青木 優香
+        - 青木 優空
+        - 青山 裕子
+        - 青木 雄
+        - 青木 悠斗
