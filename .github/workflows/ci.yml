@@ -151,8 +151,9 @@ jobs:
             echo "| Skipped | ${NATIVE_SKIPPED:-0} | ℹ️ |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
-            
-            # Test Suites Breakdown
+
+          # Test Suites Breakdown
+          if [ -d "build/test-results/test" ]; then
             echo "## 📝 Test Suites" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Test Suite | Tests | Failures | Errors | Time |" >> $GITHUB_STEP_SUMMARY
