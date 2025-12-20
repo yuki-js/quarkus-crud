@@ -77,32 +77,9 @@ test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
 }
 
-// Integration tests for native mode - run after native build
-def integrationTestNative = tasks.register('testNative', Test) {
-    description = 'Runs integration tests against native binary'
-    group = 'verification'
-    
+// Configure testNative to run IT tests against native binary
+tasks.named('testNative') {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
-    systemProperty "native.image.path", "${buildDir}/quarkus-app/quarkus-run"
-    
-    // Run only IT tests (Integration Tests for native mode)
-    useJUnitPlatform {
-        includeTags 'integration-test'
-    }
-    
-    // Alternative: filter by class name pattern
-    filter {
-        includeTestsMatching "*IT"
-    }
-    
-    // Depend on native build
-    mustRunAfter('build')
-    
-    // Disable if not in native mode
-    onlyIf {
-        project.hasProperty('quarkus.native.enabled') || 
-        System.getProperty('quarkus.native.enabled') == 'true'
-    }
 }
 compileJava {
     options.encoding = 'UTF-8'
