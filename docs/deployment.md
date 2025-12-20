@@ -10,9 +10,14 @@ For native builds, add `-PnativeBuild=true` and adjust base images accordingly. 
 
 ## Configuration strategy
 
-Production settings live in `src/main/resources/application.properties`. Database credentials, JDBC URLs, and JWT keys are intentionally left blank so they must be supplied via environment variables or Kubernetes secrets (`QUARKUS_DATASOURCE_*`, `MP_JWT_VERIFY_PUBLICKEY_LOCATION`, `SMALLRYE_JWT_SIGN_KEY_LOCATION`). Observability endpoints remain stable (`/openapi`, `/swagger-ui`, `/healthz`, `/q/metrics`) making it simple to write ingress or probe definitions once.
+Production settings live in `src/main/resources/application.properties` and `manifests/application.properties` (for Kubernetes). Database credentials, JDBC URLs, JWT keys, and Azure OpenAI credentials are intentionally left blank or use placeholder defaults so they must be supplied via environment variables or Kubernetes secrets:
+- Database: `QUARKUS_DATASOURCE_*`
+- JWT: `MP_JWT_VERIFY_PUBLICKEY_LOCATION`, `SMALLRYE_JWT_SIGN_KEY_LOCATION`
+- Azure OpenAI (for LLM endpoint): `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT_NAME`
 
-When deploying to Kubernetes, mount secrets or config maps that populate those environment variables. Quarkus supports `.env` style files as well, but Kubernetes `EnvVar` entries keep intent clearer.
+Observability endpoints remain stable (`/openapi`, `/swagger-ui`, `/healthz`, `/q/metrics`) making it simple to write ingress or probe definitions once.
+
+When deploying to Kubernetes, mount secrets or config maps that populate those environment variables. The `manifests/common-secret.yaml` file includes commented examples for all required credentials. Quarkus supports `.env` style files as well, but Kubernetes `EnvVar` entries keep intent clearer.
 
 ## Database lifecycle
 
