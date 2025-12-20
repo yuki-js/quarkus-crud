@@ -90,14 +90,32 @@ jobs:
         env:
           QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://localhost:5432/quarkus_crud
 
+      - name: Install GraalVM for native build
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build native binary
+        run: ./gradlew quarkusBuild -Dquarkus.package.type=native -Dquarkus.native.container-build=false --no-daemon
+        env:
+          QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://localhost:5432/quarkus_crud
+
+      - name: Run native integration tests
+        run: ./gradlew testNative --no-daemon
+        env:
+          QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://localhost:5432/quarkus_crud
+
       - name: Generate Test Evidence Summary
         if: always()
         run: |
           echo "# 🧪 Test Execution Evidence" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Test Results Summary
-          echo "## 📊 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          # JVM Test Results Summary
+          echo "## 📊 JVM Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -d "build/test-results/test" ]; then
@@ -113,8 +131,29 @@ jobs:
             echo "| Errors | ${TOTAL_ERRORS:-0} | $([ ${TOTAL_ERRORS:-0} -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
             echo "| Skipped | ${TOTAL_SKIPPED:-0} | ℹ️ |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Native Test Results Summary
+          echo "## 🔥 Native Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -d "build/test-results/testNative" ]; then
+            NATIVE_TESTS=$(find build/test-results/testNative -name "*.xml" -exec grep -o 'tests="[0-9]*"' {} \; | grep -o '[0-9]*' | awk '{s+=$1} END {print s}')
+            NATIVE_FAILURES=$(find build/test-results/testNative -name "*.xml" -exec grep -o 'failures="[0-9]*"' {} \; | grep -o '[0-9]*' | awk '{s+=$1} END {print s}')
+            NATIVE_ERRORS=$(find build/test-results/testNative -name "*.xml" -exec grep -o 'errors="[0-9]*"' {} \; | grep -o '[0-9]*' | awk '{s+=$1} END {print s}')
+            NATIVE_SKIPPED=$(find build/test-results/testNative -name "*.xml" -exec grep -o 'skipped="[0-9]*"' {} \; | grep -o '[0-9]*' | awk '{s+=$1} END {print s}')
             
-            # Test Suites Breakdown
+            echo "| Metric | Count | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Total Tests | ${NATIVE_TESTS:-0} | ✅ |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failures | ${NATIVE_FAILURES:-0} | $([ ${NATIVE_FAILURES:-0} -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Errors | ${NATIVE_ERRORS:-0} | $([ ${NATIVE_ERRORS:-0} -eq 0 ] && echo '✅' || echo '❌') |" >> $GITHUB_STEP_SUMMARY
+            echo "| Skipped | ${NATIVE_SKIPPED:-0} | ℹ️ |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Test Suites Breakdown
+          if [ -d "build/test-results/test" ]; then
             echo "## 📝 Test Suites" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Test Suite | Tests | Failures | Errors | Time |" >> $GITHUB_STEP_SUMMARY
@@ -178,22 +217,30 @@ jobs:
           # Coverage Summary
           echo "## 🎯 Test Coverage Areas" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### JVM Mode Tests (122 tests)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Unit Tests (services, entities)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Integration Tests (@QuarkusTest)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Native Mode Tests (80 tests)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Authentication (guest user creation, token validation)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ CRUD Operations (create, read, update, delete)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Authorization (access control, multi-user scenarios)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Data Integrity (special chars, unicode, nulls, edge cases)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Database Integration (PostgreSQL + Flyway + MyBatis)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ REST API Endpoints (all resources)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Native binary execution compatibility" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Build Status
           TOTAL_FAILURES=${TOTAL_FAILURES:-0}
           TOTAL_ERRORS=${TOTAL_ERRORS:-0}
+          NATIVE_FAILURES=${NATIVE_FAILURES:-0}
+          NATIVE_ERRORS=${NATIVE_ERRORS:-0}
 
-          if [ "$TOTAL_FAILURES" -eq 0 ] && [ "$TOTAL_ERRORS" -eq 0 ]; then
+          if [ "$TOTAL_FAILURES" -eq 0 ] && [ "$TOTAL_ERRORS" -eq 0 ] && [ "$NATIVE_FAILURES" -eq 0 ] && [ "$NATIVE_ERRORS" -eq 0 ]; then
             echo "## ✅ Build Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "All ${TOTAL_TESTS:-0} tests passed successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+            echo "All ${TOTAL_TESTS:-0} JVM tests and ${NATIVE_TESTS:-0} native tests passed successfully! 🎉" >> $GITHUB_STEP_SUMMARY
           else
             echo "## ❌ Build Status: FAILURE" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
