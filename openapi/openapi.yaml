@@ -24,6 +24,8 @@ tags:
     description: Profile card exchanges between users
   - name: Events
     description: Event management, attendees, and live updates
+  - name: LLM
+    description: LLM-powered features and endpoints
 paths:
   /api/auth/guest:
     $ref: './paths/auth.yaml#/paths/~1api~1auth~1guest'
@@ -53,6 +55,8 @@ paths:
     $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}~1live'
   /api/events/{eventId}/users/{userId}:
     $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}~1users~1{userId}'
+  /api/llm/fake-names:
+    $ref: './paths/llm.yaml#/paths/~1api~1llm~1fake-names'
 components:
   securitySchemes:
     bearerAuth:
@@ -84,6 +88,10 @@ components:
       $ref: './components/schemas/eventUserData.yaml#/EventUserData'
     EventUserDataUpdateRequest:
       $ref: './components/schemas/eventUserData.yaml#/EventUserDataUpdateRequest'
+    FakeNamesRequest:
+      $ref: './components/schemas/llm.yaml#/FakeNamesRequest'
+    FakeNamesResponse:
+      $ref: './components/schemas/llm.yaml#/FakeNamesResponse'
     ErrorResponse:
       $ref: './components/schemas/common.yaml#/ErrorResponse'
     LocalDateTime:
