@@ -26,12 +26,12 @@ public class OpenAiMockServerResource implements QuarkusTestResourceLifecycleMan
     // Configure default stub for chat completions endpoint
     setupDefaultStubs();
 
-    // Return configuration to override the OpenAI base URL
-    String baseUrl = "http://localhost:" + wireMockServer.port();
+    // Return configuration to override the Azure OpenAI endpoint
+    String baseUrl = "http://localhost:" + wireMockServer.port() + "/";
     return Map.of(
-        "quarkus.langchain4j.openai.base-url",
+        "quarkus.langchain4j.azure-openai.endpoint",
         baseUrl,
-        "quarkus.langchain4j.openai.api-key",
+        "quarkus.langchain4j.azure-openai.api-key",
         "test-api-key");
   }
 
@@ -51,13 +51,13 @@ public class OpenAiMockServerResource implements QuarkusTestResourceLifecycleMan
   }
 
   private void setupDefaultStubs() {
-    // Default stub for chat completions - matches OpenAI API specification
+    // Default stub for chat completions - matches Azure OpenAI API path structure
+    // Azure OpenAI uses paths like: /openai/deployments/{deployment-name}/chat/completions
     // This stub validates the request has required headers and body structure
     wireMockServer.stubFor(
-        post(urlPathMatching("/chat/completions"))
-            .withHeader("Authorization", matching("Bearer .*"))
+        post(urlPathMatching(".*/chat/completions"))
+            .withHeader("api-key", matching(".*"))
             .withHeader("Content-Type", equalTo("application/json"))
-            .withRequestBody(matchingJsonPath("$.model"))
             .withRequestBody(matchingJsonPath("$.messages"))
             .willReturn(
                 aResponse()
@@ -88,8 +88,8 @@ public class OpenAiMockServerResource implements QuarkusTestResourceLifecycleMan
 
     // Stub for requests without proper authentication
     wireMockServer.stubFor(
-        post(urlPathMatching("/chat/completions"))
-            .withHeader("Authorization", absent())
+        post(urlPathMatching(".*/chat/completions"))
+            .withHeader("api-key", absent())
             .willReturn(
                 aResponse()
                     .withStatus(401)

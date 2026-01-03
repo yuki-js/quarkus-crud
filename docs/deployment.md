@@ -15,6 +15,8 @@ Production settings live in `src/main/resources/application.properties` and `man
 - JWT: `MP_JWT_VERIFY_PUBLICKEY_LOCATION`, `SMALLRYE_JWT_SIGN_KEY_LOCATION`
 - Azure OpenAI (for LLM endpoint): `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT_NAME`
 
+**Important**: For Azure OpenAI, `AZURE_OPENAI_ENDPOINT` should be the base resource URL (e.g., `https://your-resource.openai.azure.com/`) without the deployment path. The extension will automatically construct the correct path.
+
 Observability endpoints remain stable (`/openapi`, `/swagger-ui`, `/healthz`, `/q/metrics`) making it simple to write ingress or probe definitions once.
 
 When deploying to Kubernetes, mount secrets or config maps that populate those environment variables. The `manifests/common-secret.yaml` file includes commented examples for all required credentials. Quarkus supports `.env` style files as well, but Kubernetes `EnvVar` entries keep intent clearer.
