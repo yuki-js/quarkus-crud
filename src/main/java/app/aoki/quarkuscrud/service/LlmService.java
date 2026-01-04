@@ -155,7 +155,7 @@ public class LlmService {
       throw new SecurityException("不適切な指示が検出されました。");
     } else if (!SECURITY_CHECK_SAFE.equals(result)) {
       // If response is neither SAFE nor DANGER, retry with a more specific prompt
-      LOG.warnf("Ambiguous security check response: %s, retrying with stricter prompt", result);
+      LOG.warnf("Ambiguous security check response (length: %d chars), retrying with stricter prompt", result.length());
       
       String retryResult = performSecurityCheck(customPrompt, true);
 
@@ -164,8 +164,8 @@ public class LlmService {
       } else if (!SECURITY_CHECK_SAFE.equals(retryResult)) {
         // If still ambiguous after retry, log warning and allow (err on the side of usability)
         LOG.warnf(
-            "Security check returned ambiguous response after retry: %s, allowing request",
-            retryResult);
+            "Security check returned ambiguous response after retry (length: %d chars), allowing request",
+            retryResult.length());
       }
     }
   }
