@@ -12,12 +12,20 @@ FakeNamesRequest:
       minLength: 1
       maxLength: 100
     variance:
-      type: number
-      format: double
-      description: Diversity factor (0-1). 0 = very similar names, 1 = more diverse names.
-      minimum: 0.0
-      maximum: 1.0
-      example: 0.1
+      type: string
+      description: Similarity level for name generation.
+      enum:
+        - ほぼ違いがない名前
+        - とても良く似ている名前
+        - 結構似ている名前
+        - 多少似ているといえるくらいの名前
+        - かすかに類似性を感じられる名前
+        - 互いにまったく似ていない名前
+      example: とても良く似ている名前
+    customPrompt:
+      type: string
+      description: Optional custom instructions for name generation (e.g., "古風な名前にして").
+      maxLength: 500
 
 FakeNamesResponse:
   type: object
