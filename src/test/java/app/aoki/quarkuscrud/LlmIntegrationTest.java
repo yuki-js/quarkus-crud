@@ -66,7 +66,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"inputName\":\"青木 勇樹\",\"variance\":0.1}")
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":\"とても良く似ている名前\"}")
         .when()
         .post("/api/llm/fake-names")
         .then()
@@ -112,7 +112,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"inputName\":\"青木 勇樹\",\"variance\":0.9}")
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":\"互いにまったく似ていない名前\"}")
         .when()
         .post("/api/llm/fake-names")
         .then()
@@ -127,7 +127,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"variance\":0.1}")
+        .body("{\"variance\":\"とても良く似ている名前\"}")
         .when()
         .post("/api/llm/fake-names")
         .then()
@@ -140,7 +140,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"inputName\":\"\",\"variance\":0.1}")
+        .body("{\"inputName\":\"\",\"variance\":\"とても良く似ている名前\"}")
         .when()
         .post("/api/llm/fake-names")
         .then()
@@ -149,32 +149,19 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
 
   @Test
   @Order(6)
-  public void testGenerateFakeNamesInvalidVarianceTooLow() {
+  public void testGenerateFakeNamesInvalidVariance() {
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"inputName\":\"青木 勇樹\",\"variance\":-0.1}")
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":\"invalid level\"}")
         .when()
         .post("/api/llm/fake-names")
         .then()
-        .statusCode(400); // DecimalMin validation will catch this
+        .statusCode(400); // Use case validation will catch this
   }
 
   @Test
   @Order(7)
-  public void testGenerateFakeNamesInvalidVarianceTooHigh() {
-    given()
-        .header("Authorization", "Bearer " + jwtToken)
-        .contentType(ContentType.JSON)
-        .body("{\"inputName\":\"青木 勇樹\",\"variance\":1.5}")
-        .when()
-        .post("/api/llm/fake-names")
-        .then()
-        .statusCode(400); // DecimalMax validation will catch this
-  }
-
-  @Test
-  @Order(8)
   public void testGenerateFakeNamesMissingVariance() {
     given()
         .header("Authorization", "Bearer " + jwtToken)
@@ -222,7 +209,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"inputName\":\"田中 太郎\",\"variance\":0.2}")
+        .body("{\"inputName\":\"田中 太郎\",\"variance\":\"結構似ている名前\"}")
         .when()
         .post("/api/llm/fake-names")
         .then()
@@ -241,7 +228,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
-        .body("{\"inputName\":\"青木 勇樹\",\"variance\":0.1}")
+        .body("{\"inputName\":\"青木 勇樹\",\"variance\":\"とても良く似ている名前\"}")
         .when()
         .post("/api/llm/fake-names")
         .then()
@@ -289,7 +276,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
       given()
           .header("Authorization", "Bearer " + jwtToken)
           .contentType(ContentType.JSON)
-          .body("{\"inputName\":\"テスト\",\"variance\":0.5}")
+          .body("{\"inputName\":\"テスト\",\"variance\":\"結構似ている名前\"}")
           .when()
           .post("/api/llm/fake-names");
     }
@@ -300,7 +287,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
         given()
             .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
-            .body("{\"inputName\":\"テスト\",\"variance\":0.5}")
+            .body("{\"inputName\":\"テスト\",\"variance\":\"結構似ている名前\"}")
             .when()
             .post("/api/llm/fake-names");
 

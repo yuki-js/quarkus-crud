@@ -4,6 +4,7 @@ import app.aoki.quarkuscrud.generated.model.FakeNamesRequest;
 import app.aoki.quarkuscrud.generated.model.FakeNamesResponse;
 import app.aoki.quarkuscrud.service.LlmService;
 import app.aoki.quarkuscrud.service.RateLimiterService;
+import app.aoki.quarkuscrud.service.SimilarityLevel;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.LinkedHashSet;
@@ -43,15 +44,28 @@ public class LlmUseCase {
       throw new IllegalArgumentException("Input name is required");
     }
 
-    if (request.getVariance() == null
-        || request.getVariance() < 0.0
-        || request.getVariance() > 1.0) {
-      throw new IllegalArgumentException("Variance must be between 0.0 and 1.0");
+    if (request.getVariance() == null) {
+      throw new IllegalArgumentException("Similarity level is required");
+    }
+
+    // Convert variance enum to SimilarityLevel enum
+    SimilarityLevel level;
+    try {
+      level = SimilarityLevel.fromValue(request.getVariance().value());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Invalid similarity level: " + request.getVariance(), e);
+    }
+
+    // Check for prompt injection in customPrompt
+    try {
+      llmService.checkPromptInjection(request.getCustomPrompt());
+    } catch (SecurityException e) {
+      throw new IllegalArgumentException(e.getMessage(), e);
     }
 
     // Generate fake names through service
     List<String> fakeNames =
-        llmService.generateFakeNames(request.getInputName(), request.getVariance());
+        llmService.generateFakeNames(request.getInputName(), level, request.getCustomPrompt());
 
     // Map to response DTO
     FakeNamesResponse response = new FakeNamesResponse();

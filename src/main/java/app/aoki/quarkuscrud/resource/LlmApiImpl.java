@@ -33,8 +33,12 @@ public class LlmApiImpl implements LlmApi {
   public Response generateFakeNames(FakeNamesRequest request) {
     User user = authenticatedUser.get();
     LOG.infof(
-        "Request received: generate fake names for user %d (input: %s, variance: %.2f)",
-        user.getId(), request.getInputName(), request.getVariance());
+        "Request received: generate fake names for user %d (input: %s, variance: %s,"
+            + " customPrompt: %s)",
+        user.getId(),
+        request.getInputName(),
+        request.getVariance() != null ? request.getVariance().value() : "null",
+        request.getCustomPrompt() != null ? request.getCustomPrompt() : "null");
 
     Timer.Sample sample = Timer.start(meterRegistry);
 
