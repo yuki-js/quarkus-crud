@@ -100,8 +100,11 @@ public class LlmService {
       String customPromptSection = "";
       if (customPrompt != null && !customPrompt.isBlank()) {
         // Simple sanitization: remove newlines and limit length as extra safety
-        String sanitizedPrompt =
-            customPrompt.replace("\n", " ").replace("\r", " ").substring(0, Math.min(500, customPrompt.length()));
+        String sanitizedPrompt = customPrompt.replace("\n", " ").replace("\r", " ");
+        // Limit length after sanitization
+        if (sanitizedPrompt.length() > 500) {
+          sanitizedPrompt = sanitizedPrompt.substring(0, 500);
+        }
         customPromptSection = "カスタム指示: " + sanitizedPrompt;
       }
 
