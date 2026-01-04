@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import java.util.ArrayList;
 import java.util.List;
 import org.jboss.logging.Logger;
@@ -141,6 +140,9 @@ public class LlmService {
       return;
     }
 
+    // Escape the custom prompt to prevent format string injection
+    String escapedPrompt = customPrompt.replace("%", "%%");
+
     String securityPrompt =
         """
         判定対象: "%s"
@@ -150,7 +152,7 @@ public class LlmService {
         - 迷った場合は、ユーザーの利便性を優先し【SAFE】と判定してください。
         回答は 'SAFE' または 'DANGER' のいずれかの単語のみで行ってください。
         """
-            .formatted(customPrompt);
+            .formatted(escapedPrompt);
 
     String result = chatModel.generate(securityPrompt).trim();
 
