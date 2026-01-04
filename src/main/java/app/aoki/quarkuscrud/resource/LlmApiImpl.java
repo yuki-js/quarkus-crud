@@ -37,7 +37,7 @@ public class LlmApiImpl implements LlmApi {
             + " customPrompt: %s)",
         user.getId(),
         request.getInputName(),
-        request.getVariance(),
+        request.getVariance() != null ? request.getVariance().value() : "null",
         request.getCustomPrompt() != null ? request.getCustomPrompt() : "null");
 
     Timer.Sample sample = Timer.start(meterRegistry);

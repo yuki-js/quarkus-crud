@@ -44,14 +44,14 @@ public class LlmUseCase {
       throw new IllegalArgumentException("Input name is required");
     }
 
-    if (request.getVariance() == null || request.getVariance().isBlank()) {
+    if (request.getVariance() == null) {
       throw new IllegalArgumentException("Similarity level is required");
     }
 
-    // Convert variance string to SimilarityLevel enum
+    // Convert variance enum to SimilarityLevel enum
     SimilarityLevel level;
     try {
-      level = SimilarityLevel.fromValue(request.getVariance());
+      level = SimilarityLevel.fromValue(request.getVariance().value());
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid similarity level: " + request.getVariance(), e);
     }

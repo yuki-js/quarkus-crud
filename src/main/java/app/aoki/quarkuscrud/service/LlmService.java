@@ -17,8 +17,6 @@ public class LlmService {
 
   @Inject ChatLanguageModel chatModel;
 
-  @Inject @Named("securityModel") ChatLanguageModel securityModel;
-
   @Inject ObjectMapper objectMapper;
 
   private static final String FAKE_NAMES_PROMPT_TEMPLATE =
@@ -154,7 +152,7 @@ public class LlmService {
         """
             .formatted(customPrompt);
 
-    String result = securityModel.generate(securityPrompt).trim();
+    String result = chatModel.generate(securityPrompt).trim();
 
     if (result.contains("DANGER")) {
       throw new SecurityException("不適切な指示が検出されました。");

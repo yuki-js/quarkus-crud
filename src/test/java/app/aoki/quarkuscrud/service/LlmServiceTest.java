@@ -25,12 +25,9 @@ public class LlmServiceTest {
 
   @InjectMock ChatLanguageModel chatModel;
 
-  @InjectMock(convertScopes = true)
-  ChatLanguageModel securityModel;
-
   @BeforeEach
   public void setup() {
-    reset(chatModel, securityModel);
+    reset(chatModel);
   }
 
   @Test
@@ -253,18 +250,18 @@ public class LlmServiceTest {
   @Test
   public void testCheckPromptInjectionSafe() {
     // Arrange
-    when(securityModel.generate(anyString())).thenReturn("SAFE");
+    when(chatModel.generate(anyString())).thenReturn("SAFE");
 
     // Act & Assert - Should not throw
     assertDoesNotThrow(() -> llmService.checkPromptInjection("古風な名前にして"));
 
-    verify(securityModel, times(1)).generate(anyString());
+    verify(chatModel, times(1)).generate(anyString());
   }
 
   @Test
   public void testCheckPromptInjectionDanger() {
     // Arrange
-    when(securityModel.generate(anyString())).thenReturn("DANGER");
+    when(chatModel.generate(anyString())).thenReturn("DANGER");
 
     // Act & Assert - Should throw SecurityException
     SecurityException exception =
@@ -274,7 +271,7 @@ public class LlmServiceTest {
 
     assertEquals("不適切な指示が検出されました。", exception.getMessage());
 
-    verify(securityModel, times(1)).generate(anyString());
+    verify(chatModel, times(1)).generate(anyString());
   }
 
   @Test
@@ -282,7 +279,7 @@ public class LlmServiceTest {
     // Act & Assert - Should not throw or call security model
     assertDoesNotThrow(() -> llmService.checkPromptInjection(null));
 
-    verify(securityModel, never()).generate(anyString());
+    verify(chatModel, never()).generate(anyString());
   }
 
   @Test
@@ -290,6 +287,6 @@ public class LlmServiceTest {
     // Act & Assert - Should not throw or call security model
     assertDoesNotThrow(() -> llmService.checkPromptInjection("   "));
 
-    verify(securityModel, never()).generate(anyString());
+    verify(chatModel, never()).generate(anyString());
   }
 }
