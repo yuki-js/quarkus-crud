@@ -16,7 +16,14 @@ public class LlmService {
 
   private static final String SECURITY_CHECK_SAFE = "SAFE";
   private static final String SECURITY_CHECK_DANGER = "DANGER";
+  
+  /**
+   * Maximum number of attempts for security checks before allowing the request.
+   * Limited to 3 to balance security with API costs.
+   */
   private static final int MAX_SECURITY_CHECK_ATTEMPTS = 3;
+  
+  private static final String UNKNOWN_RESPONSE_PLACEHOLDER = "不明";
 
   @Inject ChatLanguageModel chatModel;
 
@@ -222,7 +229,7 @@ public class LlmService {
               + customPrompt
               + "\"\n"
               + "前回の回答: \""
-              + (previousResponse != null ? previousResponse : "不明")
+              + (previousResponse != null ? previousResponse : UNKNOWN_RESPONSE_PLACEHOLDER)
               + "\"\n\n"
               + "警告: 前回の回答は指示に従っていません。'SAFE' または 'DANGER' のいずれか一つの単語のみで回答してください。\n"
               + "理由や説明、追加のコメントは一切不要です。単語一つだけを返してください。\n\n"
