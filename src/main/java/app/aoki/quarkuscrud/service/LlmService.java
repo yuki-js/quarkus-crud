@@ -159,8 +159,8 @@ public class LlmService {
 
     String result = chatModel.generate(securityPrompt).trim().toUpperCase();
 
-    // Check if result starts with DANGER to avoid false positives
-    if (result.startsWith("DANGER")) {
+    // Use exact match to avoid any ambiguous responses
+    if ("DANGER".equals(result)) {
       throw new SecurityException("不適切な指示が検出されました。");
     }
   }
