@@ -16,13 +16,13 @@ public class LlmService {
 
   private static final String SECURITY_CHECK_SAFE = "SAFE";
   private static final String SECURITY_CHECK_DANGER = "DANGER";
-  
+
   /**
-   * Maximum number of attempts for security checks before allowing the request.
-   * Limited to 3 to balance security with API costs.
+   * Maximum number of attempts for security checks before allowing the request. Limited to 3 to
+   * balance security with API costs.
    */
   private static final int MAX_SECURITY_CHECK_ATTEMPTS = 3;
-  
+
   private static final String UNKNOWN_RESPONSE_PLACEHOLDER = "不明";
 
   @Inject ChatLanguageModel chatModel;
@@ -207,8 +207,7 @@ public class LlmService {
    * @param previousResponse the previous ambiguous response (null on first attempt)
    * @return the security check result (SAFE, DANGER, or other)
    */
-  private String performSecurityCheck(
-      String customPrompt, int attempt, String previousResponse) {
+  private String performSecurityCheck(String customPrompt, int attempt, String previousResponse) {
     String securityPrompt;
 
     if (attempt == 1) {

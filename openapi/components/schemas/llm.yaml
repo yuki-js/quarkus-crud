@@ -21,6 +21,13 @@ FakeNamesRequest:
         - 多少似ているといえるくらいの名前
         - かすかに類似性を感じられる名前
         - 互いにまったく似ていない名前
+      x-enum-varnames:
+        - ALMOST_SAME
+        - VERY_SIMILAR
+        - MODERATELY_SIMILAR
+        - SOMEWHAT_SIMILAR
+        - FAINTLY_SIMILAR
+        - COMPLETELY_DIFFERENT
       example: とても良く似ている名前
     customPrompt:
       type: string

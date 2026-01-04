@@ -202,8 +202,7 @@ public class LlmUseCaseTest {
 
     when(rateLimiterService.allowRequest(TEST_USER_ID)).thenReturn(true);
     doNothing().when(llmService).checkPromptInjection("古風な名前にして");
-    when(llmService.generateFakeNames(
-            eq("青木 勇樹"), any(SimilarityLevel.class), eq("古風な名前にして")))
+    when(llmService.generateFakeNames(eq("青木 勇樹"), any(SimilarityLevel.class), eq("古風な名前にして")))
         .thenReturn(mockNames);
 
     // Act
@@ -268,8 +267,7 @@ public class LlmUseCaseTest {
     request.setVariance(FakeNamesRequest.VarianceEnum.fromValue("結構似ている名前"));
 
     // Mock returns duplicates, but Set should ensure uniqueness
-    List<String> mockNames =
-        Arrays.asList("田中 太郎", "田中 次郎", "田中 太郎", "田辺 太郎", "山田 太郎", "田中 次郎");
+    List<String> mockNames = Arrays.asList("田中 太郎", "田中 次郎", "田中 太郎", "田辺 太郎", "山田 太郎", "田中 次郎");
 
     when(rateLimiterService.allowRequest(TEST_USER_ID)).thenReturn(true);
     doNothing().when(llmService).checkPromptInjection(null);

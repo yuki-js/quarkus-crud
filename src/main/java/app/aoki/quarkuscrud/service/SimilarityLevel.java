@@ -3,8 +3,8 @@ package app.aoki.quarkuscrud.service;
 /**
  * Enum representing similarity levels for name generation.
  *
- * <p>This enum defines six levels of similarity from almost identical to completely different,
- * with Japanese descriptions for each level.
+ * <p>This enum defines six levels of similarity from almost identical to completely different, with
+ * Japanese descriptions for each level.
  */
 public enum SimilarityLevel {
   ALMOST_SAME("ほぼ違いがない名前"),

@@ -44,7 +44,7 @@ public class OpenAiApiValidationTest {
         given()
             .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
-            .body("{\"inputName\":\"青木 勇樹\",\"variance\":0.1}")
+            .body("{\"inputName\":\"青木 勇樹\",\"variance\":\"とても良く似ている名前\"}")
             .when()
             .post("/api/llm/fake-names");
 
