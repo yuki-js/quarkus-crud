@@ -29,6 +29,7 @@ public class FriendshipIntegrationTest {
   private static String user2Token;
   private static Long user1Id;
   private static Long user2Id;
+  private static Long friendshipId;
 
   @Test
   @Order(0)
@@ -72,17 +73,23 @@ public class FriendshipIntegrationTest {
   @Order(2)
   public void testReceiveFriendship() {
     // User 1 sends their profile card to User 2
-    given()
-        .header("Authorization", "Bearer " + user1Token)
-        .contentType(ContentType.JSON)
-        .body("{}")
-        .when()
-        .post("/api/users/" + user2Id + "/friendship")
-        .then()
-        .statusCode(anyOf(is(200), is(201)))
-        .body("id", notNullValue())
-        .body("senderUserId", equalTo(user1Id.intValue()))
-        .body("recipientUserId", equalTo(user2Id.intValue()));
+    Response response =
+        given()
+            .header("Authorization", "Bearer " + user1Token)
+            .contentType(ContentType.JSON)
+            .body("{}")
+            .when()
+            .post("/api/users/" + user2Id + "/friendship")
+            .then()
+            .statusCode(anyOf(is(200), is(201)))
+            .body("id", notNullValue())
+            .body("senderUserId", equalTo(user1Id.intValue()))
+            .body("recipientUserId", equalTo(user2Id.intValue()))
+            .extract()
+            .response();
+
+    // Store friendship ID for later tests
+    friendshipId = response.jsonPath().getLong("id");
   }
 
   @Test
@@ -147,6 +154,42 @@ public class FriendshipIntegrationTest {
         .body("{}")
         .when()
         .post("/api/users/999999/friendship")
+        .then()
+        .statusCode(404);
+  }
+
+  @Test
+  @Order(7)
+  public void testGetFriendship() {
+    // Get friendship by ID
+    given()
+        .header("Authorization", "Bearer " + user1Token)
+        .when()
+        .get("/api/friendships/" + friendshipId)
+        .then()
+        .statusCode(200)
+        .body("id", equalTo(friendshipId.intValue()))
+        .body("senderUserId", equalTo(user1Id.intValue()))
+        .body("recipientUserId", equalTo(user2Id.intValue()));
+  }
+
+  @Test
+  @Order(8)
+  public void testGetFriendshipWithoutAuthentication() {
+    given()
+        .when()
+        .get("/api/friendships/" + friendshipId)
+        .then()
+        .statusCode(401);
+  }
+
+  @Test
+  @Order(9)
+  public void testGetNonExistentFriendship() {
+    given()
+        .header("Authorization", "Bearer " + user1Token)
+        .when()
+        .get("/api/friendships/999999")
         .then()
         .statusCode(404);
   }

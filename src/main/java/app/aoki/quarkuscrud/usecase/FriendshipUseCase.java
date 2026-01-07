@@ -25,6 +25,20 @@ public class FriendshipUseCase {
   @Inject FriendshipMapper friendshipMapper;
 
   /**
+   * Gets a friendship by its ID.
+   *
+   * @param friendshipId the friendship ID
+   * @return the friendship as DTO
+   * @throws IllegalArgumentException if friendship not found
+   */
+  public app.aoki.quarkuscrud.generated.model.Friendship getFriendship(Long friendshipId) {
+    return friendshipService
+        .getFriendshipById(friendshipId)
+        .map(this::toFriendshipDto)
+        .orElseThrow(() -> new IllegalArgumentException("Friendship not found"));
+  }
+
+  /**
    * Lists received friendships for a user.
    *
    * @param userId the recipient user ID

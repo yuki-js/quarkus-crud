@@ -24,6 +24,19 @@ public class FriendshipsApiImpl implements FriendshipsApi {
 
   @Override
   @Authenticated
+  public Response getFriendship(Long friendshipId) {
+    try {
+      Friendship friendship = friendshipUseCase.getFriendship(friendshipId);
+      return Response.ok(friendship).build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
   public Response listReceivedFriendships() {
     User user = authenticatedUser.get();
     List<Friendship> friendships = friendshipUseCase.listReceivedFriendships(user.getId());

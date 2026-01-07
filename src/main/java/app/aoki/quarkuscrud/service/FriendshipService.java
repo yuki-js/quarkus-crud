@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
  * Service for managing friendships between users.
@@ -17,6 +18,16 @@ import java.time.LocalDateTime;
 public class FriendshipService {
 
   @Inject FriendshipMapper friendshipMapper;
+
+  /**
+   * Finds a friendship by its ID.
+   *
+   * @param friendshipId the friendship ID
+   * @return the friendship if found
+   */
+  public Optional<Friendship> getFriendshipById(Long friendshipId) {
+    return friendshipMapper.findById(friendshipId);
+  }
 
   /**
    * Creates a new mutual friendship between sender and recipient. This creates two directional
