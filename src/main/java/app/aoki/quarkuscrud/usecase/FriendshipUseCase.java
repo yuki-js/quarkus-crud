@@ -25,6 +25,31 @@ public class FriendshipUseCase {
   @Inject FriendshipMapper friendshipMapper;
 
   /**
+   * Gets a friendship by its ID with authorization check.
+   *
+   * @param friendshipId the friendship ID
+   * @param requestingUserId the ID of the user requesting the friendship
+   * @return the friendship as DTO
+   * @throws IllegalArgumentException if friendship not found
+   * @throws SecurityException if the requesting user is not part of the friendship
+   */
+  public app.aoki.quarkuscrud.generated.model.Friendship getFriendship(
+      Long friendshipId, Long requestingUserId) {
+    Friendship friendship =
+        friendshipService
+            .getFriendshipById(friendshipId)
+            .orElseThrow(() -> new IllegalArgumentException("Friendship not found"));
+
+    // Authorization check: verify the requesting user is either sender or recipient
+    if (!friendship.getSenderId().equals(requestingUserId)
+        && !friendship.getRecipientId().equals(requestingUserId)) {
+      throw new SecurityException("Access denied. User is not part of this friendship.");
+    }
+
+    return toFriendshipDto(friendship);
+  }
+
+  /**
    * Lists received friendships for a user.
    *
    * @param userId the recipient user ID

@@ -37,6 +37,8 @@ paths:
     $ref: './paths/profiles.yaml#/paths/~1api~1users~1{userId}~1profile'
   /api/me/profile:
     $ref: './paths/profiles.yaml#/paths/~1api~1me~1profile'
+  /api/friendships/{friendshipId}:
+    $ref: './paths/friendships.yaml#/paths/~1api~1friendships~1{friendshipId}'
   /api/users/{userId}/friendship:
     $ref: './paths/friendships.yaml#/paths/~1api~1users~1{userId}~1friendship'
   /api/me/friendships/received:

@@ -1,4 +1,50 @@
 paths:
+  /api/friendships/{friendshipId}:
+    get:
+      tags:
+        - Friendships
+      summary: Get friendship by ID
+      description: Retrieve a specific friendship record by its unique identifier.
+      operationId: getFriendship
+      parameters:
+        - name: friendshipId
+          in: path
+          required: true
+          description: Identifier of the friendship to fetch.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Friendship found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/friendship.yaml#/Friendship'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '403':
+          description: Access denied. User is not part of this friendship.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: The friendship was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
   /api/users/{userId}/friendship:
     post:
       tags:

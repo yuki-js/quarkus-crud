@@ -27,13 +27,16 @@ public class FriendshipIntegrationTest {
 
   private static String user1Token;
   private static String user2Token;
+  private static String user3Token;
   private static Long user1Id;
   private static Long user2Id;
+  private static Long user3Id;
+  private static Long friendshipId;
 
   @Test
   @Order(0)
   public void setup() {
-    // Create two guest users for testing friendships
+    // Create three guest users for testing friendships
     Response user1Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     user1Token = user1Response.getHeader("Authorization").substring(7);
     user1Id = user1Response.jsonPath().getLong("id");
@@ -42,7 +45,11 @@ public class FriendshipIntegrationTest {
     user2Token = user2Response.getHeader("Authorization").substring(7);
     user2Id = user2Response.jsonPath().getLong("id");
 
-    // Set up profiles for both users
+    Response user3Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    user3Token = user3Response.getHeader("Authorization").substring(7);
+    user3Id = user3Response.jsonPath().getLong("id");
+
+    // Set up profiles for all users
     given()
         .header("Authorization", "Bearer " + user1Token)
         .contentType(ContentType.JSON)
@@ -53,6 +60,12 @@ public class FriendshipIntegrationTest {
         .header("Authorization", "Bearer " + user2Token)
         .contentType(ContentType.JSON)
         .body("{\"profileData\":{\"displayName\":\"User Two\",\"bio\":\"Second user\"}}")
+        .put("/api/me/profile");
+
+    given()
+        .header("Authorization", "Bearer " + user3Token)
+        .contentType(ContentType.JSON)
+        .body("{\"profileData\":{\"displayName\":\"User Three\",\"bio\":\"Third user\"}}")
         .put("/api/me/profile");
   }
 
@@ -72,17 +85,23 @@ public class FriendshipIntegrationTest {
   @Order(2)
   public void testReceiveFriendship() {
     // User 1 sends their profile card to User 2
-    given()
-        .header("Authorization", "Bearer " + user1Token)
-        .contentType(ContentType.JSON)
-        .body("{}")
-        .when()
-        .post("/api/users/" + user2Id + "/friendship")
-        .then()
-        .statusCode(anyOf(is(200), is(201)))
-        .body("id", notNullValue())
-        .body("senderUserId", equalTo(user1Id.intValue()))
-        .body("recipientUserId", equalTo(user2Id.intValue()));
+    Response response =
+        given()
+            .header("Authorization", "Bearer " + user1Token)
+            .contentType(ContentType.JSON)
+            .body("{}")
+            .when()
+            .post("/api/users/" + user2Id + "/friendship")
+            .then()
+            .statusCode(anyOf(is(200), is(201)))
+            .body("id", notNullValue())
+            .body("senderUserId", equalTo(user1Id.intValue()))
+            .body("recipientUserId", equalTo(user2Id.intValue()))
+            .extract()
+            .response();
+
+    // Store friendship ID for later tests
+    friendshipId = response.jsonPath().getLong("id");
   }
 
   @Test
@@ -149,5 +168,65 @@ public class FriendshipIntegrationTest {
         .post("/api/users/999999/friendship")
         .then()
         .statusCode(404);
+  }
+
+  @Test
+  @Order(7)
+  public void testGetFriendship() {
+    // Get friendship by ID
+    given()
+        .header("Authorization", "Bearer " + user1Token)
+        .when()
+        .get("/api/friendships/" + friendshipId)
+        .then()
+        .statusCode(200)
+        .body("id", equalTo(friendshipId.intValue()))
+        .body("senderUserId", equalTo(user1Id.intValue()))
+        .body("recipientUserId", equalTo(user2Id.intValue()));
+  }
+
+  @Test
+  @Order(8)
+  public void testGetFriendshipWithoutAuthentication() {
+    given().when().get("/api/friendships/" + friendshipId).then().statusCode(401);
+  }
+
+  @Test
+  @Order(9)
+  public void testGetNonExistentFriendship() {
+    given()
+        .header("Authorization", "Bearer " + user1Token)
+        .when()
+        .get("/api/friendships/999999")
+        .then()
+        .statusCode(404);
+  }
+
+  @Test
+  @Order(10)
+  public void testGetFriendshipByUnauthorizedUser() {
+    // User 3 (who is not part of the friendship) tries to access friendship between user 1 and
+    // user 2
+    given()
+        .header("Authorization", "Bearer " + user3Token)
+        .when()
+        .get("/api/friendships/" + friendshipId)
+        .then()
+        .statusCode(403);
+  }
+
+  @Test
+  @Order(11)
+  public void testGetFriendshipByRecipient() {
+    // User 2 (recipient) should be able to access the friendship
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .when()
+        .get("/api/friendships/" + friendshipId)
+        .then()
+        .statusCode(200)
+        .body("id", equalTo(friendshipId.intValue()))
+        .body("senderUserId", equalTo(user1Id.intValue()))
+        .body("recipientUserId", equalTo(user2Id.intValue()));
   }
 }
