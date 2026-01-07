@@ -176,11 +176,7 @@ public class FriendshipIntegrationTest {
   @Test
   @Order(8)
   public void testGetFriendshipWithoutAuthentication() {
-    given()
-        .when()
-        .get("/api/friendships/" + friendshipId)
-        .then()
-        .statusCode(401);
+    given().when().get("/api/friendships/" + friendshipId).then().statusCode(401);
   }
 
   @Test
