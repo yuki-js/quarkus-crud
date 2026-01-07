@@ -27,6 +27,12 @@ paths:
             application/json:
               schema:
                 $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '403':
+          description: Access denied. User is not part of this friendship.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
         '404':
           description: The friendship was not found.
           content:
