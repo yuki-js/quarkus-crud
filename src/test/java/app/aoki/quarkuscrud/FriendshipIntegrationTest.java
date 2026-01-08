@@ -229,4 +229,80 @@ public class FriendshipIntegrationTest {
         .body("senderUserId", equalTo(user1Id.intValue()))
         .body("recipientUserId", equalTo(user2Id.intValue()));
   }
+
+  @Test
+  @Order(12)
+  public void testReceivedFriendshipsWithProfileData() {
+    // Create two new users without profiles
+    Response userAResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String userAToken = userAResponse.getHeader("Authorization").substring(7);
+    Long userAId = userAResponse.jsonPath().getLong("id");
+
+    Response userBResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String userBToken = userBResponse.getHeader("Authorization").substring(7);
+    Long userBId = userBResponse.jsonPath().getLong("id");
+
+    // User A sends profile card to User B (no profiles yet)
+    given()
+        .header("Authorization", "Bearer " + userAToken)
+        .contentType(ContentType.JSON)
+        .body("{}")
+        .when()
+        .post("/api/users/" + userBId + "/friendship")
+        .then()
+        .statusCode(anyOf(is(200), is(201)));
+
+    // User B should see the received friendship with null senderProfile
+    given()
+        .header("Authorization", "Bearer " + userBToken)
+        .when()
+        .get("/api/me/friendships/received")
+        .then()
+        .statusCode(200)
+        .body(
+            "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile", equalTo(null));
+
+    // Getting User A's profile should return 404
+    given()
+        .header("Authorization", "Bearer " + userBToken)
+        .when()
+        .get("/api/users/" + userAId + "/profile")
+        .then()
+        .statusCode(404);
+
+    // User A creates a profile
+    given()
+        .header("Authorization", "Bearer " + userAToken)
+        .contentType(ContentType.JSON)
+        .body(
+            "{\"profileData\":{\"displayName\":\"User A\",\"bio\":\"This is User A's bio\",\"favoriteColor\":\"blue\"}}")
+        .put("/api/me/profile")
+        .then()
+        .statusCode(200);
+
+    // Now User B should see the received friendship with senderProfile populated
+    String senderProfileBasePath =
+        "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile";
+    given()
+        .header("Authorization", "Bearer " + userBToken)
+        .when()
+        .get("/api/me/friendships/received")
+        .then()
+        .statusCode(200)
+        .body(senderProfileBasePath, notNullValue())
+        .body(senderProfileBasePath + ".userId", equalTo(userAId.intValue()))
+        .body(senderProfileBasePath + ".profileData.displayName", equalTo("User A"))
+        .body(senderProfileBasePath + ".profileData.bio", equalTo("This is User A's bio"))
+        .body(senderProfileBasePath + ".profileData.favoriteColor", equalTo("blue"));
+
+    // User A's profile should now be accessible
+    given()
+        .header("Authorization", "Bearer " + userBToken)
+        .when()
+        .get("/api/users/" + userAId + "/profile")
+        .then()
+        .statusCode(200)
+        .body("userId", equalTo(userAId.intValue()))
+        .body("profileData.displayName", equalTo("User A"));
+  }
 }

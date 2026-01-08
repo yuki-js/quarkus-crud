@@ -13,6 +13,7 @@ Opinionated Quarkus 3 starter. Schema-first OpenAPI, PostgreSQL, MyBatis, JWT, o
   - Custom compiler (`compileOpenApi`) that bundles the spec and feeds SmallRye OpenAPI
   - OpenAPI Generator producing REST interfaces, DTOs with Bean Validation, and swagger-request-validator tests
   - TypeScript fetch client packaged via npm `pack`
+  - RFC 7807 Problem Details for semi-normal responses (e.g., `ProfileMissing`)
 - **Persistence**
   - PostgreSQL 15 through Quarkus Dev Services or external DBs
   - Flyway migrations under `src/main/resources/db/migration`
