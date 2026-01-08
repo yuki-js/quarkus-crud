@@ -23,6 +23,7 @@ public class FriendshipUseCase {
   @Inject FriendshipService friendshipService;
   @Inject UserService userService;
   @Inject FriendshipMapper friendshipMapper;
+  @Inject ProfileUseCase profileUseCase;
 
   /**
    * Gets a friendship by its ID with authorization check.
@@ -98,6 +99,10 @@ public class FriendshipUseCase {
     if (friendship.getUpdatedAt() != null) {
       response.setUpdatedAt(friendship.getUpdatedAt().atOffset(ZoneOffset.UTC));
     }
+    
+    // Populate senderProfile if available
+    profileUseCase.getLatestProfile(friendship.getSenderId()).ifPresent(response::setSenderProfile);
+    
     return response;
   }
 }
