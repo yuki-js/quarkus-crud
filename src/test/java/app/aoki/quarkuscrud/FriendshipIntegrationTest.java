@@ -281,30 +281,19 @@ public class FriendshipIntegrationTest {
         .statusCode(200);
 
     // Now User B should see the received friendship with senderProfile populated
+    String senderProfileBasePath =
+        "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile";
     given()
         .header("Authorization", "Bearer " + userBToken)
         .when()
         .get("/api/me/friendships/received")
         .then()
         .statusCode(200)
-        .body(
-            "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile", notNullValue())
-        .body(
-            "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile.userId",
-            equalTo(userAId.intValue()))
-        .body(
-            "find { it.senderUserId == "
-                + userAId.intValue()
-                + " }.senderProfile.profileData.displayName",
-            equalTo("User A"))
-        .body(
-            "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile.profileData.bio",
-            equalTo("This is User A's bio"))
-        .body(
-            "find { it.senderUserId == "
-                + userAId.intValue()
-                + " }.senderProfile.profileData.favoriteColor",
-            equalTo("blue"));
+        .body(senderProfileBasePath, notNullValue())
+        .body(senderProfileBasePath + ".userId", equalTo(userAId.intValue()))
+        .body(senderProfileBasePath + ".profileData.displayName", equalTo("User A"))
+        .body(senderProfileBasePath + ".profileData.bio", equalTo("This is User A's bio"))
+        .body(senderProfileBasePath + ".profileData.favoriteColor", equalTo("blue"));
 
     // User A's profile should now be accessible
     given()
