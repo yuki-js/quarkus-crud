@@ -27,8 +27,7 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   public Response getFriendshipByOtherUser(Long otherUserId) {
     User user = authenticatedUser.get();
     try {
-      Friendship friendship =
-          friendshipUseCase.getFriendshipByOtherUser(user.getId(), otherUserId);
+      Friendship friendship = friendshipUseCase.getFriendshipByOtherUser(user.getId(), otherUserId);
       return Response.ok(friendship).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.NOT_FOUND)
