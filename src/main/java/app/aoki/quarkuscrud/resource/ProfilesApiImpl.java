@@ -2,6 +2,7 @@ package app.aoki.quarkuscrud.resource;
 
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.generated.api.ProfilesApi;
+import app.aoki.quarkuscrud.generated.model.ProfileMissing;
 import app.aoki.quarkuscrud.generated.model.UserProfile;
 import app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest;
 import app.aoki.quarkuscrud.support.Authenticated;
@@ -38,7 +39,7 @@ public class ProfilesApiImpl implements ProfilesApi {
         .map(profile -> Response.ok(profile).build())
         .orElse(
             Response.status(Response.Status.NOT_FOUND)
-                .entity(new ErrorResponse("Profile not found"))
+                .entity(createProfileMissingResponse())
                 .build());
   }
 
@@ -53,8 +54,18 @@ public class ProfilesApiImpl implements ProfilesApi {
         .map(profile -> Response.ok(profile).build())
         .orElse(
             Response.status(Response.Status.NOT_FOUND)
-                .entity(new ErrorResponse("Profile not found"))
+                .entity(createProfileMissingResponse())
                 .build());
+  }
+
+  private ProfileMissing createProfileMissingResponse() {
+    ProfileMissing response = new ProfileMissing();
+    response.setType("about:blank");
+    response.setTitle("Profile Not Created");
+    response.setStatus(404);
+    response.setCode(ProfileMissing.CodeEnum.PROFILE_MISSING);
+    response.setDetail("The user has not created a profile yet.");
+    return response;
   }
 
   @Override
