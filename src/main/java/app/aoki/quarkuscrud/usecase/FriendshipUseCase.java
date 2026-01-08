@@ -99,10 +99,10 @@ public class FriendshipUseCase {
     if (friendship.getUpdatedAt() != null) {
       response.setUpdatedAt(friendship.getUpdatedAt().atOffset(ZoneOffset.UTC));
     }
-    
+
     // Populate senderProfile if available
     profileUseCase.getLatestProfile(friendship.getSenderId()).ifPresent(response::setSenderProfile);
-    
+
     return response;
   }
 }

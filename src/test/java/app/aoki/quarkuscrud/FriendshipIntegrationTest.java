@@ -259,7 +259,8 @@ public class FriendshipIntegrationTest {
         .get("/api/me/friendships/received")
         .then()
         .statusCode(200)
-        .body("find { it.senderUserId == " + userAId.intValue() + " }.senderProfile", equalTo(null));
+        .body(
+            "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile", equalTo(null));
 
     // Getting User A's profile should return 404
     given()
@@ -286,11 +287,10 @@ public class FriendshipIntegrationTest {
         .get("/api/me/friendships/received")
         .then()
         .statusCode(200)
-        .body("find { it.senderUserId == " + userAId.intValue() + " }.senderProfile", notNullValue())
         .body(
-            "find { it.senderUserId == "
-                + userAId.intValue()
-                + " }.senderProfile.userId",
+            "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile", notNullValue())
+        .body(
+            "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile.userId",
             equalTo(userAId.intValue()))
         .body(
             "find { it.senderUserId == "
@@ -298,9 +298,7 @@ public class FriendshipIntegrationTest {
                 + " }.senderProfile.profileData.displayName",
             equalTo("User A"))
         .body(
-            "find { it.senderUserId == "
-                + userAId.intValue()
-                + " }.senderProfile.profileData.bio",
+            "find { it.senderUserId == " + userAId.intValue() + " }.senderProfile.profileData.bio",
             equalTo("This is User A's bio"))
         .body(
             "find { it.senderUserId == "
