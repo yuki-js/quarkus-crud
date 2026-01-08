@@ -26,26 +26,22 @@ public class FriendshipUseCase {
   @Inject ProfileUseCase profileUseCase;
 
   /**
-   * Gets a friendship by its ID with authorization check.
+   * Gets a friendship between the authenticated user and another user.
    *
-   * @param friendshipId the friendship ID
-   * @param requestingUserId the ID of the user requesting the friendship
+   * <p>This method searches for a friendship record between the current user and the specified
+   * other user, checking both possible orderings (currentUser→otherUser or otherUser→currentUser).
+   *
+   * @param currentUserId the ID of the currently authenticated user
+   * @param otherUserId the ID of the other user
    * @return the friendship as DTO
-   * @throws IllegalArgumentException if friendship not found
-   * @throws SecurityException if the requesting user is not part of the friendship
+   * @throws IllegalArgumentException if no friendship exists between the users
    */
-  public app.aoki.quarkuscrud.generated.model.Friendship getFriendship(
-      Long friendshipId, Long requestingUserId) {
+  public app.aoki.quarkuscrud.generated.model.Friendship getFriendshipByOtherUser(
+      Long currentUserId, Long otherUserId) {
     Friendship friendship =
         friendshipService
-            .getFriendshipById(friendshipId)
+            .findByParticipants(currentUserId, otherUserId)
             .orElseThrow(() -> new IllegalArgumentException("Friendship not found"));
-
-    // Authorization check: verify the requesting user is either sender or recipient
-    if (!friendship.getSenderId().equals(requestingUserId)
-        && !friendship.getRecipientId().equals(requestingUserId)) {
-      throw new SecurityException("Access denied. User is not part of this friendship.");
-    }
 
     return toFriendshipDto(friendship);
   }
