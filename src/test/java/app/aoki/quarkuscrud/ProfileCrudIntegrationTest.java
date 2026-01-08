@@ -42,13 +42,13 @@ public class ProfileCrudIntegrationTest {
   @Test
   @Order(1)
   public void testGetMyProfileInitially() {
-    // Initially profile should not exist or be null
+    // Initially profile should not exist - returns 404
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/me/profile")
         .then()
-        .statusCode(anyOf(is(200), is(404)));
+        .statusCode(404); // Profile doesn't exist yet
   }
 
   @Test

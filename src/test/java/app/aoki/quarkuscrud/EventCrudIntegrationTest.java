@@ -62,7 +62,7 @@ public class EventCrudIntegrationTest {
             .when()
             .post("/api/events")
             .then()
-            .statusCode(anyOf(is(200), is(201)))
+            .statusCode(201) // Event creation returns 201 according to API spec
             .body("id", notNullValue())
             .body("invitationCode", notNullValue())
             .extract()
@@ -135,7 +135,7 @@ public class EventCrudIntegrationTest {
         .when()
         .post("/api/events/join-by-code")
         .then()
-        .statusCode(anyOf(is(200), is(201)))
+        .statusCode(201) // Joining returns 201 according to API spec
         .body("id", notNullValue());
   }
 

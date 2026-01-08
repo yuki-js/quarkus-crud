@@ -8,6 +8,13 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -129,21 +136,33 @@ public class DataIntegrityIntegrationTest {
             .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
             .body("{}")
-            .post("/api/events");
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .extract()
+            .response();
 
     String code1 = event1.jsonPath().getString("invitationCode");
+    assertNotNull(code1, "First invitation code should not be null");
 
     Response event2 =
         given()
             .header("Authorization", "Bearer " + jwtToken)
             .contentType(ContentType.JSON)
             .body("{}")
-            .post("/api/events");
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .extract()
+            .response();
 
     String code2 = event2.jsonPath().getString("invitationCode");
+    assertNotNull(code2, "Second invitation code should not be null");
 
-    // Codes should be different (extremely unlikely to collide)
-    // Note: There's a tiny chance of collision with random codes, but practically negligible
+    // Codes must be different - this is a critical security requirement
+    assertFalse(
+        code1.equals(code2),
+        "Invitation codes must be unique. Got duplicate code: " + code1);
   }
 
   @Test
@@ -152,6 +171,8 @@ public class DataIntegrityIntegrationTest {
     String longDisplayName = "A".repeat(100); // 100 character name
     String longBio = "B".repeat(500); // 500 character bio
 
+    // Test if long strings are accepted or rejected based on actual validation rules
+    // If there are length limits, this should fail with 400
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
@@ -164,12 +185,13 @@ public class DataIntegrityIntegrationTest {
         .when()
         .put("/api/me/profile")
         .then()
-        .statusCode(anyOf(is(200), is(400))); // May succeed or fail based on validation
+        .statusCode(200); // Assuming no length limit based on current schema
   }
 
   @Test
   @Order(7)
   public void testProfileWithEmptyDisplayName() {
+    // Test actual behavior: empty display name is currently allowed
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
@@ -177,7 +199,9 @@ public class DataIntegrityIntegrationTest {
         .when()
         .put("/api/me/profile")
         .then()
-        .statusCode(anyOf(is(200), is(400))); // May be allowed or rejected
+        .statusCode(200) // Empty displayName is currently allowed
+        .body("profileData.displayName", equalTo(""))
+        .body("profileData.bio", equalTo("Empty name test"));
   }
 
   @Test
@@ -190,21 +214,32 @@ public class DataIntegrityIntegrationTest {
         .when()
         .post("/api/events/join-by-code")
         .then()
-        .statusCode(anyOf(is(400), is(404)));
+        .statusCode(400); // Invalid code format returns 400
   }
 
   @Test
   @Order(9)
   public void testMultipleGuestUsersAreUnique() {
-    // Create multiple guest users quickly
+    // Create multiple guest users quickly and verify each has unique ID
+    Set<Long> userIds = new HashSet<>();
     for (int i = 0; i < 5; i++) {
-      Response response = given().contentType(ContentType.JSON).post("/api/auth/guest");
-      response
-          .then()
-          .statusCode(anyOf(is(200), is(201)))
-          .body("id", notNullValue())
-          .header("Authorization", notNullValue());
+      Response response =
+          given()
+              .contentType(ContentType.JSON)
+              .post("/api/auth/guest")
+              .then()
+              .statusCode(200) // Guest user creation returns 200 according to API spec
+              .body("id", notNullValue())
+              .header("Authorization", notNullValue())
+              .extract()
+              .response();
+
+      Long userId = response.jsonPath().getLong("id");
+      assertTrue(
+          userIds.add(userId),
+          "Duplicate user ID detected: " + userId + ". All user IDs must be unique.");
     }
+    assertEquals(5, userIds.size(), "Should have created 5 unique users");
   }
 
   @Test
@@ -223,9 +258,9 @@ public class DataIntegrityIntegrationTest {
         .when()
         .post("/api/users/" + user2Id + "/friendship")
         .then()
-        .statusCode(anyOf(is(200), is(201)));
+        .statusCode(201); // First friendship creation returns 201
 
-    // Try to send again
+    // Try to send again - should return 409 conflict
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
@@ -233,6 +268,6 @@ public class DataIntegrityIntegrationTest {
         .when()
         .post("/api/users/" + user2Id + "/friendship")
         .then()
-        .statusCode(anyOf(is(200), is(201), is(409))); // May succeed or return conflict
+        .statusCode(409); // Duplicate friendship should be rejected with 409
   }
 }
