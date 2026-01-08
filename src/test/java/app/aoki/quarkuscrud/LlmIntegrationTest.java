@@ -274,7 +274,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
     // This test verifies the endpoint doesn't crash under load
     int successCount = 0;
     int errorCount = 0;
-    
+
     for (int i = 0; i < 10; i++) {
       Response response =
           given()
@@ -283,7 +283,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
               .body("{\"inputName\":\"テスト\",\"variance\":\"結構似ている名前\"}")
               .when()
               .post("/api/llm/fake-names");
-      
+
       int statusCode = response.getStatusCode();
       if (statusCode == 200) {
         successCount++;
@@ -294,7 +294,7 @@ public class LlmIntegrationTest implements OpenAiMockServerResource.OpenAiMockSe
         fail("Unexpected status code: " + statusCode + ". Expected 200, 429, or 500.");
       }
     }
-    
+
     // Verify the endpoint handled all requests without crashing
     // At minimum, some requests should succeed
     assertTrue(

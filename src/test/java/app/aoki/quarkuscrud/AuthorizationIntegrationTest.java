@@ -1,10 +1,8 @@
 package app.aoki.quarkuscrud;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -320,9 +318,7 @@ public class AuthorizationIntegrationTest {
 
     // Accept either 201 (joined successfully) or 409 (already joined from previous test)
     int statusCode = joinResponse.getStatusCode();
-    assertTrue(
-        statusCode == 201 || statusCode == 409,
-        "Expected 201 or 409, got " + statusCode);
+    assertTrue(statusCode == 201 || statusCode == 409, "Expected 201 or 409, got " + statusCode);
 
     // User 2 (now an attendee but not owner) should be able to see attendees
     given()

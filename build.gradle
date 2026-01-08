@@ -80,8 +80,10 @@ java {
 }
 
 // Configure parallel test execution
-// Calculate optimal number of parallel forks based on available processors
-def testParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+// Use half the processor count to balance performance with database stability
+// Quarkus tests with Flyway clean-at-start need some serialization to avoid race conditions
+// User suggested we can use 2x cores, but database constraints require moderation
+def testParallelForks = Math.max(Runtime.runtime.availableProcessors().intdiv(2), 1)
 
 test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
