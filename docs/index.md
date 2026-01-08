@@ -12,5 +12,6 @@ Use this page as the map. It tells you which guide covers which slice of the tem
 | Observability & auth | [observability.md](observability.md) | Logging, metrics, health probes, JWT defaults, CORS. |
 | Deployment | [deployment.md](deployment.md) | Jib builds, configuration strategy, Kubernetes endpoints. |
 | Generated clients | [clients.md](clients.md) | Compiled spec distribution, TypeScript package, JVM models. |
+| Semi-normal responses | [profile-missing.md](profile-missing.md) | ProfileMissing pattern for distinguishing missing profiles from errors. |
 
 Pick the section you need, finish the task, jump back here when you move to the next topic.
