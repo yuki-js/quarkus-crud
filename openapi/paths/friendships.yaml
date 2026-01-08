@@ -1,22 +1,26 @@
 paths:
-  /api/friendships/{friendshipId}:
+  /api/friendships/{otherUserId}:
     get:
       tags:
         - Friendships
-      summary: Get friendship by ID
-      description: Retrieve a specific friendship record by its unique identifier.
-      operationId: getFriendship
+      summary: Get friendship between authenticated user and another user
+      description: |
+        Retrieve the friendship record between the currently authenticated user 
+        and the specified user. This endpoint searches for friendship in both 
+        directions (A→B or B→A) and returns the same friendship record regardless 
+        of the direction.
+      operationId: getFriendshipByOtherUser
       parameters:
-        - name: friendshipId
+        - name: otherUserId
           in: path
           required: true
-          description: Identifier of the friendship to fetch.
+          description: ID of the other user in the friendship.
           schema:
             type: integer
             format: int64
       responses:
         '200':
-          description: Friendship found.
+          description: Friendship found between the authenticated user and the specified user.
           content:
             application/json:
               schema:
@@ -27,14 +31,8 @@ paths:
             application/json:
               schema:
                 $ref: '../components/schemas/common.yaml#/ErrorResponse'
-        '403':
-          description: Access denied. User is not part of this friendship.
-          content:
-            application/json:
-              schema:
-                $ref: '../components/schemas/common.yaml#/ErrorResponse'
         '404':
-          description: The friendship was not found.
+          description: No friendship exists between the users.
           content:
             application/json:
               schema:

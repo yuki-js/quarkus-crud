@@ -20,13 +20,17 @@ public class FriendshipService {
   @Inject FriendshipMapper friendshipMapper;
 
   /**
-   * Finds a friendship by its ID.
+   * Finds a friendship between two users regardless of direction.
    *
-   * @param friendshipId the friendship ID
+   * <p>This method searches for a friendship record between userId1 and userId2, checking both
+   * possible orderings (userId1→userId2 or userId2→userId1).
+   *
+   * @param userId1 the first user ID
+   * @param userId2 the second user ID
    * @return the friendship if found
    */
-  public Optional<Friendship> getFriendshipById(Long friendshipId) {
-    return friendshipMapper.findById(friendshipId);
+  public Optional<Friendship> findByParticipants(Long userId1, Long userId2) {
+    return friendshipMapper.findByParticipants(userId1, userId2);
   }
 
   /**
