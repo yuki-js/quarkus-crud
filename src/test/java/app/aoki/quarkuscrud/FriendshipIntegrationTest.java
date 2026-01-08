@@ -196,7 +196,8 @@ public class FriendshipIntegrationTest {
         .header("Authorization", "Bearer " + userAToken)
         .contentType(ContentType.JSON)
         .body(
-            "{\"profileData\":{\"displayName\":\"User A\",\"bio\":\"This is User A's bio\",\"favoriteColor\":\"blue\"}}")
+            "{\"profileData\":{\"displayName\":\"User A\","
+                + "\"bio\":\"This is User A's bio\",\"favoriteColor\":\"blue\"}}")
         .put("/api/me/profile")
         .then()
         .statusCode(200);
@@ -229,7 +230,7 @@ public class FriendshipIntegrationTest {
 
   @Test
   @Order(8)
-  public void testGetFriendshipByOtherUser_Success() {
+  public void testGetFriendshipByOtherUserSuccess() {
     // User 1 gets friendship with User 2 (they are friends from test order 2)
     given()
         .header("Authorization", "Bearer " + user1Token)
@@ -248,7 +249,7 @@ public class FriendshipIntegrationTest {
 
   @Test
   @Order(9)
-  public void testGetFriendshipByOtherUser_ReverseDirection() {
+  public void testGetFriendshipByOtherUserReverseDirection() {
     // User 2 gets friendship with User 1 (same friendship, reverse perspective)
     given()
         .header("Authorization", "Bearer " + user2Token)
@@ -267,7 +268,7 @@ public class FriendshipIntegrationTest {
 
   @Test
   @Order(10)
-  public void testGetFriendshipByOtherUser_NotFound() {
+  public void testGetFriendshipByOtherUserNotFound() {
     // Create a third user who has no friendship with user 1
     Response user3Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
     String user3Token = user3Response.getHeader("Authorization").substring(7);
@@ -292,7 +293,7 @@ public class FriendshipIntegrationTest {
 
   @Test
   @Order(11)
-  public void testGetFriendshipByOtherUser_Unauthenticated() {
+  public void testGetFriendshipByOtherUserUnauthenticated() {
     // Request without authentication should return 401
     given().when().get("/api/friendships/" + user2Id).then().statusCode(401);
   }
