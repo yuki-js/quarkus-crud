@@ -150,4 +150,37 @@ public class EventCrudIntegrationTest {
         .statusCode(200)
         .body("size()", greaterThanOrEqualTo(1));
   }
+
+  @Test
+  @Order(8)
+  public void testJoinEventTwiceReturnsConflict() {
+    // Create a new user
+    Response newUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String newUserToken = newUserResponse.getHeader("Authorization").substring(7);
+
+    // Get the invitation code
+    Response eventResponse =
+        given().header("Authorization", "Bearer " + jwtToken).when().get("/api/events/" + eventId);
+    String invitationCode = eventResponse.jsonPath().getString("invitationCode");
+
+    // Join the event first time
+    given()
+        .header("Authorization", "Bearer " + newUserToken)
+        .contentType(ContentType.JSON)
+        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
+        .when()
+        .post("/api/events/join-by-code")
+        .then()
+        .statusCode(201);
+
+    // Try to join again - should return 409 conflict
+    given()
+        .header("Authorization", "Bearer " + newUserToken)
+        .contentType(ContentType.JSON)
+        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
+        .when()
+        .post("/api/events/join-by-code")
+        .then()
+        .statusCode(409); // Duplicate join should be rejected
+  }
 }

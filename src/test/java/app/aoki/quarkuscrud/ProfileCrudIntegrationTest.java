@@ -124,4 +124,29 @@ public class ProfileCrudIntegrationTest {
         .body("profileData.displayName", equalTo("Name Only"))
         .body("profileData.bio", nullValue());
   }
+
+  @Test
+  @Order(7)
+  public void testGetNonExistentUserProfile() {
+    // Try to get profile for non-existent user
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .when()
+        .get("/api/users/999999/profile")
+        .then()
+        .statusCode(404);
+  }
+
+  @Test
+  @Order(8)
+  public void testUpdateProfileWithoutAuthentication() {
+    // Try to update profile without auth token
+    given()
+        .contentType(ContentType.JSON)
+        .body("{\"profileData\":{\"displayName\":\"Hacker\"}}")
+        .when()
+        .put("/api/me/profile")
+        .then()
+        .statusCode(401);
+  }
 }
