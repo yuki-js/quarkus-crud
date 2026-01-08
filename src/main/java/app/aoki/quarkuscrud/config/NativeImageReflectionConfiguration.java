@@ -27,6 +27,8 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
       app.aoki.quarkuscrud.generated.model.UserProfile.class,
       app.aoki.quarkuscrud.generated.model.UserProfileUpdateRequest.class,
       app.aoki.quarkuscrud.generated.model.Friendship.class,
-      app.aoki.quarkuscrud.generated.model.ErrorResponse.class
+      app.aoki.quarkuscrud.generated.model.ErrorResponse.class,
+      app.aoki.quarkuscrud.generated.model.ProfileMissing.class,
+      app.aoki.quarkuscrud.generated.model.ProfileMissing.CodeEnum.class
     })
 public class NativeImageReflectionConfiguration {}
