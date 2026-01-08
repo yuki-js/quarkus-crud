@@ -228,7 +228,15 @@ Enable container reuse to speed up test execution:
 testcontainers.reuse.enable=true
 ```
 
-This reuses the PostgreSQL container across test runs instead of recreating it.
+This reuses the PostgreSQL container across test runs instead of recreating it, which can significantly speed up test execution.
+
+**Trade-offs to consider:**
+- ✅ **Faster test execution**: Containers start instantly after the first run
+- ✅ **Reduced resource usage**: No container creation/destruction overhead
+- ⚠️ **Potential state leakage**: Data from previous test runs may remain in the container
+- ⚠️ **Manual cleanup**: You may need to manually stop containers with `docker stop` when switching branches or making database schema changes
+
+**Recommendation**: Enable container reuse for local development, but **disable it in CI** to ensure clean test runs. Quarkus tests use `quarkus.flyway.clean-at-start=true` which mitigates state leakage by cleaning the database before each test run.
 
 ### Gradle Build Cache
 

@@ -79,13 +79,18 @@ java {
     }
 }
 
+// Configure parallel test execution
+// Calculate optimal number of parallel forks based on available processors
+def testParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+
 test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
     
     // Enable parallel test execution for better performance
-    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    // Run test classes in separate JVM processes for isolation
+    maxParallelForks = testParallelForks
     
-    // Use JUnit Platform for parallel execution
+    // Use JUnit Platform test framework
     useJUnitPlatform()
 }
 
@@ -94,9 +99,10 @@ tasks.named('testNative') {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
     
     // Enable parallel test execution for native tests as well
-    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    // Run test classes in separate JVM processes for isolation
+    maxParallelForks = testParallelForks
     
-    // Use JUnit Platform for parallel execution
+    // Use JUnit Platform test framework
     useJUnitPlatform()
 }
 compileJava {
