@@ -60,28 +60,48 @@ public class FriendshipUseCase {
   }
 
   /**
-   * Creates a mutual friendship between sender and recipient. This will create bidirectional
-   * relationships automatically.
+   * Creates a mutual friendship between sender and recipient, or updates meta if it already exists.
+   * This operation is idempotent - if the friendship already exists, it updates the meta and
+   * returns the existing friendship instead of throwing an error.
    *
    * @param senderId the sender user ID
    * @param recipientId the recipient user ID
-   * @return the created friendship as DTO
+   * @param meta optional metadata for the friendship
+   * @return the created or updated friendship as DTO
    * @throws IllegalArgumentException if recipient user not found
-   * @throws IllegalStateException if friendship already exists in either direction
    */
   @Transactional
-  public app.aoki.quarkuscrud.generated.model.Friendship createFriendship(
-      Long senderId, Long recipientId) {
+  public app.aoki.quarkuscrud.generated.model.Friendship createOrUpdateFriendship(
+      Long senderId, Long recipientId, java.util.Map<String, Object> meta) {
     if (userService.findById(recipientId).isEmpty()) {
       throw new IllegalArgumentException("User not found");
     }
 
     // Check if friendship already exists in either direction
-    if (friendshipMapper.existsBetweenUsers(senderId, recipientId)) {
-      throw new IllegalStateException("Friendship already exists");
+    Optional<Friendship> existingFriendship =
+        friendshipService.findByParticipants(senderId, recipientId);
+
+    if (existingFriendship.isPresent()) {
+      // Friendship exists - update meta if provided
+      Friendship friendship = existingFriendship.get();
+      if (meta != null && !meta.isEmpty()) {
+        // Update both directions
+        friendshipService.updateMeta(friendship.getId(), meta);
+
+        // Find and update the reverse friendship
+        Optional<Friendship> reverseFriendship =
+            friendshipMapper.findBySenderAndRecipient(
+                friendship.getRecipientId(), friendship.getSenderId());
+        reverseFriendship.ifPresent(rf -> friendshipService.updateMeta(rf.getId(), meta));
+
+        // Reload the updated friendship
+        friendship = friendshipMapper.findById(friendship.getId()).orElseThrow();
+      }
+      return toFriendshipDto(friendship);
     }
 
-    Friendship friendship = friendshipService.createFriendship(senderId, recipientId);
+    // Create new friendship
+    Friendship friendship = friendshipService.createFriendship(senderId, recipientId, meta);
     return toFriendshipDto(friendship);
   }
 
@@ -94,6 +114,9 @@ public class FriendshipUseCase {
     response.setCreatedAt(friendship.getCreatedAt().atOffset(ZoneOffset.UTC));
     if (friendship.getUpdatedAt() != null) {
       response.setUpdatedAt(friendship.getUpdatedAt().atOffset(ZoneOffset.UTC));
+    }
+    if (friendship.getMeta() != null) {
+      response.setMeta(friendship.getMeta());
     }
 
     // Populate senderProfile if available

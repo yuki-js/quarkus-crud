@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -39,16 +40,18 @@ public class FriendshipService {
    *
    * @param senderId the sender user ID
    * @param recipientId the recipient user ID
+   * @param meta optional metadata for the friendship
    * @return the created friendship from sender to recipient
    */
   @Transactional
-  public Friendship createFriendship(Long senderId, Long recipientId) {
+  public Friendship createFriendship(Long senderId, Long recipientId, Map<String, Object> meta) {
     LocalDateTime now = LocalDateTime.now();
 
     // Create friendship from sender to recipient
     Friendship friendship = new Friendship();
     friendship.setSenderId(senderId);
     friendship.setRecipientId(recipientId);
+    friendship.setMeta(meta);
     friendship.setCreatedAt(now);
     friendship.setUpdatedAt(now);
     friendshipMapper.insert(friendship);
@@ -57,10 +60,25 @@ public class FriendshipService {
     Friendship reverseFriendship = new Friendship();
     reverseFriendship.setSenderId(recipientId);
     reverseFriendship.setRecipientId(senderId);
+    reverseFriendship.setMeta(meta);
     reverseFriendship.setCreatedAt(now);
     reverseFriendship.setUpdatedAt(now);
     friendshipMapper.insert(reverseFriendship);
 
     return friendship;
+  }
+
+  /**
+   * Updates the meta field of a friendship.
+   *
+   * @param friendshipId the friendship ID to update
+   * @param meta the new metadata
+   */
+  @Transactional
+  public void updateMeta(Long friendshipId, Map<String, Object> meta) {
+    Friendship friendship = friendshipMapper.findById(friendshipId).orElseThrow();
+    friendship.setMeta(meta);
+    friendship.setUpdatedAt(LocalDateTime.now());
+    friendshipMapper.updateMeta(friendship);
   }
 }

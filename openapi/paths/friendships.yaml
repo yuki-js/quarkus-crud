@@ -47,8 +47,8 @@ paths:
     post:
       tags:
         - Friendships
-      summary: Share my profile card with another user
-      description: Record that the authenticated user has shared their profile card with the specified user. This operation creates a mutual (bidirectional) friendship, establishing both A→B and B→A relationships automatically.
+      summary: Share my profile card with another user (idempotent)
+      description: Record that the authenticated user has shared their profile card with the specified user. This operation creates a mutual (bidirectional) friendship, establishing both A→B and B→A relationships automatically. This operation is idempotent - if the friendship already exists, it updates the metadata and returns the existing friendship.
       operationId: receiveFriendship
       parameters:
         - name: userId
@@ -73,8 +73,8 @@ paths:
                   description: Free-form metadata captured for the exchange.
                   additionalProperties: true
       responses:
-        '201':
-          description: Friendship created.
+        '200':
+          description: Friendship created or updated successfully (idempotent operation).
           content:
             application/json:
               schema:
@@ -87,12 +87,6 @@ paths:
                 $ref: '../components/schemas/common.yaml#/ErrorResponse'
         '404':
           description: The specified user was not found.
-          content:
-            application/json:
-              schema:
-                $ref: '../components/schemas/common.yaml#/ErrorResponse'
-        '409':
-          description: Friendship already exists (checked in both directions).
           content:
             application/json:
               schema:
