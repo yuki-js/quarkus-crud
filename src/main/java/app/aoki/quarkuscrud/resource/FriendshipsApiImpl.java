@@ -52,8 +52,9 @@ public class FriendshipsApiImpl implements FriendshipsApi {
     try {
       java.util.Map<String, Object> meta =
           request.getMeta() != null ? request.getMeta() : new java.util.HashMap<>();
-      Friendship friendship = friendshipUseCase.createOrUpdateFriendship(sender.getId(), userId, meta);
-      
+      Friendship friendship =
+          friendshipUseCase.createOrUpdateFriendship(sender.getId(), userId, meta);
+
       // Return 200 OK for idempotent operation (could be existing or new friendship)
       return Response.ok(friendship).build();
     } catch (IllegalArgumentException e) {

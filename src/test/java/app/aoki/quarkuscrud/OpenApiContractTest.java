@@ -1,6 +1,8 @@
 package app.aoki.quarkuscrud;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.atlassian.oai.validator.OpenApiInteractionValidator;
