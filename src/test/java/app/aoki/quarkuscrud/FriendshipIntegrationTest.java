@@ -297,4 +297,120 @@ public class FriendshipIntegrationTest {
     // Request without authentication should return 401
     given().when().get("/api/friendships/" + user2Id).then().statusCode(401);
   }
+
+  @Test
+  @Order(12)
+  public void testFriendshipMetaWriteReadUpdateRead() {
+    // Create two new users for meta testing
+    Response userXResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String userXToken = userXResponse.getHeader("Authorization").substring(7);
+    Long userXId = userXResponse.jsonPath().getLong("id");
+
+    Response userYResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String userYToken = userYResponse.getHeader("Authorization").substring(7);
+    Long userYId = userYResponse.jsonPath().getLong("id");
+
+    // Step 1: Create friendship with initial meta
+    given()
+        .header("Authorization", "Bearer " + userXToken)
+        .contentType(ContentType.JSON)
+        .body("{\"meta\":{\"location\":\"Tokyo\",\"event\":\"Conference2024\"}}")
+        .when()
+        .post("/api/users/" + userYId + "/friendship")
+        .then()
+        .statusCode(anyOf(is(200), is(201)))
+        .body("senderUserId", equalTo(userXId.intValue()))
+        .body("recipientUserId", equalTo(userYId.intValue()))
+        .body("meta.location", equalTo("Tokyo"))
+        .body("meta.event", equalTo("Conference2024"));
+
+    // Step 2: Read friendship and verify initial meta
+    given()
+        .header("Authorization", "Bearer " + userXToken)
+        .when()
+        .get("/api/friendships/" + userYId)
+        .then()
+        .statusCode(200)
+        .body("meta.location", equalTo("Tokyo"))
+        .body("meta.event", equalTo("Conference2024"));
+
+    // Also verify from the other user's perspective
+    given()
+        .header("Authorization", "Bearer " + userYToken)
+        .when()
+        .get("/api/friendships/" + userXId)
+        .then()
+        .statusCode(200)
+        .body("meta.location", equalTo("Tokyo"))
+        .body("meta.event", equalTo("Conference2024"));
+
+    // Verify meta in received friendships list
+    given()
+        .header("Authorization", "Bearer " + userYToken)
+        .when()
+        .get("/api/me/friendships/received")
+        .then()
+        .statusCode(200)
+        .body(
+            "find { it.senderUserId == " + userXId.intValue() + " }.meta.location",
+            equalTo("Tokyo"))
+        .body(
+            "find { it.senderUserId == " + userXId.intValue() + " }.meta.event",
+            equalTo("Conference2024"));
+
+    // Step 3: Update meta via idempotent POST (same friendship, new meta)
+    given()
+        .header("Authorization", "Bearer " + userXToken)
+        .contentType(ContentType.JSON)
+        .body(
+            "{\"meta\":{\"location\":\"Osaka\",\"event\":\"Workshop2025\",\"notes\":\"Follow-up\"}}")
+        .when()
+        .post("/api/users/" + userYId + "/friendship")
+        .then()
+        .statusCode(200)
+        .body("senderUserId", equalTo(userXId.intValue()))
+        .body("recipientUserId", equalTo(userYId.intValue()))
+        .body("meta.location", equalTo("Osaka"))
+        .body("meta.event", equalTo("Workshop2025"))
+        .body("meta.notes", equalTo("Follow-up"));
+
+    // Step 4: Read friendship again and verify updated meta
+    given()
+        .header("Authorization", "Bearer " + userXToken)
+        .when()
+        .get("/api/friendships/" + userYId)
+        .then()
+        .statusCode(200)
+        .body("meta.location", equalTo("Osaka"))
+        .body("meta.event", equalTo("Workshop2025"))
+        .body("meta.notes", equalTo("Follow-up"));
+
+    // Verify updated meta from the other user's perspective
+    given()
+        .header("Authorization", "Bearer " + userYToken)
+        .when()
+        .get("/api/friendships/" + userXId)
+        .then()
+        .statusCode(200)
+        .body("meta.location", equalTo("Osaka"))
+        .body("meta.event", equalTo("Workshop2025"))
+        .body("meta.notes", equalTo("Follow-up"));
+
+    // Verify updated meta in received friendships list
+    given()
+        .header("Authorization", "Bearer " + userYToken)
+        .when()
+        .get("/api/me/friendships/received")
+        .then()
+        .statusCode(200)
+        .body(
+            "find { it.senderUserId == " + userXId.intValue() + " }.meta.location",
+            equalTo("Osaka"))
+        .body(
+            "find { it.senderUserId == " + userXId.intValue() + " }.meta.event",
+            equalTo("Workshop2025"))
+        .body(
+            "find { it.senderUserId == " + userXId.intValue() + " }.meta.notes",
+            equalTo("Follow-up"));
+  }
 }
