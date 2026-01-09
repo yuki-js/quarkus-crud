@@ -1,12 +1,11 @@
 package app.aoki.quarkuscrud;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -172,7 +171,7 @@ public class AuthorizationIntegrationTest {
         .when()
         .post("/api/users/" + user2Id + "/friendship")
         .then()
-        .statusCode(anyOf(is(200), is(201)))
+        .statusCode(201) // Friendship creation returns 201
         .body("senderUserId", equalTo(user1Id.intValue()))
         .body("recipientUserId", equalTo(user2Id.intValue()));
 
@@ -309,14 +308,17 @@ public class AuthorizationIntegrationTest {
     String invitationCode = eventResponse.jsonPath().getString("invitationCode");
 
     // User 2 joins the event using the invitation code
-    given()
-        .header("Authorization", "Bearer " + user2Token)
-        .contentType(ContentType.JSON)
-        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
-        .when()
-        .post("/api/events/join-by-code")
-        .then()
-        .statusCode(anyOf(is(200), is(201), is(409))); // 409 if already joined
+    Response joinResponse =
+        given()
+            .header("Authorization", "Bearer " + user2Token)
+            .contentType(ContentType.JSON)
+            .body("{\"invitationCode\":\"" + invitationCode + "\"}")
+            .when()
+            .post("/api/events/join-by-code");
+
+    // Accept either 201 (joined successfully) or 409 (already joined from previous test)
+    int statusCode = joinResponse.getStatusCode();
+    assertTrue(statusCode == 201 || statusCode == 409, "Expected 201 or 409, got " + statusCode);
 
     // User 2 (now an attendee but not owner) should be able to see attendees
     given()

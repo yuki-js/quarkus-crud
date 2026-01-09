@@ -24,7 +24,21 @@ Install Java 21 (Temurin or any distribution that works with Gradle toolchains),
 
 ## Running tests explicitly
 
-`./gradlew test` executes the full suite: Quarkus integration tests backed by Dev Services, RestAssured contract checks, and Swagger request-validation. You can scope tests (e.g., `./gradlew :test --tests '*UserServiceTest'`) when you only care about a subset. Remember that contract tests rely on the compiled OpenAPI spec in `build/openapi-compiled/openapi.yaml`, so if you edit OpenAPI modules outside the Gradle lifecycle, run `./gradlew compileOpenApi` first to avoid stale contracts.
+`./gradlew test` executes the full JVM test suite: Quarkus integration tests backed by Dev Services, RestAssured contract checks, and Swagger request-validation. Tests run in parallel for faster feedback (see [Test Architecture](testing/test-architecture.md) for details).
+
+You can scope tests (e.g., `./gradlew :test --tests '*UserServiceTest'`) when you only care about a subset. Remember that contract tests rely on the compiled OpenAPI spec in `build/openapi-compiled/openapi.yaml`, so if you edit OpenAPI modules outside the Gradle lifecycle, run `./gradlew compileOpenApi` first to avoid stale contracts.
+
+### Native Mode Tests
+
+Run `./gradlew testNative` to execute all integration tests against the native binary. Native tests extend their JVM counterparts, ensuring complete test equivalence. See [Test Architecture](testing/test-architecture.md) for the full strategy.
+
+```bash
+# Run all native tests
+./gradlew testNative
+
+# Run specific native test
+./gradlew testNative --tests "AuthenticationIntegrationIT"
+```
 
 ## Tooling niceties
 

@@ -1,9 +1,7 @@
 package app.aoki.quarkuscrud;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -42,13 +40,13 @@ public class ProfileCrudIntegrationTest {
   @Test
   @Order(1)
   public void testGetMyProfileInitially() {
-    // Initially profile should not exist or be null
+    // Initially profile should not exist - returns 404
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .when()
         .get("/api/me/profile")
         .then()
-        .statusCode(anyOf(is(200), is(404)));
+        .statusCode(404); // Profile doesn't exist yet
   }
 
   @Test
@@ -123,5 +121,30 @@ public class ProfileCrudIntegrationTest {
         .statusCode(200)
         .body("profileData.displayName", equalTo("Name Only"))
         .body("profileData.bio", nullValue());
+  }
+
+  @Test
+  @Order(7)
+  public void testGetNonExistentUserProfile() {
+    // Try to get profile for non-existent user
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .when()
+        .get("/api/users/999999/profile")
+        .then()
+        .statusCode(404);
+  }
+
+  @Test
+  @Order(8)
+  public void testUpdateProfileWithoutAuthentication() {
+    // Try to update profile without auth token
+    given()
+        .contentType(ContentType.JSON)
+        .body("{\"profileData\":{\"displayName\":\"Hacker\"}}")
+        .when()
+        .put("/api/me/profile")
+        .then()
+        .statusCode(401);
   }
 }
