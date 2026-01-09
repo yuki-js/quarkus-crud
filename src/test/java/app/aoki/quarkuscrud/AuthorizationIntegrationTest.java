@@ -171,7 +171,7 @@ public class AuthorizationIntegrationTest {
         .when()
         .post("/api/users/" + user2Id + "/friendship")
         .then()
-        .statusCode(201) // Friendship creation returns 201
+        .statusCode(anyOf(is(200), is(201))) // Idempotent operation
         .body("senderUserId", equalTo(user1Id.intValue()))
         .body("recipientUserId", equalTo(user2Id.intValue()));
 

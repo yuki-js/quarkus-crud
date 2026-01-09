@@ -4,11 +4,15 @@ import app.aoki.quarkuscrud.entity.Friendship;
 import app.aoki.quarkuscrud.mapper.FriendshipMapper;
 import app.aoki.quarkuscrud.service.FriendshipService;
 import app.aoki.quarkuscrud.service.UserService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -24,6 +28,7 @@ public class FriendshipUseCase {
   @Inject UserService userService;
   @Inject FriendshipMapper friendshipMapper;
   @Inject ProfileUseCase profileUseCase;
+  @Inject ObjectMapper objectMapper;
 
   /**
    * Gets a friendship between the authenticated user and another user.
@@ -115,13 +120,25 @@ public class FriendshipUseCase {
     if (friendship.getUpdatedAt() != null) {
       response.setUpdatedAt(friendship.getUpdatedAt().atOffset(ZoneOffset.UTC));
     }
-    if (friendship.getMeta() != null) {
-      response.setMeta(friendship.getMeta());
+    if (friendship.getMeta() != null && !friendship.getMeta().isEmpty()) {
+      response.setMeta(deserializeMeta(friendship.getMeta()));
     }
 
     // Populate senderProfile if available
     profileUseCase.getLatestProfile(friendship.getSenderId()).ifPresent(response::setSenderProfile);
 
     return response;
+  }
+
+  private Map<String, Object> deserializeMeta(String metaJson) {
+    if (metaJson == null || metaJson.isEmpty()) {
+      return null;
+    }
+    try {
+      return objectMapper.readValue(metaJson, new TypeReference<Map<String, Object>>() {});
+    } catch (Exception e) {
+      // If deserialization fails, return null
+      return null;
+    }
   }
 }

@@ -55,7 +55,7 @@ public class FriendshipServiceTest {
   @Order(2)
   @Transactional
   public void testCreateFriendship() {
-    Friendship friendship = friendshipService.createFriendship(testUser1Id, testUser2Id);
+    Friendship friendship = friendshipService.createFriendship(testUser1Id, testUser2Id, null);
 
     assertNotNull(friendship);
     assertNotNull(friendship.getId());
@@ -110,11 +110,11 @@ public class FriendshipServiceTest {
   @Transactional
   public void testCreateMultipleFriendships() {
     // Create friendships from user1 to user3
-    Friendship friendship1 = friendshipService.createFriendship(testUser1Id, testUser3Id);
+    Friendship friendship1 = friendshipService.createFriendship(testUser1Id, testUser3Id, null);
     assertNotNull(friendship1);
 
     // Create friendships from user2 to user3
-    Friendship friendship2 = friendshipService.createFriendship(testUser2Id, testUser3Id);
+    Friendship friendship2 = friendshipService.createFriendship(testUser2Id, testUser3Id, null);
     assertNotNull(friendship2);
 
     // Verify user3 has two friendships
@@ -130,7 +130,7 @@ public class FriendshipServiceTest {
     Long user5Id = userService.createAnonymousUser().getId();
 
     // Create friendship from user4 to user5
-    Friendship friendship1 = friendshipService.createFriendship(user4Id, user5Id);
+    Friendship friendship1 = friendshipService.createFriendship(user4Id, user5Id, null);
     assertNotNull(friendship1);
 
     // Verify both directions exist automatically

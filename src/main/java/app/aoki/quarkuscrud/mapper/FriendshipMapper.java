@@ -17,40 +17,37 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface FriendshipMapper {
 
-  @Insert("INSERT INTO friendships (sender_id, recipient_id, meta, created_at, updated_at) VALUES (#{senderId}, #{recipientId}, #{meta, typeHandler=org.apache.ibatis.type.ObjectTypeHandler}::jsonb, #{createdAt}, #{updatedAt})")
+  @Insert("INSERT INTO friendships (sender_id, recipient_id, meta, created_at, updated_at) VALUES (#{senderId}, #{recipientId}, #{meta}::jsonb, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(Friendship friendship);
 
-  @Select("SELECT id, sender_id, recipient_id, meta, created_at, updated_at FROM friendships WHERE id = #{id}")
+  @Select("SELECT id, sender_id, recipient_id, meta::text as meta, created_at, updated_at FROM friendships WHERE id = #{id}")
   @Results(
       id = "friendshipResultMap",
       value = {
         @Result(property = "id", column = "id", id = true),
         @Result(property = "senderId", column = "sender_id"),
         @Result(property = "recipientId", column = "recipient_id"),
-        @Result(
-            property = "meta",
-            column = "meta",
-            typeHandler = org.apache.ibatis.type.ObjectTypeHandler.class),
+        @Result(property = "meta", column = "meta"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at")
       })
   Optional<Friendship> findById(@Param("id") Long id);
 
-  @Select("SELECT id, sender_id, recipient_id, meta, created_at, updated_at FROM friendships WHERE sender_id = #{senderId}")
+  @Select("SELECT id, sender_id, recipient_id, meta::text as meta, created_at, updated_at FROM friendships WHERE sender_id = #{senderId}")
   @ResultMap("friendshipResultMap")
   List<Friendship> findBySenderId(@Param("senderId") Long senderId);
 
-  @Select("SELECT id, sender_id, recipient_id, meta, created_at, updated_at FROM friendships WHERE recipient_id = #{recipientId}")
+  @Select("SELECT id, sender_id, recipient_id, meta::text as meta, created_at, updated_at FROM friendships WHERE recipient_id = #{recipientId}")
   @ResultMap("friendshipResultMap")
   List<Friendship> findByRecipientId(@Param("recipientId") Long recipientId);
 
-  @Select("SELECT id, sender_id, recipient_id, meta, created_at, updated_at FROM friendships WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
+  @Select("SELECT id, sender_id, recipient_id, meta::text as meta, created_at, updated_at FROM friendships WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
   @ResultMap("friendshipResultMap")
   Optional<Friendship> findBySenderAndRecipient(
       @Param("senderId") Long senderId, @Param("recipientId") Long recipientId);
 
-  @Select("SELECT id, sender_id, recipient_id, meta, created_at, updated_at FROM friendships WHERE (sender_id = #{userId1} AND recipient_id = #{userId2}) OR (sender_id = #{userId2} AND recipient_id = #{userId1}) LIMIT 1")
+  @Select("SELECT id, sender_id, recipient_id, meta::text as meta, created_at, updated_at FROM friendships WHERE (sender_id = #{userId1} AND recipient_id = #{userId2}) OR (sender_id = #{userId2} AND recipient_id = #{userId1}) LIMIT 1")
   @ResultMap("friendshipResultMap")
   Optional<Friendship> findByParticipants(
       @Param("userId1") Long userId1, @Param("userId2") Long userId2);
@@ -58,7 +55,7 @@ public interface FriendshipMapper {
   @Select("SELECT EXISTS(SELECT 1 FROM friendships WHERE (sender_id = #{userId1} AND recipient_id = #{userId2}) OR (sender_id = #{userId2} AND recipient_id = #{userId1}))")
   boolean existsBetweenUsers(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
 
-  @Update("UPDATE friendships SET meta = #{meta, typeHandler=org.apache.ibatis.type.ObjectTypeHandler}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
+  @Update("UPDATE friendships SET meta = #{meta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
   void updateMeta(Friendship friendship);
 
   @Delete("DELETE FROM friendships WHERE id = #{id}")

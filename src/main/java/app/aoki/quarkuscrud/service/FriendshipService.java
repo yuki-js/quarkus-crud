@@ -2,6 +2,8 @@ package app.aoki.quarkuscrud.service;
 
 import app.aoki.quarkuscrud.entity.Friendship;
 import app.aoki.quarkuscrud.mapper.FriendshipMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -19,6 +21,7 @@ import java.util.Optional;
 public class FriendshipService {
 
   @Inject FriendshipMapper friendshipMapper;
+  @Inject ObjectMapper objectMapper;
 
   /**
    * Finds a friendship between two users regardless of direction.
@@ -46,12 +49,13 @@ public class FriendshipService {
   @Transactional
   public Friendship createFriendship(Long senderId, Long recipientId, Map<String, Object> meta) {
     LocalDateTime now = LocalDateTime.now();
+    String metaJson = serializeMeta(meta);
 
     // Create friendship from sender to recipient
     Friendship friendship = new Friendship();
     friendship.setSenderId(senderId);
     friendship.setRecipientId(recipientId);
-    friendship.setMeta(meta);
+    friendship.setMeta(metaJson);
     friendship.setCreatedAt(now);
     friendship.setUpdatedAt(now);
     friendshipMapper.insert(friendship);
@@ -60,7 +64,7 @@ public class FriendshipService {
     Friendship reverseFriendship = new Friendship();
     reverseFriendship.setSenderId(recipientId);
     reverseFriendship.setRecipientId(senderId);
-    reverseFriendship.setMeta(meta);
+    reverseFriendship.setMeta(metaJson);
     reverseFriendship.setCreatedAt(now);
     reverseFriendship.setUpdatedAt(now);
     friendshipMapper.insert(reverseFriendship);
@@ -77,8 +81,19 @@ public class FriendshipService {
   @Transactional
   public void updateMeta(Long friendshipId, Map<String, Object> meta) {
     Friendship friendship = friendshipMapper.findById(friendshipId).orElseThrow();
-    friendship.setMeta(meta);
+    friendship.setMeta(serializeMeta(meta));
     friendship.setUpdatedAt(LocalDateTime.now());
     friendshipMapper.updateMeta(friendship);
+  }
+
+  private String serializeMeta(Map<String, Object> meta) {
+    if (meta == null || meta.isEmpty()) {
+      return null;
+    }
+    try {
+      return objectMapper.writeValueAsString(meta);
+    } catch (JsonProcessingException e) {
+      throw new IllegalArgumentException("Failed to serialize meta", e);
+    }
   }
 }

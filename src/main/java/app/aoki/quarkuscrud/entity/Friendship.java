@@ -2,7 +2,6 @@ package app.aoki.quarkuscrud.entity;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * Friendship entity representing mutual profile card exchange.
@@ -15,7 +14,7 @@ public class Friendship {
   private Long id;
   private Long senderId;
   private Long recipientId;
-  private Map<String, Object> meta;
+  private String meta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -25,7 +24,7 @@ public class Friendship {
       Long id,
       Long senderId,
       Long recipientId,
-      Map<String, Object> meta,
+      String meta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
@@ -76,11 +75,11 @@ public class Friendship {
     this.updatedAt = updatedAt;
   }
 
-  public Map<String, Object> getMeta() {
+  public String getMeta() {
     return meta;
   }
 
-  public void setMeta(Map<String, Object> meta) {
+  public void setMeta(String meta) {
     this.meta = meta;
   }
 }

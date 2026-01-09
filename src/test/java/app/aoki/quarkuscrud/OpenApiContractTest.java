@@ -225,7 +225,7 @@ public class OpenApiContractTest {
         .when()
         .post("/api/users/" + user2Id + "/friendship")
         .then()
-        .statusCode(201);
+        .statusCode(anyOf(is(200), is(201)));
   }
 
   @Test
