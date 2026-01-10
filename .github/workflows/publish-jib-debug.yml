@@ -1,7 +1,6 @@
 name: Build and Publish with Jib
 
 on:
-  push:
   workflow_dispatch:
 
 permissions:
@@ -177,3 +176,4 @@ jobs:
           echo "Built images:" >> $GITHUB_STEP_SUMMARY
           echo "- JVM: ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm" >> $GITHUB_STEP_SUMMARY
           echo "- JVM Debug: ${{ needs.prepare.outputs.image_base }}:${{ needs.prepare.outputs.short_sha }}-jvm-debug" >> $GITHUB_STEP_SUMMARY
+
