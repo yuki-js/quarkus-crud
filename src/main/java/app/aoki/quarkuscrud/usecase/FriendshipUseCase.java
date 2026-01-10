@@ -4,11 +4,15 @@ import app.aoki.quarkuscrud.entity.Friendship;
 import app.aoki.quarkuscrud.mapper.FriendshipMapper;
 import app.aoki.quarkuscrud.service.FriendshipService;
 import app.aoki.quarkuscrud.service.UserService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -24,6 +28,7 @@ public class FriendshipUseCase {
   @Inject UserService userService;
   @Inject FriendshipMapper friendshipMapper;
   @Inject ProfileUseCase profileUseCase;
+  @Inject ObjectMapper objectMapper;
 
   /**
    * Gets a friendship between the authenticated user and another user.
@@ -60,28 +65,48 @@ public class FriendshipUseCase {
   }
 
   /**
-   * Creates a mutual friendship between sender and recipient. This will create bidirectional
-   * relationships automatically.
+   * Creates a mutual friendship between sender and recipient, or updates meta if it already exists.
+   * This operation is idempotent - if the friendship already exists, it updates the meta and
+   * returns the existing friendship instead of throwing an error.
    *
    * @param senderId the sender user ID
    * @param recipientId the recipient user ID
-   * @return the created friendship as DTO
+   * @param meta optional metadata for the friendship
+   * @return the created or updated friendship as DTO
    * @throws IllegalArgumentException if recipient user not found
-   * @throws IllegalStateException if friendship already exists in either direction
    */
   @Transactional
-  public app.aoki.quarkuscrud.generated.model.Friendship createFriendship(
-      Long senderId, Long recipientId) {
+  public app.aoki.quarkuscrud.generated.model.Friendship createOrUpdateFriendship(
+      Long senderId, Long recipientId, java.util.Map<String, Object> meta) {
     if (userService.findById(recipientId).isEmpty()) {
       throw new IllegalArgumentException("User not found");
     }
 
     // Check if friendship already exists in either direction
-    if (friendshipMapper.existsBetweenUsers(senderId, recipientId)) {
-      throw new IllegalStateException("Friendship already exists");
+    Optional<Friendship> existingFriendship =
+        friendshipService.findByParticipants(senderId, recipientId);
+
+    if (existingFriendship.isPresent()) {
+      // Friendship exists - update meta if provided
+      Friendship friendship = existingFriendship.get();
+      if (meta != null && !meta.isEmpty()) {
+        // Update both directions
+        friendshipService.updateMeta(friendship.getId(), meta);
+
+        // Find and update the reverse friendship
+        Optional<Friendship> reverseFriendship =
+            friendshipMapper.findBySenderAndRecipient(
+                friendship.getRecipientId(), friendship.getSenderId());
+        reverseFriendship.ifPresent(rf -> friendshipService.updateMeta(rf.getId(), meta));
+
+        // Reload the updated friendship
+        friendship = friendshipMapper.findById(friendship.getId()).orElseThrow();
+      }
+      return toFriendshipDto(friendship);
     }
 
-    Friendship friendship = friendshipService.createFriendship(senderId, recipientId);
+    // Create new friendship
+    Friendship friendship = friendshipService.createFriendship(senderId, recipientId, meta);
     return toFriendshipDto(friendship);
   }
 
@@ -95,10 +120,25 @@ public class FriendshipUseCase {
     if (friendship.getUpdatedAt() != null) {
       response.setUpdatedAt(friendship.getUpdatedAt().atOffset(ZoneOffset.UTC));
     }
+    if (friendship.getMeta() != null && !friendship.getMeta().isEmpty()) {
+      response.setMeta(deserializeMeta(friendship.getMeta()));
+    }
 
     // Populate senderProfile if available
     profileUseCase.getLatestProfile(friendship.getSenderId()).ifPresent(response::setSenderProfile);
 
     return response;
+  }
+
+  private Map<String, Object> deserializeMeta(String metaJson) {
+    if (metaJson == null || metaJson.isEmpty()) {
+      return null;
+    }
+    try {
+      return objectMapper.readValue(metaJson, new TypeReference<Map<String, Object>>() {});
+    } catch (Exception e) {
+      // If deserialization fails, return null
+      return null;
+    }
   }
 }

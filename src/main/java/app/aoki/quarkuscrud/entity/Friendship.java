@@ -14,16 +14,23 @@ public class Friendship {
   private Long id;
   private Long senderId;
   private Long recipientId;
+  private String meta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
   public Friendship() {}
 
   public Friendship(
-      Long id, Long senderId, Long recipientId, LocalDateTime createdAt, LocalDateTime updatedAt) {
+      Long id,
+      Long senderId,
+      Long recipientId,
+      String meta,
+      LocalDateTime createdAt,
+      LocalDateTime updatedAt) {
     this.id = id;
     this.senderId = senderId;
     this.recipientId = recipientId;
+    this.meta = meta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -66,5 +73,13 @@ public class Friendship {
 
   public void setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public String getMeta() {
+    return meta;
+  }
+
+  public void setMeta(String meta) {
+    this.meta = meta;
   }
 }

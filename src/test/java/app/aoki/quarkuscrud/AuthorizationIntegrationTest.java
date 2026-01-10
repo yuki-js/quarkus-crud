@@ -1,8 +1,10 @@
 package app.aoki.quarkuscrud;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -171,7 +173,7 @@ public class AuthorizationIntegrationTest {
         .when()
         .post("/api/users/" + user2Id + "/friendship")
         .then()
-        .statusCode(201) // Friendship creation returns 201
+        .statusCode(anyOf(is(200), is(201))) // Idempotent operation
         .body("senderUserId", equalTo(user1Id.intValue()))
         .body("recipientUserId", equalTo(user2Id.intValue()));
 

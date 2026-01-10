@@ -22,6 +22,10 @@ Friendship:
       format: int64
       description: User who received the profile card.
       example: 42
+    meta:
+      type: object
+      description: Free-form metadata captured for the exchange.
+      additionalProperties: true
     createdAt:
       $ref: './common.yaml#/LocalDateTime'
     updatedAt:

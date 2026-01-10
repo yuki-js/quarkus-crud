@@ -1,9 +1,11 @@
 package app.aoki.quarkuscrud;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -254,9 +256,9 @@ public class DataIntegrityIntegrationTest {
         .when()
         .post("/api/users/" + user2Id + "/friendship")
         .then()
-        .statusCode(201); // First friendship creation returns 201
+        .statusCode(anyOf(is(200), is(201))); // First friendship creation
 
-    // Try to send again - should return 409 conflict
+    // Try to send again - should be idempotent and return 200
     given()
         .header("Authorization", "Bearer " + jwtToken)
         .contentType(ContentType.JSON)
@@ -264,6 +266,6 @@ public class DataIntegrityIntegrationTest {
         .when()
         .post("/api/users/" + user2Id + "/friendship")
         .then()
-        .statusCode(409); // Duplicate friendship should be rejected with 409
+        .statusCode(200); // Idempotent operation returns 200
   }
 }
