@@ -7,8 +7,6 @@ UserMeta:
       description: User-editable metadata as a JSON object
       nullable: true
       additionalProperties: true
-  required:
-    - usermeta
 
 UsermetaUpdateRequest:
   type: object
@@ -19,5 +17,3 @@ UsermetaUpdateRequest:
       description: User-editable metadata as a JSON object
       nullable: true
       additionalProperties: true
-  required:
-    - usermeta

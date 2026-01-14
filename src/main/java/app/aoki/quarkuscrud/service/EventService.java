@@ -99,6 +99,27 @@ public class EventService {
       throw new InvitationCodeCollisionException();
     }
 
+    // Automatically add the initiator as an attendee
+    EventAttendee initiatorAttendee = new EventAttendee();
+    initiatorAttendee.setEventId(event.getId());
+    initiatorAttendee.setAttendeeUserId(initiatorId);
+    initiatorAttendee.setUsermeta(null);
+    initiatorAttendee.setSysmeta(null);
+    initiatorAttendee.setCreatedAt(now);
+    initiatorAttendee.setUpdatedAt(now);
+    eventAttendeeMapper.insert(initiatorAttendee);
+
+    // Create initial event_user_data record for the initiator
+    EventUserData initiatorUserData = new EventUserData();
+    initiatorUserData.setEventId(event.getId());
+    initiatorUserData.setUserId(initiatorId);
+    initiatorUserData.setUserData("{}"); // Empty JSON object
+    initiatorUserData.setUsermeta(null);
+    initiatorUserData.setSysmeta(null);
+    initiatorUserData.setCreatedAt(now);
+    initiatorUserData.setUpdatedAt(now);
+    eventUserDataMapper.insert(initiatorUserData);
+
     return event;
   }
 

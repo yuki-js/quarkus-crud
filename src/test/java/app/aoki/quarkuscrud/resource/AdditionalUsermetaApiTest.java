@@ -506,7 +506,9 @@ public class AdditionalUsermetaApiTest {
             .extract()
             .as(Event.class);
 
-    Map<String, Object> request = Map.of("usermeta", (Object) null);
+    // Map.of doesn't allow null values, so use HashMap instead
+    Map<String, Object> request = new java.util.HashMap<>();
+    request.put("usermeta", null);
 
     given()
         .header("Authorization", "Bearer " + token)
