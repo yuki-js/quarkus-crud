@@ -18,13 +18,13 @@ import org.apache.ibatis.annotations.Update;
 public interface UserMapper {
 
   @Insert(
-      "INSERT INTO users (account_lifecycle, meta, created_at, updated_at) "
-          + "VALUES (#{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, #{meta}::jsonb, #{createdAt}, #{updatedAt})")
+      "INSERT INTO users (account_lifecycle, usermeta, sysmeta, created_at, updated_at) "
+          + "VALUES (#{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, #{usermeta}::jsonb, #{sysmeta}::jsonb, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(User user);
 
   @Select(
-      "SELECT id, account_lifecycle, meta::text as meta, created_at, updated_at FROM users WHERE id = #{id}")
+      "SELECT id, account_lifecycle, usermeta::text as usermeta, sysmeta::text as sysmeta, created_at, updated_at FROM users WHERE id = #{id}")
   @Results(
       id = "userResultMap",
       value = {
@@ -34,7 +34,8 @@ public interface UserMapper {
             column = "account_lifecycle",
             javaType = AccountLifecycle.class,
             typeHandler = AccountLifecycleTypeHandler.class),
-        @Result(property = "meta", column = "meta"),
+        @Result(property = "usermeta", column = "usermeta"),
+        @Result(property = "sysmeta", column = "sysmeta"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at")
       })
@@ -44,7 +45,7 @@ public interface UserMapper {
       "UPDATE users SET "
           + "account_lifecycle = "
           + "#{accountLifecycle, typeHandler=app.aoki.quarkuscrud.mapper.type.AccountLifecycleTypeHandler}, "
-          + "meta = #{meta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
+          + "usermeta = #{usermeta}::jsonb, sysmeta = #{sysmeta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
   void update(User user);
 
   @Delete("DELETE FROM users WHERE id = #{id}")

@@ -13,7 +13,8 @@ public class EventAttendee {
   private Long id;
   private Long eventId;
   private Long attendeeUserId;
-  private String meta;
+  private String usermeta;
+  private String sysmeta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -23,13 +24,15 @@ public class EventAttendee {
       Long id,
       Long eventId,
       Long attendeeUserId,
-      String meta,
+      String usermeta,
+      String sysmeta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
     this.eventId = eventId;
     this.attendeeUserId = attendeeUserId;
-    this.meta = meta;
+    this.usermeta = usermeta;
+    this.sysmeta = sysmeta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -58,12 +61,20 @@ public class EventAttendee {
     this.attendeeUserId = attendeeUserId;
   }
 
-  public String getMeta() {
-    return meta;
+  public String getUsermeta() {
+    return usermeta;
   }
 
-  public void setMeta(String meta) {
-    this.meta = meta;
+  public void setUsermeta(String usermeta) {
+    this.usermeta = usermeta;
+  }
+
+  public String getSysmeta() {
+    return sysmeta;
+  }
+
+  public void setSysmeta(String sysmeta) {
+    this.sysmeta = sysmeta;
   }
 
   public LocalDateTime getCreatedAt() {

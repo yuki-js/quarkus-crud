@@ -14,7 +14,8 @@ public class Event {
   private Long id;
   private Long initiatorId;
   private EventStatus status;
-  private String meta;
+  private String usermeta;
+  private String sysmeta;
   private LocalDateTime expiresAt;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
@@ -25,14 +26,16 @@ public class Event {
       Long id,
       Long initiatorId,
       EventStatus status,
-      String meta,
+      String usermeta,
+      String sysmeta,
       LocalDateTime expiresAt,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
     this.initiatorId = initiatorId;
     this.status = status;
-    this.meta = meta;
+    this.usermeta = usermeta;
+    this.sysmeta = sysmeta;
     this.expiresAt = expiresAt;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -62,12 +65,20 @@ public class Event {
     this.status = status;
   }
 
-  public String getMeta() {
-    return meta;
+  public String getUsermeta() {
+    return usermeta;
   }
 
-  public void setMeta(String meta) {
-    this.meta = meta;
+  public void setUsermeta(String usermeta) {
+    this.usermeta = usermeta;
+  }
+
+  public String getSysmeta() {
+    return sysmeta;
+  }
+
+  public void setSysmeta(String sysmeta) {
+    this.sysmeta = sysmeta;
   }
 
   public LocalDateTime getExpiresAt() {

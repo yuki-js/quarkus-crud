@@ -15,7 +15,8 @@ public class EventUserData {
   private Long eventId;
   private Long userId;
   private String userData;
-  private String revisionMeta;
+  private String usermeta;
+  private String sysmeta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -26,14 +27,16 @@ public class EventUserData {
       Long eventId,
       Long userId,
       String userData,
-      String revisionMeta,
+      String usermeta,
+      String sysmeta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
     this.eventId = eventId;
     this.userId = userId;
     this.userData = userData;
-    this.revisionMeta = revisionMeta;
+    this.usermeta = usermeta;
+    this.sysmeta = sysmeta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -70,12 +73,28 @@ public class EventUserData {
     this.userData = userData;
   }
 
+  public String getUsermeta() {
+    return usermeta;
+  }
+
+  public void setUsermeta(String usermeta) {
+    this.usermeta = usermeta;
+  }
+
+  public String getSysmeta() {
+    return sysmeta;
+  }
+
+  public void setSysmeta(String sysmeta) {
+    this.sysmeta = sysmeta;
+  }
+
   public String getRevisionMeta() {
-    return revisionMeta;
+    return sysmeta; // Deprecated: for backward compatibility
   }
 
   public void setRevisionMeta(String revisionMeta) {
-    this.revisionMeta = revisionMeta;
+    this.sysmeta = revisionMeta; // Deprecated: for backward compatibility
   }
 
   public LocalDateTime getCreatedAt() {

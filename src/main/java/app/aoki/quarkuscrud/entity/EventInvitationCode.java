@@ -14,6 +14,8 @@ public class EventInvitationCode {
   private Long id;
   private Long eventId;
   private String invitationCode;
+  private String usermeta;
+  private String sysmeta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -23,11 +25,15 @@ public class EventInvitationCode {
       Long id,
       Long eventId,
       String invitationCode,
+      String usermeta,
+      String sysmeta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
     this.eventId = eventId;
     this.invitationCode = invitationCode;
+    this.usermeta = usermeta;
+    this.sysmeta = sysmeta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -54,6 +60,22 @@ public class EventInvitationCode {
 
   public void setInvitationCode(String invitationCode) {
     this.invitationCode = invitationCode;
+  }
+
+  public String getUsermeta() {
+    return usermeta;
+  }
+
+  public void setUsermeta(String usermeta) {
+    this.usermeta = usermeta;
+  }
+
+  public String getSysmeta() {
+    return sysmeta;
+  }
+
+  public void setSysmeta(String sysmeta) {
+    this.sysmeta = sysmeta;
   }
 
   public LocalDateTime getCreatedAt() {

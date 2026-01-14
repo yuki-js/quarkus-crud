@@ -257,10 +257,10 @@ public class EventUseCase {
       response.setUpdatedAt(event.getUpdatedAt().atOffset(ZoneOffset.UTC));
     }
 
-    if (event.getMeta() != null) {
+    if (event.getUsermeta() != null) {
       try {
         Map<String, Object> meta =
-            objectMapper.readValue(event.getMeta(), new TypeReference<>() {});
+            objectMapper.readValue(event.getUsermeta(), new TypeReference<>() {});
         response.setMeta(meta);
       } catch (Exception e) {
         response.setMeta(new HashMap<>());
@@ -283,10 +283,10 @@ public class EventUseCase {
       response.setUpdatedAt(attendee.getUpdatedAt().atOffset(ZoneOffset.UTC));
     }
 
-    if (attendee.getMeta() != null) {
+    if (attendee.getUsermeta() != null) {
       try {
         Map<String, Object> meta =
-            objectMapper.readValue(attendee.getMeta(), new TypeReference<>() {});
+            objectMapper.readValue(attendee.getUsermeta(), new TypeReference<>() {});
         response.setMeta(meta);
       } catch (Exception e) {
         response.setMeta(new HashMap<>());

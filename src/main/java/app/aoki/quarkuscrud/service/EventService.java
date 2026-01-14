@@ -78,7 +78,8 @@ public class EventService {
     Event event = new Event();
     event.setInitiatorId(initiatorId);
     event.setStatus(EventStatus.CREATED);
-    event.setMeta(meta);
+    event.setUsermeta(meta);
+    event.setSysmeta(null);
     event.setExpiresAt(expiresAt);
     LocalDateTime now = LocalDateTime.now();
     event.setCreatedAt(now);
@@ -175,7 +176,8 @@ public class EventService {
     EventAttendee attendee = new EventAttendee();
     attendee.setEventId(eventId);
     attendee.setAttendeeUserId(userId);
-    attendee.setMeta(meta);
+    attendee.setUsermeta(meta);
+    attendee.setSysmeta(null);
     LocalDateTime now = LocalDateTime.now();
     attendee.setCreatedAt(now);
     attendee.setUpdatedAt(now);
