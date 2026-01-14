@@ -1,0 +1,23 @@
+MetaData:
+  type: object
+  description: Metadata container for user-editable metadata
+  properties:
+    usermeta:
+      type: object
+      description: User-editable metadata as a JSON object
+      nullable: true
+      additionalProperties: true
+  required:
+    - usermeta
+
+MetaDataUpdateRequest:
+  type: object
+  description: Request to update metadata
+  properties:
+    usermeta:
+      type: object
+      description: User-editable metadata as a JSON object
+      nullable: true
+      additionalProperties: true
+  required:
+    - usermeta

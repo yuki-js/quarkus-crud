@@ -1,0 +1,214 @@
+paths:
+  /api/users/{userId}/meta:
+    get:
+      tags:
+        - Users
+      summary: Get user metadata
+      description: Retrieve usermeta for a user. Only accessible to the user themselves or admins.
+      operationId: getUserMeta
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User metadata retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/meta.yaml#/MetaData'
+        '403':
+          description: Forbidden - not authorized to access this user's metadata
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+    put:
+      tags:
+        - Users
+      summary: Update user metadata
+      description: Update usermeta for a user. Only accessible to the user themselves.
+      operationId: updateUserMeta
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/meta.yaml#/MetaDataUpdateRequest'
+      responses:
+        '200':
+          description: Metadata updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/meta.yaml#/MetaData'
+        '403':
+          description: Forbidden - not authorized to update this user's metadata
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+  /api/events/{eventId}/meta:
+    get:
+      tags:
+        - Events
+      summary: Get event metadata
+      description: Retrieve usermeta for an event. Accessible to event initiator and attendees.
+      operationId: getEventMeta
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Event metadata retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/meta.yaml#/MetaData'
+        '403':
+          description: Forbidden - not authorized to access this event's metadata
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+    put:
+      tags:
+        - Events
+      summary: Update event metadata
+      description: Update usermeta for an event. Only accessible to the event initiator.
+      operationId: updateEventMeta
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/meta.yaml#/MetaDataUpdateRequest'
+      responses:
+        '200':
+          description: Metadata updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/meta.yaml#/MetaData'
+        '403':
+          description: Forbidden - not authorized to update this event's metadata
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+  /api/friendships/{otherUserId}/meta:
+    get:
+      tags:
+        - Friendships
+      summary: Get friendship metadata
+      description: Retrieve usermeta for a friendship. Accessible to both parties in the friendship.
+      operationId: getFriendshipMeta
+      parameters:
+        - name: otherUserId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Friendship metadata retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/meta.yaml#/MetaData'
+        '403':
+          description: Forbidden - not authorized to access this friendship's metadata
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: Friendship not found
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+    put:
+      tags:
+        - Friendships
+      summary: Update friendship metadata
+      description: Update usermeta for a friendship. Accessible to both parties in the friendship.
+      operationId: updateFriendshipMeta
+      parameters:
+        - name: otherUserId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/meta.yaml#/MetaDataUpdateRequest'
+      responses:
+        '200':
+          description: Metadata updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/meta.yaml#/MetaData'
+        '403':
+          description: Forbidden - not authorized to update this friendship's metadata
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: Friendship not found
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
