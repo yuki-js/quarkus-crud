@@ -8,7 +8,6 @@ import app.aoki.quarkuscrud.generated.model.UserMeta;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.*;
 
@@ -176,7 +175,6 @@ public class ComprehensiveUsermetaApiTest {
         .then()
         .statusCode(200);
   }
-}
 
   // ==================== Additional Test Variants ====================
 

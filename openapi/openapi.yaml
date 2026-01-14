@@ -65,6 +65,12 @@ paths:
     $ref: './paths/meta.yaml#/paths/~1api~1events~1{eventId}~1meta'
   /api/friendships/{otherUserId}/meta:
     $ref: './paths/meta.yaml#/paths/~1api~1friendships~1{otherUserId}~1meta'
+  /api/users/{userId}/profile/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1users~1{userId}~1profile~1meta'
+  /api/events/{eventId}/users/{userId}/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1events~1{eventId}~1users~1{userId}~1meta'
+  /api/events/{eventId}/attendees/{attendeeUserId}/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1events~1{eventId}~1attendees~1{attendeeUserId}~1meta'
 components:
   securitySchemes:
     bearerAuth:

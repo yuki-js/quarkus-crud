@@ -110,7 +110,8 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   @Path("/friendships/{otherUserId}/meta")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public Response updateFriendshipMeta(@PathParam("otherUserId") Long otherUserId, UserMeta userMeta) {
+  public Response updateFriendshipMeta(
+      @PathParam("otherUserId") Long otherUserId, UserMeta userMeta) {
     User user = authenticatedUser.get();
     try {
       UserMeta requestData = new UserMeta();

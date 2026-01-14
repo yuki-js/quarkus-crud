@@ -319,4 +319,99 @@ public class EventsApiImpl implements EventsApi {
           .build();
     }
   }
+
+  @Override
+  @Authenticated
+  @GET
+  @Path("/events/{eventId}/users/{userId}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getEventUserDataMeta(
+      @PathParam("eventId") Long eventId, @PathParam("userId") Long userId) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData = usermetaUseCase.getEventUserDataMeta(eventId, userId, user.getId());
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @PUT
+  @Path("/events/{eventId}/users/{userId}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateEventUserDataMeta(
+      @PathParam("eventId") Long eventId, @PathParam("userId") Long userId, UserMeta userMeta) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData =
+          usermetaUseCase.updateEventUserDataMeta(eventId, userId, user.getId(), userMeta);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @GET
+  @Path("/events/{eventId}/attendees/{attendeeUserId}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getEventAttendeeMeta(
+      @PathParam("eventId") Long eventId, @PathParam("attendeeUserId") Long attendeeUserId) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData =
+          usermetaUseCase.getEventAttendeeMeta(eventId, attendeeUserId, user.getId());
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @PUT
+  @Path("/events/{eventId}/attendees/{attendeeUserId}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateEventAttendeeMeta(
+      @PathParam("eventId") Long eventId,
+      @PathParam("attendeeUserId") Long attendeeUserId,
+      UserMeta userMeta) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData =
+          usermetaUseCase.updateEventAttendeeMeta(eventId, attendeeUserId, user.getId(), userMeta);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
 }
