@@ -28,6 +28,11 @@ import org.jboss.logging.Logger;
  *
  * <p>Handles reading and writing usermeta for entities with proper authorization checks.
  *
+ * <p>Architecture Note: This UseCase uses UserMeta from the generated API models (presentation
+ * layer). While this creates coupling between layers, UserMeta is essentially a simple DTO wrapper
+ * around JSON data with no business logic. For a future refactoring, consider creating a separate
+ * domain model (e.g., UsermetaData) to maintain strict separation of concerns.
+ *
  * <p>Authorization rules: - users: 本人のみRW - events: attendeeのみRW - event_attendees: attendee全体RW -
  * friendships: senderのみRW(mutualなfriendshipが形成されるならばもう片方のrelationが張られるはずなので無問題) - user_profiles:
  * 本人のみRW - event_user_data: R: attendee, W: 本人のみ - rooms: attendee全体RW - authn_providers:

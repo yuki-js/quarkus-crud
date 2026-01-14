@@ -384,6 +384,17 @@ task generateJavascriptFetchClient(type: JavaExec) {
         project.delete(javascriptFetchClientDir)
         javascriptFetchClientDir.mkdirs()
     }
+    
+    doLast {
+        // Fix index.ts to remove MetaApi export which causes duplicate exports
+        def indexFile = file("${javascriptFetchClientDir}/src/apis/index.ts")
+        if (indexFile.exists()) {
+            def content = indexFile.text
+            content = content.replaceAll(/export \* from '\.\/MetaApi';\n?/, '')
+            indexFile.text = content
+            logger.lifecycle('Fixed index.ts - removed MetaApi export to avoid duplicate exports')
+        }
+    }
 }
 
 def npmInstallJavascriptFetchClient = tasks.register('npmInstallJavascriptFetchClient', Exec) {
