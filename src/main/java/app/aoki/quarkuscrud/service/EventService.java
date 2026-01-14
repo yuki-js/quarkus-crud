@@ -90,6 +90,8 @@ public class EventService {
     EventInvitationCode code = new EventInvitationCode();
     code.setEventId(event.getId());
     code.setInvitationCode(generateInvitationCode());
+    code.setUsermeta(null);
+    code.setSysmeta(null);
     code.setCreatedAt(now);
     code.setUpdatedAt(now);
 

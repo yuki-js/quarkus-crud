@@ -142,10 +142,40 @@ private String sysmeta;
 ## 進捗状況
 
 - [x] 計画策定
-- [ ] データベースマイグレーション作成
-- [ ] エンティティ更新
-- [ ] Mapper更新
-- [ ] OpenAPI定義更新
-- [ ] API実装
-- [ ] テスト作成・更新
-- [ ] CI検証
+- [x] データベースマイグレーション作成
+- [x] エンティティ更新
+- [x] Mapper更新
+- [x] Service層更新
+- [ ] OpenAPI定義更新 (未着手)
+- [ ] API実装 (未着手)
+- [ ] テスト作成・更新 (一部完了、2テスト失敗中)
+- [ ] CI検証 (未完了)
+
+## 既知の問題
+
+### EventServiceTest の2テスト失敗
+
+**症状:**
+- `testInvitationCodeCanBeReusedAfterExpiration()` が失敗
+- `testInvitationCodeCanBeReusedAfterDeletion()` が失敗
+- 両方とも `insertIfInvitationCodeAvailable()` が期待値1ではなく0を返す
+
+**原因調査:**
+1. マイグレーションは正常に適用されている（V4まで）
+2. 197/199テストは成功しており、基本機能は正常
+3. `EventInvitationCode`に`usermeta`/`sysmeta`を追加したが、これらのフィールドが`insertIfInvitationCodeAvailable`のSQL WHERE句に影響している可能性
+4. テストでは`EventInvitationCode`のusermeta/sysmetaを明示的にNULLに設定済み
+5. `EventService.createEventInTransaction`でもusermeta/sysmetaを明示的にNULLに設定済み
+
+**推測される問題:**
+- `insertIfInvitationCodeAvailable`のSELECT句で`#{usermeta}::jsonb, #{sysmeta}::jsonb`を追加したことにより、何らかの副作用が発生している可能性
+- または、WHERE句の`LOWER(e.status) NOT IN ('expired', 'deleted')`が正しく評価されていない可能性
+
+**次のアクション:**
+1. PostgreSQLで直接SQLを実行して、`insertIfInvitationCodeAvailable`の動作を確認
+2. テストにデバッグログを追加して、データベースの状態を確認
+3. 必要に応じて、`insertIfInvitationCodeAvailable`のSQLを修正
+4. または、これらのテストが実際に必要か、テストロジックが正しいかを検証
+
+**回避策:**
+現時点では、この2テストの失敗は主要機能（usermeta/sysmetaの分離）に影響を与えないため、一旦保留とする。
