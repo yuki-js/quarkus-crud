@@ -277,7 +277,10 @@ public class EventsApiImpl implements EventsApi {
 
   @Override
   @Authenticated
-  public Response getEventMeta(Long eventId) {
+  @GET
+  @Path("/events/{eventId}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getEventMeta(@PathParam("eventId") Long eventId) {
     User user = authenticatedUser.get();
     try {
       UserMeta metaData = usermetaUseCase.getEventMeta(eventId, user.getId());
@@ -295,7 +298,11 @@ public class EventsApiImpl implements EventsApi {
 
   @Override
   @Authenticated
-  public Response updateEventMeta(Long eventId, UserMeta userMeta) {
+  @PUT
+  @Path("/events/{eventId}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateEventMeta(@PathParam("eventId") Long eventId, UserMeta userMeta) {
     User user = authenticatedUser.get();
     try {
       UserMeta requestData = new UserMeta();

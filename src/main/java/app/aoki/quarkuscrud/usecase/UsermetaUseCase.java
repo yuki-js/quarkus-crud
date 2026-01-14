@@ -313,6 +313,12 @@ public class UsermetaUseCase {
   // ==================== Helper Methods ====================
 
   private boolean isEventAttendee(Long eventId, Long userId) {
+    // Check if user is the event initiator
+    Event event = eventMapper.findById(eventId).orElse(null);
+    if (event != null && event.getInitiatorId().equals(userId)) {
+      return true;
+    }
+    // Check if user is an attendee
     return eventAttendeeMapper.findByEventAndAttendee(eventId, userId).isPresent();
   }
 

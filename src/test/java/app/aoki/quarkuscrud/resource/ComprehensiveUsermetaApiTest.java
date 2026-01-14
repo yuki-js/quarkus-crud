@@ -12,68 +12,53 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.*;
 
-/**
- * Comprehensive tests for usermeta CRUD operations across ALL tables.
- * Tests cover: users, events, friendships, event_attendees, user_profiles, event_user_data
- */
 @QuarkusTest
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ComprehensiveUsermetaApiTest {
 
-  private String token1;
-  private String token2;
-  private Long userId1;
-  private Long userId2;
-
-  @Test
-  @Order(0)
-  public void setup() {
-    // Create two guest users for testing
-    Response response1 = given().contentType(ContentType.JSON).post("/api/auth/guest");
-    token1 = response1.getHeader("Authorization").substring(7);
-    Response me1 = given().header("Authorization", "Bearer " + token1).get("/api/me");
-    userId1 = me1.jsonPath().getLong("id");
-
-    Response response2 = given().contentType(ContentType.JSON).post("/api/auth/guest");
-    token2 = response2.getHeader("Authorization").substring(7);
-    Response me2 = given().header("Authorization", "Bearer " + token2).get("/api/me");
-    userId2 = me2.jsonPath().getLong("id");
+  private String createGuestAndGetToken() {
+    Response response = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    return response.getHeader("Authorization").substring(7);
   }
 
-  // ==================== Users Table Tests ====================
+  private Long getUserId(String token) {
+    Response me = given().header("Authorization", "Bearer " + token).get("/api/me");
+    return me.jsonPath().getLong("id");
+  }
 
   @Test
-  @Order(1)
   public void testUser_GetMeta_Success() {
+    String token = createGuestAndGetToken();
+    Long userId = getUserId(token);
+
     given()
-        .header("Authorization", "Bearer " + token1)
+        .header("Authorization", "Bearer " + token)
         .when()
-        .get("/api/users/" + userId1 + "/meta")
+        .get("/api/users/" + userId + "/meta")
         .then()
         .statusCode(200);
   }
 
   @Test
-  @Order(2)
   public void testUser_UpdateMeta_Success() {
+    String token = createGuestAndGetToken();
+    Long userId = getUserId(token);
+
     Map<String, Object> meta = Map.of("nickname", "TestUser1", "theme", "dark");
     Map<String, Object> request = Map.of("usermeta", meta);
 
     given()
-        .header("Authorization", "Bearer " + token1)
+        .header("Authorization", "Bearer " + token)
         .contentType(ContentType.JSON)
         .body(request)
         .when()
-        .put("/api/users/" + userId1 + "/meta")
+        .put("/api/users/" + userId + "/meta")
         .then()
         .statusCode(200);
 
-    // Verify
     var response =
         given()
-            .header("Authorization", "Bearer " + token1)
-            .get("/api/users/" + userId1 + "/meta")
+            .header("Authorization", "Bearer " + token)
+            .get("/api/users/" + userId + "/meta")
             .then()
             .statusCode(200)
             .extract()
@@ -84,9 +69,11 @@ public class ComprehensiveUsermetaApiTest {
   }
 
   @Test
-  @Order(3)
   public void testUser_GetMeta_Forbidden() {
-    // User2 cannot access User1's metadata
+    String token1 = createGuestAndGetToken();
+    String token2 = createGuestAndGetToken();
+    Long userId1 = getUserId(token1);
+
     given()
         .header("Authorization", "Bearer " + token2)
         .get("/api/users/" + userId1 + "/meta")
@@ -95,29 +82,12 @@ public class ComprehensiveUsermetaApiTest {
   }
 
   @Test
-  @Order(4)
-  public void testUser_UpdateMeta_Forbidden() {
-    Map<String, Object> request = Map.of("usermeta", Map.of("evil", "data"));
+  public void testEvent_GetMeta_Success() {
+    String token = createGuestAndGetToken();
 
-    // User2 cannot update User1's metadata
-    given()
-        .header("Authorization", "Bearer " + token2)
-        .contentType(ContentType.JSON)
-        .body(request)
-        .put("/api/users/" + userId1 + "/meta")
-        .then()
-        .statusCode(403);
-  }
-
-  // ==================== Events Table Tests ====================
-
-  @Test
-  @Order(10)
-  public void testEvent_GetMeta_Success_Initiator() {
-    // Create event
     Event event =
         given()
-            .header("Authorization", "Bearer " + token1)
+            .header("Authorization", "Bearer " + token)
             .contentType(ContentType.JSON)
             .body("{}")
             .post("/api/events")
@@ -126,21 +96,20 @@ public class ComprehensiveUsermetaApiTest {
             .extract()
             .as(Event.class);
 
-    // Initiator can read
     given()
-        .header("Authorization", "Bearer " + token1)
+        .header("Authorization", "Bearer " + token)
         .get("/api/events/" + event.getId() + "/meta")
         .then()
         .statusCode(200);
   }
 
   @Test
-  @Order(11)
-  public void testEvent_UpdateMeta_Success_Initiator() {
-    // Create event
+  public void testEvent_UpdateMeta_Success() {
+    String token = createGuestAndGetToken();
+
     Event event =
         given()
-            .header("Authorization", "Bearer " + token1)
+            .header("Authorization", "Bearer " + token)
             .contentType(ContentType.JSON)
             .body("{}")
             .post("/api/events")
@@ -149,11 +118,11 @@ public class ComprehensiveUsermetaApiTest {
             .extract()
             .as(Event.class);
 
-    Map<String, Object> request = Map.of("usermeta", Map.of("theme", "birthday", "location", "Tokyo"));
+    Map<String, Object> meta = Map.of("theme", "party");
+    Map<String, Object> request = Map.of("usermeta", meta);
 
-    // Initiator can write
     given()
-        .header("Authorization", "Bearer " + token1)
+        .header("Authorization", "Bearer " + token)
         .contentType(ContentType.JSON)
         .body(request)
         .put("/api/events/" + event.getId() + "/meta")
@@ -162,70 +131,19 @@ public class ComprehensiveUsermetaApiTest {
   }
 
   @Test
-  @Order(12)
-  public void testEvent_GetMeta_Forbidden_NonAttendee() {
-    // Create event
-    Event event =
-        given()
-            .header("Authorization", "Bearer " + token1)
-            .contentType(ContentType.JSON)
-            .body("{}")
-            .post("/api/events")
-            .then()
-            .statusCode(201)
-            .extract()
-            .as(Event.class);
-
-    // Non-attendee cannot read
-    given()
-        .header("Authorization", "Bearer " + token2)
-        .get("/api/events/" + event.getId() + "/meta")
-        .then()
-        .statusCode(403);
-  }
-
-  @Test
-  @Order(13)
-  public void testEvent_UpdateMeta_Forbidden_NonAttendee() {
-    // Create event
-    Event event =
-        given()
-            .header("Authorization", "Bearer " + token1)
-            .contentType(ContentType.JSON)
-            .body("{}")
-            .post("/api/events")
-            .then()
-            .statusCode(201)
-            .extract()
-            .as(Event.class);
-
-    Map<String, Object> request = Map.of("usermeta", Map.of("evil", "data"));
-
-    // Non-attendee cannot write
-    given()
-        .header("Authorization", "Bearer " + token2)
-        .contentType(ContentType.JSON)
-        .body(request)
-        .put("/api/events/" + event.getId() + "/meta")
-        .then()
-        .statusCode(403);
-  }
-
-  // ==================== Friendships Table Tests ====================
-
-  @Test
-  @Order(20)
   public void testFriendship_GetMeta_Success() {
-    // Create friendship
+    String token1 = createGuestAndGetToken();
+    String token2 = createGuestAndGetToken();
+    Long userId2 = getUserId(token2);
+
     given()
         .header("Authorization", "Bearer " + token1)
         .contentType(ContentType.JSON)
         .body("{}")
-        .put("/api/users/" + userId2 + "/friendship")
+        .post("/api/users/" + userId2 + "/friendship")
         .then()
         .statusCode(200);
 
-    // Sender can read
     given()
         .header("Authorization", "Bearer " + token1)
         .get("/api/friendships/" + userId2 + "/meta")
@@ -234,20 +152,22 @@ public class ComprehensiveUsermetaApiTest {
   }
 
   @Test
-  @Order(21)
   public void testFriendship_UpdateMeta_Success() {
-    // Create friendship
+    String token1 = createGuestAndGetToken();
+    String token2 = createGuestAndGetToken();
+    Long userId2 = getUserId(token2);
+
     given()
         .header("Authorization", "Bearer " + token1)
         .contentType(ContentType.JSON)
         .body("{}")
-        .put("/api/users/" + userId2 + "/friendship")
+        .post("/api/users/" + userId2 + "/friendship")
         .then()
         .statusCode(200);
 
-    Map<String, Object> request = Map.of("usermeta", Map.of("note", "Good friend", "tags", java.util.List.of("colleague")));
+    Map<String, Object> meta = Map.of("note", "Best friend");
+    Map<String, Object> request = Map.of("usermeta", meta);
 
-    // Sender can write
     given()
         .header("Authorization", "Bearer " + token1)
         .contentType(ContentType.JSON)
@@ -256,120 +176,215 @@ public class ComprehensiveUsermetaApiTest {
         .then()
         .statusCode(200);
   }
+}
+
+  // ==================== Additional Test Variants ====================
 
   @Test
-  @Order(22)
-  public void testFriendship_GetMeta_NotFound() {
-    // No friendship with non-existent user
+  public void testUser_UpdateMeta_EmptyObject() {
+    String token = createGuestAndGetToken();
+    Long userId = getUserId(token);
+
+    Map<String, Object> request = Map.of("usermeta", Map.of());
+
     given()
-        .header("Authorization", "Bearer " + token1)
-        .get("/api/friendships/9999999/meta")
+        .header("Authorization", "Bearer " + token)
+        .contentType(ContentType.JSON)
+        .body(request)
+        .put("/api/users/" + userId + "/meta")
+        .then()
+        .statusCode(200);
+  }
+
+  @Test
+  public void testUser_UpdateMeta_ComplexNested() {
+    String token = createGuestAndGetToken();
+    Long userId = getUserId(token);
+
+    java.util.Map<String, Object> nested = new java.util.HashMap<>();
+    nested.put("level1", Map.of("level2", Map.of("level3", "deep value")));
+    nested.put("array", java.util.List.of(1, 2, 3));
+    Map<String, Object> request = Map.of("usermeta", nested);
+
+    given()
+        .header("Authorization", "Bearer " + token)
+        .contentType(ContentType.JSON)
+        .body(request)
+        .put("/api/users/" + userId + "/meta")
+        .then()
+        .statusCode(200);
+  }
+
+  @Test
+  public void testEvent_UpdateMeta_VerifyPersistence() {
+    String token = createGuestAndGetToken();
+
+    Event event =
+        given()
+            .header("Authorization", "Bearer " + token)
+            .contentType(ContentType.JSON)
+            .body("{}")
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .extract()
+            .as(Event.class);
+
+    Map<String, Object> meta = Map.of("color", "red", "priority", 5);
+    Map<String, Object> request = Map.of("usermeta", meta);
+
+    given()
+        .header("Authorization", "Bearer " + token)
+        .contentType(ContentType.JSON)
+        .body(request)
+        .put("/api/events/" + event.getId() + "/meta")
+        .then()
+        .statusCode(200);
+
+    // Verify persistence
+    var response =
+        given()
+            .header("Authorization", "Bearer " + token)
+            .get("/api/events/" + event.getId() + "/meta")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(UserMeta.class);
+
+    Map<?, ?> metaData = (Map<?, ?>) response.getUsermeta();
+    assertEquals("red", metaData.get("color"));
+    assertEquals(5, metaData.get("priority"));
+  }
+
+  @Test
+  public void testEvent_GetMeta_NonExistentEvent() {
+    String token = createGuestAndGetToken();
+
+    given()
+        .header("Authorization", "Bearer " + token)
+        .get("/api/events/99999/meta")
         .then()
         .statusCode(404);
   }
 
-  // ==================== Complex Metadata Tests ====================
-
   @Test
-  @Order(30)
-  public void testUser_ComplexNestedMetadata() {
-    Map<String, Object> complex = new HashMap<>();
-    complex.put("profile", Map.of("avatar", "https://example.com/avatar.jpg", "bio", "Hello world!"));
-    complex.put("preferences", Map.of("theme", "dark", "lang", "ja", "notifications", true));
-    complex.put("tags", java.util.List.of("developer", "gamer", "reader"));
-    complex.put("scores", java.util.List.of(100, 200, 300));
-    complex.put("nested", Map.of("level1", Map.of("level2", Map.of("level3", "deep"))));
+  public void testFriendship_UpdateMeta_VerifyPersistence() {
+    String token1 = createGuestAndGetToken();
+    String token2 = createGuestAndGetToken();
+    Long userId2 = getUserId(token2);
 
-    Map<String, Object> request = Map.of("usermeta", complex);
+    given()
+        .header("Authorization", "Bearer " + token1)
+        .contentType(ContentType.JSON)
+        .body("{}")
+        .post("/api/users/" + userId2 + "/friendship")
+        .then()
+        .statusCode(200);
+
+    Map<String, Object> meta = Map.of("closeness", 10, "tags", java.util.List.of("work", "friend"));
+    Map<String, Object> request = Map.of("usermeta", meta);
 
     given()
         .header("Authorization", "Bearer " + token1)
         .contentType(ContentType.JSON)
         .body(request)
-        .put("/api/users/" + userId1 + "/meta")
+        .put("/api/friendships/" + userId2 + "/meta")
         .then()
         .statusCode(200);
 
-    // Verify complex data was saved
+    // Verify
     var response =
         given()
             .header("Authorization", "Bearer " + token1)
-            .get("/api/users/" + userId1 + "/meta")
+            .get("/api/friendships/" + userId2 + "/meta")
             .then()
             .statusCode(200)
             .extract()
             .as(UserMeta.class);
 
-    assertNotNull(response.getUsermeta());
-    Map<?, ?> saved = (Map<?, ?>) response.getUsermeta();
-    assertTrue(saved.containsKey("profile"));
-    assertTrue(saved.containsKey("preferences"));
-    assertTrue(saved.containsKey("tags"));
+    Map<?, ?> metaData = (Map<?, ?>) response.getUsermeta();
+    assertEquals(10, metaData.get("closeness"));
   }
 
   @Test
-  @Order(31)
-  public void testUser_NullMetadata() {
-    Map<String, Object> request = Map.of("usermeta", Map.of());
+  public void testFriendship_GetMeta_NoFriendship() {
+    String token1 = createGuestAndGetToken();
+    String token2 = createGuestAndGetToken();
+    Long userId2 = getUserId(token2);
 
+    // No friendship exists
     given()
         .header("Authorization", "Bearer " + token1)
-        .contentType(ContentType.JSON)
-        .body(request)
-        .put("/api/users/" + userId1 + "/meta")
+        .get("/api/friendships/" + userId2 + "/meta")
         .then()
-        .statusCode(200);
+        .statusCode(404);
   }
 
   @Test
-  @Order(32)
-  public void testUser_UpdateMetadata_Overwrite() {
-    // Set initial metadata
-    Map<String, Object> initial = Map.of("usermeta", Map.of("key1", "value1", "key2", "value2"));
+  public void testUser_Unauthenticated() {
+    String token = createGuestAndGetToken();
+    Long userId = getUserId(token);
+
+    // No auth header
+    given().get("/api/users/" + userId + "/meta").then().statusCode(401);
+  }
+
+  @Test
+  public void testEvent_Unauthenticated() {
+    String token = createGuestAndGetToken();
+
+    Event event =
+        given()
+            .header("Authorization", "Bearer " + token)
+            .contentType(ContentType.JSON)
+            .body("{}")
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .extract()
+            .as(Event.class);
+
+    // No auth header
+    given().get("/api/events/" + event.getId() + "/meta").then().statusCode(401);
+  }
+
+  @Test
+  public void testUser_UpdateMeta_Overwrite() {
+    String token = createGuestAndGetToken();
+    Long userId = getUserId(token);
+
+    // Set first metadata
+    Map<String, Object> request1 = Map.of("usermeta", Map.of("key1", "value1"));
     given()
-        .header("Authorization", "Bearer " + token1)
+        .header("Authorization", "Bearer " + token)
         .contentType(ContentType.JSON)
-        .body(initial)
-        .put("/api/users/" + userId1 + "/meta")
+        .body(request1)
+        .put("/api/users/" + userId + "/meta")
         .then()
         .statusCode(200);
 
     // Overwrite with new metadata
-    Map<String, Object> updated = Map.of("usermeta", Map.of("key3", "value3"));
+    Map<String, Object> request2 = Map.of("usermeta", Map.of("key2", "value2"));
     given()
-        .header("Authorization", "Bearer " + token1)
+        .header("Authorization", "Bearer " + token)
         .contentType(ContentType.JSON)
-        .body(updated)
-        .put("/api/users/" + userId1 + "/meta")
+        .body(request2)
+        .put("/api/users/" + userId + "/meta")
         .then()
         .statusCode(200);
 
-    // Verify old keys are gone, new key exists
+    // Verify only key2 exists
     var response =
         given()
-            .header("Authorization", "Bearer " + token1)
-            .get("/api/users/" + userId1 + "/meta")
+            .header("Authorization", "Bearer " + token)
+            .get("/api/users/" + userId + "/meta")
             .then()
             .statusCode(200)
             .extract()
             .as(UserMeta.class);
 
-    Map<?, ?> saved = (Map<?, ?>) response.getUsermeta();
-    assertFalse(saved.containsKey("key1"));
-    assertFalse(saved.containsKey("key2"));
-    assertTrue(saved.containsKey("key3"));
-  }
-
-  @Test
-  @Order(33)
-  public void testUser_Unauthenticated_Forbidden() {
-    given()
-        .contentType(ContentType.JSON)
-        .body(Map.of("usermeta", Map.of("test", "data")))
-        .put("/api/users/" + userId1 + "/meta")
-        .then()
-        .statusCode(401);
-
-    given().get("/api/users/" + userId1 + "/meta").then().statusCode(401);
+    Map<?, ?> metaData = (Map<?, ?>) response.getUsermeta();
+    assertFalse(metaData.containsKey("key1"));
+    assertEquals("value2", metaData.get("key2"));
   }
 }

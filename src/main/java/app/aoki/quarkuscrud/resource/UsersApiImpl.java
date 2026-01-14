@@ -11,7 +11,9 @@ import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.UsermetaUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -44,7 +46,10 @@ public class UsersApiImpl implements UsersApi {
 
   @Override
   @Authenticated
-  public Response getUserMeta(Long userId) {
+  @GET
+  @Path("/users/{userId}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getUserMeta(@PathParam("userId") Long userId) {
     User user = authenticatedUser.get();
     try {
       UserMeta metaData = usermetaUseCase.getUserMeta(userId, user.getId());
@@ -62,7 +67,11 @@ public class UsersApiImpl implements UsersApi {
 
   @Override
   @Authenticated
-  public Response updateUserMeta(Long userId, UserMeta userMeta) {
+  @PUT
+  @Path("/users/{userId}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateUserMeta(@PathParam("userId") Long userId, UserMeta userMeta) {
     User user = authenticatedUser.get();
     try {
       UserMeta requestData = new UserMeta();
