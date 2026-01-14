@@ -415,7 +415,12 @@ public class EdgeCaseUsermetaApiTest {
     java.util.Map<String, Object> meta = new java.util.HashMap<>();
     meta.put("tags", java.util.List.of("important", "work", "personal"));
     meta.put("numbers", java.util.List.of(1, 2, 3, 4, 5));
-    meta.put("mixed", java.util.List.of("text", 123, true, null));
+    java.util.List<Object> mixedList = new java.util.ArrayList<>();
+    mixedList.add("text");
+    mixedList.add(123);
+    mixedList.add(true);
+    mixedList.add(null);
+    meta.put("mixed", mixedList);
 
     Map<String, Object> request = Map.of("usermeta", meta);
 
