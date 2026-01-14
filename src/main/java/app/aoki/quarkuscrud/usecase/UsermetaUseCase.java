@@ -7,7 +7,7 @@ import app.aoki.quarkuscrud.entity.EventUserData;
 import app.aoki.quarkuscrud.entity.Friendship;
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.entity.UserProfile;
-import app.aoki.quarkuscrud.generated.model.MetaData;
+import app.aoki.quarkuscrud.generated.model.UserMeta;
 import app.aoki.quarkuscrud.mapper.AuthnProviderMapper;
 import app.aoki.quarkuscrud.mapper.EventAttendeeMapper;
 import app.aoki.quarkuscrud.mapper.EventInvitationCodeMapper;
@@ -34,9 +34,9 @@ import org.jboss.logging.Logger;
  * user本人のみRW - event_invitation_codes: event initiatorのみRW
  */
 @ApplicationScoped
-public class MetaUseCase {
+public class UsermetaUseCase {
 
-  private static final Logger LOG = Logger.getLogger(MetaUseCase.class);
+  private static final Logger LOG = Logger.getLogger(UsermetaUseCase.class);
 
   @Inject UserMapper userMapper;
   @Inject EventMapper eventMapper;
@@ -50,7 +50,7 @@ public class MetaUseCase {
 
   // ==================== User Meta ====================
 
-  public MetaData getUserMeta(Long userId, Long requestingUserId) {
+  public UserMeta getUserMeta(Long userId, Long requestingUserId) {
     if (!userId.equals(requestingUserId)) {
       throw new SecurityException("You can only access your own metadata");
     }
@@ -63,7 +63,7 @@ public class MetaUseCase {
   }
 
   @Transactional
-  public MetaData updateUserMeta(Long userId, Long requestingUserId, MetaData metaData) {
+  public UserMeta updateUserMeta(Long userId, Long requestingUserId, UserMeta metaData) {
     if (!userId.equals(requestingUserId)) {
       throw new SecurityException("You can only update your own metadata");
     }
@@ -80,7 +80,7 @@ public class MetaUseCase {
 
   // ==================== Event Meta ====================
 
-  public MetaData getEventMeta(Long eventId, Long requestingUserId) {
+  public UserMeta getEventMeta(Long eventId, Long requestingUserId) {
     Event event =
         eventMapper
             .findById(eventId)
@@ -94,7 +94,7 @@ public class MetaUseCase {
   }
 
   @Transactional
-  public MetaData updateEventMeta(Long eventId, Long requestingUserId, MetaData metaData) {
+  public UserMeta updateEventMeta(Long eventId, Long requestingUserId, UserMeta metaData) {
     Event event =
         eventMapper
             .findById(eventId)
@@ -112,7 +112,7 @@ public class MetaUseCase {
 
   // ==================== Friendship Meta ====================
 
-  public MetaData getFriendshipMeta(Long requestingUserId, Long otherUserId) {
+  public UserMeta getFriendshipMeta(Long requestingUserId, Long otherUserId) {
     Friendship friendship =
         friendshipMapper
             .findBySenderAndRecipient(requestingUserId, otherUserId)
@@ -122,7 +122,7 @@ public class MetaUseCase {
   }
 
   @Transactional
-  public MetaData updateFriendshipMeta(Long requestingUserId, Long otherUserId, MetaData metaData) {
+  public UserMeta updateFriendshipMeta(Long requestingUserId, Long otherUserId, UserMeta metaData) {
     Friendship friendship =
         friendshipMapper
             .findBySenderAndRecipient(requestingUserId, otherUserId)
@@ -136,7 +136,7 @@ public class MetaUseCase {
 
   // ==================== User Profile Meta ====================
 
-  public MetaData getUserProfileMeta(Long userId, Long requestingUserId) {
+  public UserMeta getUserProfileMeta(Long userId, Long requestingUserId) {
     if (!userId.equals(requestingUserId)) {
       throw new SecurityException("You can only access your own profile metadata");
     }
@@ -149,7 +149,7 @@ public class MetaUseCase {
   }
 
   @Transactional
-  public MetaData updateUserProfileMeta(Long userId, Long requestingUserId, MetaData metaData) {
+  public UserMeta updateUserProfileMeta(Long userId, Long requestingUserId, UserMeta metaData) {
     if (!userId.equals(requestingUserId)) {
       throw new SecurityException("You can only update your own profile metadata");
     }
@@ -166,7 +166,7 @@ public class MetaUseCase {
 
   // ==================== Event User Data Meta ====================
 
-  public MetaData getEventUserDataMeta(Long eventId, Long userId, Long requestingUserId) {
+  public UserMeta getEventUserDataMeta(Long eventId, Long userId, Long requestingUserId) {
     Event event =
         eventMapper
             .findById(eventId)
@@ -184,8 +184,8 @@ public class MetaUseCase {
   }
 
   @Transactional
-  public MetaData updateEventUserDataMeta(
-      Long eventId, Long userId, Long requestingUserId, MetaData metaData) {
+  public UserMeta updateEventUserDataMeta(
+      Long eventId, Long userId, Long requestingUserId, UserMeta metaData) {
     if (!userId.equals(requestingUserId)) {
       throw new SecurityException("You can only update your own event user data metadata");
     }
@@ -202,7 +202,7 @@ public class MetaUseCase {
 
   // ==================== Event Attendee Meta ====================
 
-  public MetaData getEventAttendeeMeta(Long eventId, Long attendeeUserId, Long requestingUserId) {
+  public UserMeta getEventAttendeeMeta(Long eventId, Long attendeeUserId, Long requestingUserId) {
     if (!isEventAttendee(eventId, requestingUserId)) {
       throw new SecurityException("Only event attendees can access attendee metadata");
     }
@@ -215,8 +215,8 @@ public class MetaUseCase {
   }
 
   @Transactional
-  public MetaData updateEventAttendeeMeta(
-      Long eventId, Long attendeeUserId, Long requestingUserId, MetaData metaData) {
+  public UserMeta updateEventAttendeeMeta(
+      Long eventId, Long attendeeUserId, Long requestingUserId, UserMeta metaData) {
     if (!isEventAttendee(eventId, requestingUserId)) {
       throw new SecurityException("Only event attendees can update attendee metadata");
     }
@@ -236,7 +236,7 @@ public class MetaUseCase {
 
   // ==================== Authn Provider Meta ====================
 
-  public MetaData getAuthnProviderMeta(Long providerId, Long requestingUserId) {
+  public UserMeta getAuthnProviderMeta(Long providerId, Long requestingUserId) {
     var provider =
         authnProviderMapper
             .findById(providerId)
@@ -250,8 +250,8 @@ public class MetaUseCase {
   }
 
   @Transactional
-  public MetaData updateAuthnProviderMeta(
-      Long providerId, Long requestingUserId, MetaData metaData) {
+  public UserMeta updateAuthnProviderMeta(
+      Long providerId, Long requestingUserId, UserMeta metaData) {
     var provider =
         authnProviderMapper
             .findById(providerId)
@@ -269,7 +269,7 @@ public class MetaUseCase {
 
   // ==================== Event Invitation Code Meta ====================
 
-  public MetaData getEventInvitationCodeMeta(Long codeId, Long requestingUserId) {
+  public UserMeta getEventInvitationCodeMeta(Long codeId, Long requestingUserId) {
     EventInvitationCode code =
         eventInvitationCodeMapper
             .findById(codeId)
@@ -288,8 +288,8 @@ public class MetaUseCase {
   }
 
   @Transactional
-  public MetaData updateEventInvitationCodeMeta(
-      Long codeId, Long requestingUserId, MetaData metaData) {
+  public UserMeta updateEventInvitationCodeMeta(
+      Long codeId, Long requestingUserId, UserMeta metaData) {
     EventInvitationCode code =
         eventInvitationCodeMapper
             .findById(codeId)
@@ -316,8 +316,8 @@ public class MetaUseCase {
     return eventAttendeeMapper.findByEventAndAttendee(eventId, userId).isPresent();
   }
 
-  private MetaData parseMetaData(String json) {
-    MetaData metaData = new MetaData();
+  private UserMeta parseMetaData(String json) {
+    UserMeta metaData = new UserMeta();
     try {
       if (json != null && !json.isBlank()) {
         @SuppressWarnings("unchecked")
@@ -333,7 +333,7 @@ public class MetaUseCase {
     return metaData;
   }
 
-  private String serializeMetaData(MetaData metaData) {
+  private String serializeMetaData(UserMeta metaData) {
     try {
       return metaData.getUsermeta() != null
           ? objectMapper.writeValueAsString(metaData.getUsermeta())

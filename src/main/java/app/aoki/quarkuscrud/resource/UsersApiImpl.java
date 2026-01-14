@@ -2,14 +2,13 @@ package app.aoki.quarkuscrud.resource;
 
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.generated.api.UsersApi;
-import app.aoki.quarkuscrud.generated.model.MetaData;
-import app.aoki.quarkuscrud.generated.model.MetaDataUpdateRequest;
+import app.aoki.quarkuscrud.generated.model.UserMeta;
 import app.aoki.quarkuscrud.generated.model.UserPublic;
 import app.aoki.quarkuscrud.service.UserService;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
-import app.aoki.quarkuscrud.usecase.MetaUseCase;
+import app.aoki.quarkuscrud.usecase.UsermetaUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -25,7 +24,7 @@ import java.time.ZoneOffset;
 public class UsersApiImpl implements UsersApi {
 
   @Inject UserService userService;
-  @Inject MetaUseCase metaUseCase;
+  @Inject UsermetaUseCase usermetaUseCase;
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
@@ -48,7 +47,7 @@ public class UsersApiImpl implements UsersApi {
   public Response getUserMeta(Long userId) {
     User user = authenticatedUser.get();
     try {
-      MetaData metaData = metaUseCase.getUserMeta(userId, user.getId());
+      UserMeta metaData = usermetaUseCase.getUserMeta(userId, user.getId());
       return Response.ok(metaData).build();
     } catch (SecurityException e) {
       return Response.status(Response.Status.FORBIDDEN)
@@ -63,12 +62,12 @@ public class UsersApiImpl implements UsersApi {
 
   @Override
   @Authenticated
-  public Response updateUserMeta(Long userId, MetaDataUpdateRequest metaDataUpdateRequest) {
+  public Response updateUserMeta(Long userId, UserMeta userMeta) {
     User user = authenticatedUser.get();
     try {
-      MetaData requestData = new MetaData();
-      requestData.setUsermeta(metaDataUpdateRequest.getUsermeta());
-      MetaData metaData = metaUseCase.updateUserMeta(userId, user.getId(), requestData);
+      UserMeta requestData = new UserMeta();
+      requestData.setUsermeta(userMeta.getUsermeta());
+      UserMeta metaData = usermetaUseCase.updateUserMeta(userId, user.getId(), requestData);
       return Response.ok(metaData).build();
     } catch (SecurityException e) {
       return Response.status(Response.Status.FORBIDDEN)

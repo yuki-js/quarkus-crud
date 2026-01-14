@@ -1,6 +1,6 @@
-MetaData:
+UserMeta:
   type: object
-  description: Metadata container for user-editable metadata
+  description: User-editable metadata container
   properties:
     usermeta:
       type: object
@@ -10,9 +10,9 @@ MetaData:
   required:
     - usermeta
 
-MetaDataUpdateRequest:
+UsermetaUpdateRequest:
   type: object
-  description: Request to update metadata
+  description: Request to update user-editable metadata
   properties:
     usermeta:
       type: object

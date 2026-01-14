@@ -100,10 +100,10 @@ components:
       $ref: './components/schemas/llm.yaml#/FakeNamesRequest'
     FakeNamesResponse:
       $ref: './components/schemas/llm.yaml#/FakeNamesResponse'
-    MetaData:
-      $ref: './components/schemas/meta.yaml#/MetaData'
-    MetaDataUpdateRequest:
-      $ref: './components/schemas/meta.yaml#/MetaDataUpdateRequest'
+    UserMeta:
+      $ref: './components/schemas/meta.yaml#/UserMeta'
+    UsermetaUpdateRequest:
+      $ref: './components/schemas/meta.yaml#/UsermetaUpdateRequest'
     ErrorResponse:
       $ref: './components/schemas/common.yaml#/ErrorResponse'
     LocalDateTime:

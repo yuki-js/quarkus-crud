@@ -3,14 +3,13 @@ package app.aoki.quarkuscrud.resource;
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.generated.api.FriendshipsApi;
 import app.aoki.quarkuscrud.generated.model.Friendship;
-import app.aoki.quarkuscrud.generated.model.MetaData;
-import app.aoki.quarkuscrud.generated.model.MetaDataUpdateRequest;
 import app.aoki.quarkuscrud.generated.model.ReceiveFriendshipRequest;
+import app.aoki.quarkuscrud.generated.model.UserMeta;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.FriendshipUseCase;
-import app.aoki.quarkuscrud.usecase.MetaUseCase;
+import app.aoki.quarkuscrud.usecase.UsermetaUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
@@ -23,7 +22,7 @@ import org.postgresql.util.PSQLException;
 public class FriendshipsApiImpl implements FriendshipsApi {
 
   @Inject FriendshipUseCase friendshipUseCase;
-  @Inject MetaUseCase metaUseCase;
+  @Inject UsermetaUseCase usermetaUseCase;
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
@@ -83,7 +82,7 @@ public class FriendshipsApiImpl implements FriendshipsApi {
   public Response getFriendshipMeta(Long otherUserId) {
     User user = authenticatedUser.get();
     try {
-      MetaData metaData = metaUseCase.getFriendshipMeta(user.getId(), otherUserId);
+      UserMeta metaData = usermetaUseCase.getFriendshipMeta(user.getId(), otherUserId);
       return Response.ok(metaData).build();
     } catch (SecurityException e) {
       return Response.status(Response.Status.FORBIDDEN)
@@ -98,13 +97,13 @@ public class FriendshipsApiImpl implements FriendshipsApi {
 
   @Override
   @Authenticated
-  public Response updateFriendshipMeta(
-      Long otherUserId, MetaDataUpdateRequest metaDataUpdateRequest) {
+  public Response updateFriendshipMeta(Long otherUserId, UserMeta userMeta) {
     User user = authenticatedUser.get();
     try {
-      MetaData requestData = new MetaData();
-      requestData.setUsermeta(metaDataUpdateRequest.getUsermeta());
-      MetaData metaData = metaUseCase.updateFriendshipMeta(user.getId(), otherUserId, requestData);
+      UserMeta requestData = new UserMeta();
+      requestData.setUsermeta(userMeta.getUsermeta());
+      UserMeta metaData =
+          usermetaUseCase.updateFriendshipMeta(user.getId(), otherUserId, requestData);
       return Response.ok(metaData).build();
     } catch (SecurityException e) {
       return Response.status(Response.Status.FORBIDDEN)

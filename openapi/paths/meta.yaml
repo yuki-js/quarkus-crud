@@ -19,7 +19,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../components/schemas/meta.yaml#/MetaData'
+                $ref: '../components/schemas/meta.yaml#/UserMeta'
         '403':
           description: Forbidden - not authorized to access this user's metadata
           content:
@@ -50,14 +50,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/meta.yaml#/MetaDataUpdateRequest'
+              $ref: '../components/schemas/meta.yaml#/UserMeta'
       responses:
         '200':
           description: Metadata updated successfully
           content:
             application/json:
               schema:
-                $ref: '../components/schemas/meta.yaml#/MetaData'
+                $ref: '../components/schemas/meta.yaml#/UserMeta'
         '403':
           description: Forbidden - not authorized to update this user's metadata
           content:
@@ -90,7 +90,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../components/schemas/meta.yaml#/MetaData'
+                $ref: '../components/schemas/meta.yaml#/UserMeta'
         '403':
           description: Forbidden - not authorized to access this event's metadata
           content:
@@ -121,14 +121,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/meta.yaml#/MetaDataUpdateRequest'
+              $ref: '../components/schemas/meta.yaml#/UserMeta'
       responses:
         '200':
           description: Metadata updated successfully
           content:
             application/json:
               schema:
-                $ref: '../components/schemas/meta.yaml#/MetaData'
+                $ref: '../components/schemas/meta.yaml#/UserMeta'
         '403':
           description: Forbidden - not authorized to update this event's metadata
           content:
@@ -161,7 +161,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../components/schemas/meta.yaml#/MetaData'
+                $ref: '../components/schemas/meta.yaml#/UserMeta'
         '403':
           description: Forbidden - not authorized to access this friendship's metadata
           content:
@@ -192,14 +192,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/meta.yaml#/MetaDataUpdateRequest'
+              $ref: '../components/schemas/meta.yaml#/UserMeta'
       responses:
         '200':
           description: Metadata updated successfully
           content:
             application/json:
               schema:
-                $ref: '../components/schemas/meta.yaml#/MetaData'
+                $ref: '../components/schemas/meta.yaml#/UserMeta'
         '403':
           description: Forbidden - not authorized to update this friendship's metadata
           content:

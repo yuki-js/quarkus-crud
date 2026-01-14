@@ -8,13 +8,12 @@ import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
 import app.aoki.quarkuscrud.generated.model.EventUserData;
 import app.aoki.quarkuscrud.generated.model.EventUserDataUpdateRequest;
-import app.aoki.quarkuscrud.generated.model.MetaData;
-import app.aoki.quarkuscrud.generated.model.MetaDataUpdateRequest;
+import app.aoki.quarkuscrud.generated.model.UserMeta;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.EventUseCase;
-import app.aoki.quarkuscrud.usecase.MetaUseCase;
+import app.aoki.quarkuscrud.usecase.UsermetaUseCase;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -38,7 +37,7 @@ public class EventsApiImpl implements EventsApi {
   private static final Logger LOG = Logger.getLogger(EventsApiImpl.class);
 
   @Inject EventUseCase eventUseCase;
-  @Inject MetaUseCase metaUseCase;
+  @Inject UsermetaUseCase usermetaUseCase;
   @Inject AuthenticatedUser authenticatedUser;
   @Inject MeterRegistry meterRegistry;
 
@@ -281,7 +280,7 @@ public class EventsApiImpl implements EventsApi {
   public Response getEventMeta(Long eventId) {
     User user = authenticatedUser.get();
     try {
-      MetaData metaData = metaUseCase.getEventMeta(eventId, user.getId());
+      UserMeta metaData = usermetaUseCase.getEventMeta(eventId, user.getId());
       return Response.ok(metaData).build();
     } catch (SecurityException e) {
       return Response.status(Response.Status.FORBIDDEN)
@@ -296,12 +295,12 @@ public class EventsApiImpl implements EventsApi {
 
   @Override
   @Authenticated
-  public Response updateEventMeta(Long eventId, MetaDataUpdateRequest metaDataUpdateRequest) {
+  public Response updateEventMeta(Long eventId, UserMeta userMeta) {
     User user = authenticatedUser.get();
     try {
-      MetaData requestData = new MetaData();
-      requestData.setUsermeta(metaDataUpdateRequest.getUsermeta());
-      MetaData metaData = metaUseCase.updateEventMeta(eventId, user.getId(), requestData);
+      UserMeta requestData = new UserMeta();
+      requestData.setUsermeta(userMeta.getUsermeta());
+      UserMeta metaData = usermetaUseCase.updateEventMeta(eventId, user.getId(), requestData);
       return Response.ok(metaData).build();
     } catch (SecurityException e) {
       return Response.status(Response.Status.FORBIDDEN)

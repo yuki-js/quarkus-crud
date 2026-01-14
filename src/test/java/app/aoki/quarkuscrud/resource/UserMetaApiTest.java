@@ -3,7 +3,6 @@ package app.aoki.quarkuscrud.resource;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
-import app.aoki.quarkuscrud.generated.model.MetaData;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -27,8 +26,7 @@ public class UserMetaApiTest {
   @Order(1)
   public void testGetUserMeta_Success() {
     String token = createGuestUserAndGetToken();
-    Response meResponse =
-        given().header("Authorization", "Bearer " + token).when().get("/api/me");
+    Response meResponse = given().header("Authorization", "Bearer " + token).when().get("/api/me");
     Long userId = meResponse.jsonPath().getLong("id");
 
     given()
@@ -44,8 +42,7 @@ public class UserMetaApiTest {
   @Order(2)
   public void testUpdateUserMeta_Success() {
     String token = createGuestUserAndGetToken();
-    Response meResponse =
-        given().header("Authorization", "Bearer " + token).when().get("/api/me");
+    Response meResponse = given().header("Authorization", "Bearer " + token).when().get("/api/me");
     Long userId = meResponse.jsonPath().getLong("id");
 
     Map<String, Object> meta = new HashMap<>();
@@ -129,8 +126,7 @@ public class UserMetaApiTest {
   @Order(5)
   public void testUpdateUserMeta_Unauthenticated() {
     String token = createGuestUserAndGetToken();
-    Response meResponse =
-        given().header("Authorization", "Bearer " + token).when().get("/api/me");
+    Response meResponse = given().header("Authorization", "Bearer " + token).when().get("/api/me");
     Long userId = meResponse.jsonPath().getLong("id");
 
     Map<String, Object> request = new HashMap<>();
@@ -149,8 +145,7 @@ public class UserMetaApiTest {
   @Order(6)
   public void testUpdateUserMeta_NullMeta() {
     String token = createGuestUserAndGetToken();
-    Response meResponse =
-        given().header("Authorization", "Bearer " + token).when().get("/api/me");
+    Response meResponse = given().header("Authorization", "Bearer " + token).when().get("/api/me");
     Long userId = meResponse.jsonPath().getLong("id");
 
     Map<String, Object> request = new HashMap<>();
@@ -170,8 +165,7 @@ public class UserMetaApiTest {
   @Order(7)
   public void testUpdateUserMeta_ComplexNestedData() {
     String token = createGuestUserAndGetToken();
-    Response meResponse =
-        given().header("Authorization", "Bearer " + token).when().get("/api/me");
+    Response meResponse = given().header("Authorization", "Bearer " + token).when().get("/api/me");
     Long userId = meResponse.jsonPath().getLong("id");
 
     Map<String, Object> complexMeta = new HashMap<>();
