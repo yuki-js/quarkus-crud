@@ -2,10 +2,14 @@ package app.aoki.quarkuscrud.resource;
 
 import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.generated.api.UsersApi;
+import app.aoki.quarkuscrud.generated.model.MetaData;
+import app.aoki.quarkuscrud.generated.model.MetaDataUpdateRequest;
 import app.aoki.quarkuscrud.generated.model.UserPublic;
 import app.aoki.quarkuscrud.service.UserService;
 import app.aoki.quarkuscrud.support.Authenticated;
+import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
+import app.aoki.quarkuscrud.usecase.MetaUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -21,6 +25,8 @@ import java.time.ZoneOffset;
 public class UsersApiImpl implements UsersApi {
 
   @Inject UserService userService;
+  @Inject MetaUseCase metaUseCase;
+  @Inject AuthenticatedUser authenticatedUser;
 
   @Override
   @Authenticated
@@ -35,6 +41,44 @@ public class UsersApiImpl implements UsersApi {
             Response.status(Response.Status.NOT_FOUND)
                 .entity(new ErrorResponse("User not found"))
                 .build());
+  }
+
+  @Override
+  @Authenticated
+  public Response getUserMeta(Long userId) {
+    User user = authenticatedUser.get();
+    try {
+      MetaData metaData = metaUseCase.getUserMeta(userId, user.getId());
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  public Response updateUserMeta(Long userId, MetaDataUpdateRequest metaDataUpdateRequest) {
+    User user = authenticatedUser.get();
+    try {
+      MetaData requestData = new MetaData();
+      requestData.setUsermeta(metaDataUpdateRequest.getUsermeta());
+      MetaData metaData = metaUseCase.updateUserMeta(userId, user.getId(), requestData);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
   }
 
   private UserPublic toUserPublicResponse(User user) {

@@ -8,10 +8,13 @@ import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
 import app.aoki.quarkuscrud.generated.model.EventUserData;
 import app.aoki.quarkuscrud.generated.model.EventUserDataUpdateRequest;
+import app.aoki.quarkuscrud.generated.model.MetaData;
+import app.aoki.quarkuscrud.generated.model.MetaDataUpdateRequest;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.EventUseCase;
+import app.aoki.quarkuscrud.usecase.MetaUseCase;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -35,6 +38,7 @@ public class EventsApiImpl implements EventsApi {
   private static final Logger LOG = Logger.getLogger(EventsApiImpl.class);
 
   @Inject EventUseCase eventUseCase;
+  @Inject MetaUseCase metaUseCase;
   @Inject AuthenticatedUser authenticatedUser;
   @Inject MeterRegistry meterRegistry;
 
@@ -268,6 +272,44 @@ public class EventsApiImpl implements EventsApi {
       LOG.errorf(e, "Failed to update event user data for event %d, user %d", eventId, userId);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new ErrorResponse("Failed to update user data: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  public Response getEventMeta(Long eventId) {
+    User user = authenticatedUser.get();
+    try {
+      MetaData metaData = metaUseCase.getEventMeta(eventId, user.getId());
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  public Response updateEventMeta(Long eventId, MetaDataUpdateRequest metaDataUpdateRequest) {
+    User user = authenticatedUser.get();
+    try {
+      MetaData requestData = new MetaData();
+      requestData.setUsermeta(metaDataUpdateRequest.getUsermeta());
+      MetaData metaData = metaUseCase.updateEventMeta(eventId, user.getId(), requestData);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
           .build();
     }
   }

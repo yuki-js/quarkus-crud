@@ -109,15 +109,15 @@ private String sysmeta;
 
 ## 権限ルール
 
-- **users**: 本人のみ
-- **events**: initiator のみ
-- **event_attendees**: attendee 本人または event initiator
-- **friendships**: sender または recipient
-- **user_profiles**: user本人のみ（読み取りのみ、書き込みは禁止）
-- **event_user_data**: user本人または event initiator（読み取りのみ）
-- **rooms**: room所有者のみ
-- **authn_providers**: user本人のみ
-- **event_invitation_codes**: event initiator のみ
+- **users**: 本人のみRW
+- **events**: attendeeのみRW
+- **event_attendees**: attendee全体RW
+- **friendships**: senderのみRW(mutualなfriendshipが形成されるならばもう片方のrelationが張られるはずなので無問題)
+- **user_profiles**: 本人のみRW
+- **event_user_data**: R: attendee, W: 本人のみ
+- **rooms**: attendee全体RW
+- **authn_providers**: user本人のみRW
+- **event_invitation_codes**: event initiatorのみRW
 
 ## テスト戦略
 
