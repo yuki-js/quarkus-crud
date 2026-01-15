@@ -188,7 +188,6 @@ public class EventCrudIntegrationTest {
     // Create a new user to join the event
     Response newUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
     String newUserToken = newUserResponse.getHeader("Authorization").substring(7);
-    long newUserId = newUserResponse.jsonPath().getLong("id");
 
     // Get the invitation code for the event
     Response eventResponse =
@@ -205,11 +204,11 @@ public class EventCrudIntegrationTest {
         .then()
         .statusCode(201);
 
-    // List attended events for the new user
+    // List attended events for the current user
     given()
         .header("Authorization", "Bearer " + newUserToken)
         .when()
-        .get("/api/users/" + newUserId + "/attended-events")
+        .get("/api/me/attended-events")
         .then()
         .statusCode(200)
         .body("size()", greaterThanOrEqualTo(1))
@@ -222,13 +221,12 @@ public class EventCrudIntegrationTest {
     // Create a new user who hasn't joined any events
     Response newUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
     String newUserToken = newUserResponse.getHeader("Authorization").substring(7);
-    long newUserId = newUserResponse.jsonPath().getLong("id");
 
     // List attended events - should be empty
     given()
         .header("Authorization", "Bearer " + newUserToken)
         .when()
-        .get("/api/users/" + newUserId + "/attended-events")
+        .get("/api/me/attended-events")
         .then()
         .statusCode(200)
         .body("size()", equalTo(0));
@@ -236,20 +234,15 @@ public class EventCrudIntegrationTest {
 
   @Test
   @Order(11)
-  public void testCannotViewOtherUsersAttendedEvents() {
-    // Create two users
-    Response user1Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
-    String user1Token = user1Response.getHeader("Authorization").substring(7);
-    long user1Id = user1Response.jsonPath().getLong("id");
+  public void testMyAttendedEventsEndpointWorksCorrectly() {
+    // Create a user
+    Response userResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String userToken = userResponse.getHeader("Authorization").substring(7);
 
-    Response user2Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
-    String user2Token = user2Response.getHeader("Authorization").substring(7);
-    long user2Id = user2Response.jsonPath().getLong("id");
-
-    // User 1 creates an event
+    // User creates an event
     Response eventResponse =
         given()
-            .header("Authorization", "Bearer " + user1Token)
+            .header("Authorization", "Bearer " + userToken)
             .contentType(ContentType.JSON)
             .body("{}")
             .when()
@@ -259,10 +252,14 @@ public class EventCrudIntegrationTest {
             .extract()
             .response();
     String invitationCode = eventResponse.jsonPath().getString("invitationCode");
+    long createdEventId = eventResponse.jsonPath().getLong("id");
 
-    // User 2 joins the event
+    // Create another user and join the event
+    Response otherUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String otherUserToken = otherUserResponse.getHeader("Authorization").substring(7);
+
     given()
-        .header("Authorization", "Bearer " + user2Token)
+        .header("Authorization", "Bearer " + otherUserToken)
         .contentType(ContentType.JSON)
         .body("{\"invitationCode\":\"" + invitationCode + "\"}")
         .when()
@@ -270,22 +267,14 @@ public class EventCrudIntegrationTest {
         .then()
         .statusCode(201);
 
-    // User 1 should NOT be able to view User 2's attended events
+    // Other user should be able to view their own attended events
     given()
-        .header("Authorization", "Bearer " + user1Token)
+        .header("Authorization", "Bearer " + otherUserToken)
         .when()
-        .get("/api/users/" + user2Id + "/attended-events")
-        .then()
-        .statusCode(403)
-        .body("error", equalTo("Access denied. You can only view your own attended events."));
-
-    // User 2 should be able to view their own attended events
-    given()
-        .header("Authorization", "Bearer " + user2Token)
-        .when()
-        .get("/api/users/" + user2Id + "/attended-events")
+        .get("/api/me/attended-events")
         .then()
         .statusCode(200)
-        .body("size()", greaterThanOrEqualTo(1));
+        .body("size()", greaterThanOrEqualTo(1))
+        .body("[0].id", equalTo(((Long) createdEventId).intValue()));
   }
 }

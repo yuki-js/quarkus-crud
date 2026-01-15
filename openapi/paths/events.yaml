@@ -236,24 +236,16 @@ paths:
             application/json:
               schema:
                 $ref: '../components/schemas/common.yaml#/ErrorResponse'
-  /api/users/{userId}/attended-events:
+  /api/me/attended-events:
     get:
       tags:
         - Events
-      summary: List events attended by a user
-      description: Retrieve events where the specified user is an attendee. Requires authentication and the requester must be the same user (cannot view other users' attended events).
-      operationId: listAttendedEventsByUser
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          description: Identifier of the user.
-          schema:
-            type: integer
-            format: int64
+      summary: List events attended by the current user
+      description: Retrieve events where the authenticated user is an attendee.
+      operationId: listMyAttendedEvents
       responses:
         '200':
-          description: List of events attended by the user.
+          description: List of events attended by the current user.
           content:
             application/json:
               schema:
@@ -262,18 +254,6 @@ paths:
                   $ref: '../components/schemas/event.yaml#/Event'
         '401':
           description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '../components/schemas/common.yaml#/ErrorResponse'
-        '403':
-          description: Access denied. Users can only view their own attended events.
-          content:
-            application/json:
-              schema:
-                $ref: '../components/schemas/common.yaml#/ErrorResponse'
-        '404':
-          description: User not found.
           content:
             application/json:
               schema:
