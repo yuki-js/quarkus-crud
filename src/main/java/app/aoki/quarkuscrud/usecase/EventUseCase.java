@@ -182,6 +182,37 @@ public class EventUseCase {
   }
 
   /**
+   * Lists all events attended by a user with access control for invitation codes.
+   *
+   * <p>The invitation code is only included for each event if the requesting user is the event
+   * owner (initiator). This prevents unauthorized users from obtaining invitation codes (CWE-284
+   * fix).
+   *
+   * @param userId the user ID whose attended events to list
+   * @param requestingUserId the ID of the user making the request
+   * @return list of event DTOs
+   * @throws IllegalArgumentException if user not found
+   */
+  public List<app.aoki.quarkuscrud.generated.model.Event> listAttendedEventsByUser(
+      Long userId, Long requestingUserId) {
+    if (userService.findById(userId).isEmpty()) {
+      throw new IllegalArgumentException("User not found");
+    }
+
+    return eventService.findAttendedEventsByUserId(userId).stream()
+        .map(
+            event -> {
+              // Only include invitation code if the requesting user is the event owner
+              String invitationCode = null;
+              if (requestingUserId != null && requestingUserId.equals(event.getInitiatorId())) {
+                invitationCode = eventService.getInvitationCode(event.getId()).orElse(null);
+              }
+              return toEventDto(event, invitationCode);
+            })
+        .collect(Collectors.toList());
+  }
+
+  /**
    * Checks if an event exists.
    *
    * @param eventId the event ID

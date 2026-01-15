@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
 /**
@@ -141,6 +142,21 @@ public class EventService {
    */
   public List<Event> findByInitiatorId(Long userId) {
     return eventMapper.findByInitiatorId(userId);
+  }
+
+  /**
+   * Finds all events attended by a specific user.
+   *
+   * @param userId the attendee user ID
+   * @return list of events
+   */
+  public List<Event> findAttendedEventsByUserId(Long userId) {
+    List<EventAttendee> attendees = eventAttendeeMapper.findByAttendeeUserId(userId);
+    return attendees.stream()
+        .map(attendee -> eventMapper.findById(attendee.getEventId()))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toList());
   }
 
   /**
