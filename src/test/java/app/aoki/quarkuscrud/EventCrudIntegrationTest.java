@@ -188,7 +188,6 @@ public class EventCrudIntegrationTest {
     // Create a new user to join the event
     Response newUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
     String newUserToken = newUserResponse.getHeader("Authorization").substring(7);
-    long newUserId = newUserResponse.jsonPath().getLong("id");
 
     // Get the invitation code for the event
     Response eventResponse =
@@ -205,11 +204,11 @@ public class EventCrudIntegrationTest {
         .then()
         .statusCode(201);
 
-    // List attended events for the new user
+    // List attended events for the current user
     given()
         .header("Authorization", "Bearer " + newUserToken)
         .when()
-        .get("/api/users/" + newUserId + "/attended-events")
+        .get("/api/me/attended-events")
         .then()
         .statusCode(200)
         .body("size()", greaterThanOrEqualTo(1))
@@ -222,15 +221,60 @@ public class EventCrudIntegrationTest {
     // Create a new user who hasn't joined any events
     Response newUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
     String newUserToken = newUserResponse.getHeader("Authorization").substring(7);
-    long newUserId = newUserResponse.jsonPath().getLong("id");
 
     // List attended events - should be empty
     given()
         .header("Authorization", "Bearer " + newUserToken)
         .when()
-        .get("/api/users/" + newUserId + "/attended-events")
+        .get("/api/me/attended-events")
         .then()
         .statusCode(200)
         .body("size()", equalTo(0));
+  }
+
+  @Test
+  @Order(11)
+  public void testMyAttendedEventsEndpointWorksCorrectly() {
+    // Create a user
+    Response userResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String userToken = userResponse.getHeader("Authorization").substring(7);
+
+    // User creates an event
+    Response eventResponse =
+        given()
+            .header("Authorization", "Bearer " + userToken)
+            .contentType(ContentType.JSON)
+            .body("{}")
+            .when()
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .extract()
+            .response();
+    String invitationCode = eventResponse.jsonPath().getString("invitationCode");
+    long createdEventId = eventResponse.jsonPath().getLong("id");
+
+    // Create another user and join the event
+    Response otherUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String otherUserToken = otherUserResponse.getHeader("Authorization").substring(7);
+
+    given()
+        .header("Authorization", "Bearer " + otherUserToken)
+        .contentType(ContentType.JSON)
+        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
+        .when()
+        .post("/api/events/join-by-code")
+        .then()
+        .statusCode(201);
+
+    // Other user should be able to view their own attended events
+    given()
+        .header("Authorization", "Bearer " + otherUserToken)
+        .when()
+        .get("/api/me/attended-events")
+        .then()
+        .statusCode(200)
+        .body("size()", greaterThanOrEqualTo(1))
+        .body("[0].id", equalTo(((Long) createdEventId).intValue()));
   }
 }
