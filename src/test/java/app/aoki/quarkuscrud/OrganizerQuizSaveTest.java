@@ -15,8 +15,8 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
- * Integration test to verify that event organizers (initiators) can save quiz data without
- * manually joining their own event.
+ * Integration test to verify that event organizers (initiators) can save quiz data without manually
+ * joining their own event.
  *
  * <p>This test addresses the bug where organizers could not save quizzes because they were not
  * automatically added as attendees when creating an event.
