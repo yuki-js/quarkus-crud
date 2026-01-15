@@ -49,7 +49,8 @@ public class UserService {
       // Create user entity
       User user = new User();
       user.setAccountLifecycle(AccountLifecycle.CREATED);
-      user.setMeta(null);
+      user.setUsermeta(null);
+      user.setSysmeta(null);
       user.setCreatedAt(LocalDateTime.now());
       user.setUpdatedAt(LocalDateTime.now());
       userMapper.insert(user);
@@ -114,7 +115,8 @@ public class UserService {
       // Create new user
       User user = new User();
       user.setAccountLifecycle(AccountLifecycle.CREATED);
-      user.setMeta(null);
+      user.setUsermeta(null);
+      user.setSysmeta(null);
       user.setCreatedAt(LocalDateTime.now());
       user.setUpdatedAt(LocalDateTime.now());
       userMapper.insert(user);

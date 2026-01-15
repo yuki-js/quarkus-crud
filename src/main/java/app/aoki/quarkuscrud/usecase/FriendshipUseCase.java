@@ -120,8 +120,8 @@ public class FriendshipUseCase {
     if (friendship.getUpdatedAt() != null) {
       response.setUpdatedAt(friendship.getUpdatedAt().atOffset(ZoneOffset.UTC));
     }
-    if (friendship.getMeta() != null && !friendship.getMeta().isEmpty()) {
-      response.setMeta(deserializeMeta(friendship.getMeta()));
+    if (friendship.getUsermeta() != null && !friendship.getUsermeta().isEmpty()) {
+      response.setMeta(deserializeMeta(friendship.getUsermeta()));
     }
 
     // Populate senderProfile if available

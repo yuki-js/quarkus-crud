@@ -9,6 +9,8 @@ public class Room {
   private String name;
   private String description;
   private Long userId;
+  private String usermeta;
+  private String sysmeta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -19,12 +21,16 @@ public class Room {
       String name,
       String description,
       Long userId,
+      String usermeta,
+      String sysmeta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
     this.name = name;
     this.description = description;
     this.userId = userId;
+    this.usermeta = usermeta;
+    this.sysmeta = sysmeta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -59,6 +65,22 @@ public class Room {
 
   public void setUserId(Long userId) {
     this.userId = userId;
+  }
+
+  public String getUsermeta() {
+    return usermeta;
+  }
+
+  public void setUsermeta(String usermeta) {
+    this.usermeta = usermeta;
+  }
+
+  public String getSysmeta() {
+    return sysmeta;
+  }
+
+  public void setSysmeta(String sysmeta) {
+    this.sysmeta = sysmeta;
   }
 
   public LocalDateTime getCreatedAt() {

@@ -16,6 +16,8 @@ public class AuthnProvider {
   private AuthMethod authMethod;
   private String authIdentifier;
   private String externalSubject;
+  private String usermeta;
+  private String sysmeta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -27,6 +29,8 @@ public class AuthnProvider {
       AuthMethod authMethod,
       String authIdentifier,
       String externalSubject,
+      String usermeta,
+      String sysmeta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
@@ -34,6 +38,8 @@ public class AuthnProvider {
     this.authMethod = authMethod;
     this.authIdentifier = authIdentifier;
     this.externalSubject = externalSubject;
+    this.usermeta = usermeta;
+    this.sysmeta = sysmeta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -76,6 +82,22 @@ public class AuthnProvider {
 
   public void setExternalSubject(String externalSubject) {
     this.externalSubject = externalSubject;
+  }
+
+  public String getUsermeta() {
+    return usermeta;
+  }
+
+  public void setUsermeta(String usermeta) {
+    this.usermeta = usermeta;
+  }
+
+  public String getSysmeta() {
+    return sysmeta;
+  }
+
+  public void setSysmeta(String sysmeta) {
+    this.sysmeta = sysmeta;
   }
 
   public LocalDateTime getCreatedAt() {

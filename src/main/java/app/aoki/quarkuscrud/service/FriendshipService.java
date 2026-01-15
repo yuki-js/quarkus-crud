@@ -55,7 +55,8 @@ public class FriendshipService {
     Friendship friendship = new Friendship();
     friendship.setSenderId(senderId);
     friendship.setRecipientId(recipientId);
-    friendship.setMeta(metaJson);
+    friendship.setUsermeta(metaJson);
+    friendship.setSysmeta(null);
     friendship.setCreatedAt(now);
     friendship.setUpdatedAt(now);
     friendshipMapper.insert(friendship);
@@ -64,7 +65,8 @@ public class FriendshipService {
     Friendship reverseFriendship = new Friendship();
     reverseFriendship.setSenderId(recipientId);
     reverseFriendship.setRecipientId(senderId);
-    reverseFriendship.setMeta(metaJson);
+    reverseFriendship.setUsermeta(metaJson);
+    reverseFriendship.setSysmeta(null);
     reverseFriendship.setCreatedAt(now);
     reverseFriendship.setUpdatedAt(now);
     friendshipMapper.insert(reverseFriendship);
@@ -81,7 +83,8 @@ public class FriendshipService {
   @Transactional
   public void updateMeta(Long friendshipId, Map<String, Object> meta) {
     Friendship friendship = friendshipMapper.findById(friendshipId).orElseThrow();
-    friendship.setMeta(serializeMeta(meta));
+    friendship.setUsermeta(serializeMeta(meta));
+    friendship.setSysmeta(null);
     friendship.setUpdatedAt(LocalDateTime.now());
     friendshipMapper.updateMeta(friendship);
   }

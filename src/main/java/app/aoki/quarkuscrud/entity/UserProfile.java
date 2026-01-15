@@ -14,7 +14,8 @@ public class UserProfile {
   private Long id;
   private Long userId;
   private String profileData;
-  private String revisionMeta;
+  private String usermeta;
+  private String sysmeta;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -24,13 +25,15 @@ public class UserProfile {
       Long id,
       Long userId,
       String profileData,
-      String revisionMeta,
+      String usermeta,
+      String sysmeta,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
     this.userId = userId;
     this.profileData = profileData;
-    this.revisionMeta = revisionMeta;
+    this.usermeta = usermeta;
+    this.sysmeta = sysmeta;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -59,12 +62,28 @@ public class UserProfile {
     this.profileData = profileData;
   }
 
+  public String getUsermeta() {
+    return usermeta;
+  }
+
+  public void setUsermeta(String usermeta) {
+    this.usermeta = usermeta;
+  }
+
+  public String getSysmeta() {
+    return sysmeta;
+  }
+
+  public void setSysmeta(String sysmeta) {
+    this.sysmeta = sysmeta;
+  }
+
   public String getRevisionMeta() {
-    return revisionMeta;
+    return sysmeta; // Deprecated: for backward compatibility
   }
 
   public void setRevisionMeta(String revisionMeta) {
-    this.revisionMeta = revisionMeta;
+    this.sysmeta = revisionMeta; // Deprecated: for backward compatibility
   }
 
   public LocalDateTime getCreatedAt() {

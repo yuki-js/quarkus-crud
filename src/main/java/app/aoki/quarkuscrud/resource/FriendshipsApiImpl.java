@@ -4,13 +4,21 @@ import app.aoki.quarkuscrud.entity.User;
 import app.aoki.quarkuscrud.generated.api.FriendshipsApi;
 import app.aoki.quarkuscrud.generated.model.Friendship;
 import app.aoki.quarkuscrud.generated.model.ReceiveFriendshipRequest;
+import app.aoki.quarkuscrud.generated.model.UserMeta;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.FriendshipUseCase;
+import app.aoki.quarkuscrud.usecase.UsermetaUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.postgresql.util.PSQLException;
@@ -20,6 +28,7 @@ import org.postgresql.util.PSQLException;
 public class FriendshipsApiImpl implements FriendshipsApi {
 
   @Inject FriendshipUseCase friendshipUseCase;
+  @Inject UsermetaUseCase usermetaUseCase;
   @Inject AuthenticatedUser authenticatedUser;
 
   @Override
@@ -70,6 +79,53 @@ public class FriendshipsApiImpl implements FriendshipsApi {
       }
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new ErrorResponse("Failed to create friendship: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @GET
+  @Path("/friendships/{otherUserId}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getFriendshipMeta(@PathParam("otherUserId") Long otherUserId) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData = usermetaUseCase.getFriendshipMeta(user.getId(), otherUserId);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @PUT
+  @Path("/friendships/{otherUserId}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateFriendshipMeta(
+      @PathParam("otherUserId") Long otherUserId, UserMeta userMeta) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta requestData = new UserMeta();
+      requestData.setUsermeta(userMeta.getUsermeta());
+      UserMeta metaData =
+          usermetaUseCase.updateFriendshipMeta(user.getId(), otherUserId, requestData);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
           .build();
     }
   }

@@ -59,7 +59,7 @@ public class EventServiceTest {
     assertNotNull(event.getId());
     assertEquals(testUserId, event.getInitiatorId());
     assertEquals(EventStatus.CREATED, event.getStatus());
-    assertNotNull(event.getMeta());
+    assertNotNull(event.getUsermeta());
     assertEquals(expiresAt, event.getExpiresAt());
     assertNotNull(event.getCreatedAt());
     assertNotNull(event.getUpdatedAt());
@@ -198,7 +198,7 @@ public class EventServiceTest {
     EventAttendee attendee = eventService.addAttendee(event.getId(), attendeeUserId, meta);
 
     assertNotNull(attendee);
-    assertEquals(meta, attendee.getMeta());
+    assertEquals(meta, attendee.getUsermeta());
   }
 
   @Test
@@ -237,6 +237,8 @@ public class EventServiceTest {
     EventInvitationCode duplicateRequest = new EventInvitationCode();
     duplicateRequest.setEventId(secondEvent.getId());
     duplicateRequest.setInvitationCode(reusableCode);
+    duplicateRequest.setUsermeta(null);
+    duplicateRequest.setSysmeta(null);
     duplicateRequest.setCreatedAt(LocalDateTime.now());
     duplicateRequest.setUpdatedAt(LocalDateTime.now());
 
@@ -248,6 +250,8 @@ public class EventServiceTest {
     firstEvent.setUpdatedAt(LocalDateTime.now());
     eventMapper.update(firstEvent);
 
+    duplicateRequest.setUsermeta(null);
+    duplicateRequest.setSysmeta(null);
     duplicateRequest.setCreatedAt(LocalDateTime.now());
     duplicateRequest.setUpdatedAt(LocalDateTime.now());
     int insertedAfterExpiration =
@@ -276,6 +280,8 @@ public class EventServiceTest {
     EventInvitationCode duplicateRequest = new EventInvitationCode();
     duplicateRequest.setEventId(secondEvent.getId());
     duplicateRequest.setInvitationCode(reusableCode);
+    duplicateRequest.setUsermeta(null);
+    duplicateRequest.setSysmeta(null);
     duplicateRequest.setCreatedAt(LocalDateTime.now());
     duplicateRequest.setUpdatedAt(LocalDateTime.now());
 
@@ -287,6 +293,8 @@ public class EventServiceTest {
     firstEvent.setUpdatedAt(LocalDateTime.now());
     eventMapper.update(firstEvent);
 
+    duplicateRequest.setUsermeta(null);
+    duplicateRequest.setSysmeta(null);
     duplicateRequest.setCreatedAt(LocalDateTime.now());
     duplicateRequest.setUpdatedAt(LocalDateTime.now());
     int insertedAfterDeletion =

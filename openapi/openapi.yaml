@@ -59,6 +59,18 @@ paths:
     $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}~1users~1{userId}'
   /api/llm/fake-names:
     $ref: './paths/llm.yaml#/paths/~1api~1llm~1fake-names'
+  /api/users/{userId}/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1users~1{userId}~1meta'
+  /api/events/{eventId}/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1events~1{eventId}~1meta'
+  /api/friendships/{otherUserId}/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1friendships~1{otherUserId}~1meta'
+  /api/users/{userId}/profile/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1users~1{userId}~1profile~1meta'
+  /api/events/{eventId}/users/{userId}/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1events~1{eventId}~1users~1{userId}~1meta'
+  /api/events/{eventId}/attendees/{attendeeUserId}/meta:
+    $ref: './paths/meta.yaml#/paths/~1api~1events~1{eventId}~1attendees~1{attendeeUserId}~1meta'
 components:
   securitySchemes:
     bearerAuth:
@@ -94,6 +106,10 @@ components:
       $ref: './components/schemas/llm.yaml#/FakeNamesRequest'
     FakeNamesResponse:
       $ref: './components/schemas/llm.yaml#/FakeNamesResponse'
+    UserMeta:
+      $ref: './components/schemas/meta.yaml#/UserMeta'
+    UsermetaUpdateRequest:
+      $ref: './components/schemas/meta.yaml#/UsermetaUpdateRequest'
     ErrorResponse:
       $ref: './components/schemas/common.yaml#/ErrorResponse'
     LocalDateTime:

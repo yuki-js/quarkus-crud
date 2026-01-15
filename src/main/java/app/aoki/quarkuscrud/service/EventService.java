@@ -78,7 +78,8 @@ public class EventService {
     Event event = new Event();
     event.setInitiatorId(initiatorId);
     event.setStatus(EventStatus.CREATED);
-    event.setMeta(meta);
+    event.setUsermeta(meta);
+    event.setSysmeta(null);
     event.setExpiresAt(expiresAt);
     LocalDateTime now = LocalDateTime.now();
     event.setCreatedAt(now);
@@ -89,12 +90,35 @@ public class EventService {
     EventInvitationCode code = new EventInvitationCode();
     code.setEventId(event.getId());
     code.setInvitationCode(generateInvitationCode());
+    code.setUsermeta(null);
+    code.setSysmeta(null);
     code.setCreatedAt(now);
     code.setUpdatedAt(now);
 
     if (eventInvitationCodeMapper.insertIfInvitationCodeAvailable(code) != 1) {
       throw new InvitationCodeCollisionException();
     }
+
+    // Automatically add the initiator as an attendee
+    EventAttendee initiatorAttendee = new EventAttendee();
+    initiatorAttendee.setEventId(event.getId());
+    initiatorAttendee.setAttendeeUserId(initiatorId);
+    initiatorAttendee.setUsermeta(null);
+    initiatorAttendee.setSysmeta(null);
+    initiatorAttendee.setCreatedAt(now);
+    initiatorAttendee.setUpdatedAt(now);
+    eventAttendeeMapper.insert(initiatorAttendee);
+
+    // Create initial event_user_data record for the initiator
+    EventUserData initiatorUserData = new EventUserData();
+    initiatorUserData.setEventId(event.getId());
+    initiatorUserData.setUserId(initiatorId);
+    initiatorUserData.setUserData("{}"); // Empty JSON object
+    initiatorUserData.setUsermeta(null);
+    initiatorUserData.setSysmeta(null);
+    initiatorUserData.setCreatedAt(now);
+    initiatorUserData.setUpdatedAt(now);
+    eventUserDataMapper.insert(initiatorUserData);
 
     return event;
   }
@@ -175,7 +199,8 @@ public class EventService {
     EventAttendee attendee = new EventAttendee();
     attendee.setEventId(eventId);
     attendee.setAttendeeUserId(userId);
-    attendee.setMeta(meta);
+    attendee.setUsermeta(meta);
+    attendee.setSysmeta(null);
     LocalDateTime now = LocalDateTime.now();
     attendee.setCreatedAt(now);
     attendee.setUpdatedAt(now);

@@ -8,10 +8,12 @@ import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
 import app.aoki.quarkuscrud.generated.model.EventUserData;
 import app.aoki.quarkuscrud.generated.model.EventUserDataUpdateRequest;
+import app.aoki.quarkuscrud.generated.model.UserMeta;
 import app.aoki.quarkuscrud.support.Authenticated;
 import app.aoki.quarkuscrud.support.AuthenticatedUser;
 import app.aoki.quarkuscrud.support.ErrorResponse;
 import app.aoki.quarkuscrud.usecase.EventUseCase;
+import app.aoki.quarkuscrud.usecase.UsermetaUseCase;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -35,6 +37,7 @@ public class EventsApiImpl implements EventsApi {
   private static final Logger LOG = Logger.getLogger(EventsApiImpl.class);
 
   @Inject EventUseCase eventUseCase;
+  @Inject UsermetaUseCase usermetaUseCase;
   @Inject AuthenticatedUser authenticatedUser;
   @Inject MeterRegistry meterRegistry;
 
@@ -268,6 +271,146 @@ public class EventsApiImpl implements EventsApi {
       LOG.errorf(e, "Failed to update event user data for event %d, user %d", eventId, userId);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new ErrorResponse("Failed to update user data: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @GET
+  @Path("/events/{eventId}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getEventMeta(@PathParam("eventId") Long eventId) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData = usermetaUseCase.getEventMeta(eventId, user.getId());
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @PUT
+  @Path("/events/{eventId}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateEventMeta(@PathParam("eventId") Long eventId, UserMeta userMeta) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta requestData = new UserMeta();
+      requestData.setUsermeta(userMeta.getUsermeta());
+      UserMeta metaData = usermetaUseCase.updateEventMeta(eventId, user.getId(), requestData);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @GET
+  @Path("/events/{eventId}/users/{userId}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getEventUserDataMeta(
+      @PathParam("eventId") Long eventId, @PathParam("userId") Long userId) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData = usermetaUseCase.getEventUserDataMeta(eventId, userId, user.getId());
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @PUT
+  @Path("/events/{eventId}/users/{userId}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateEventUserDataMeta(
+      @PathParam("eventId") Long eventId, @PathParam("userId") Long userId, UserMeta userMeta) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData =
+          usermetaUseCase.updateEventUserDataMeta(eventId, userId, user.getId(), userMeta);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @GET
+  @Path("/events/{eventId}/attendees/{attendeeUserId}/meta")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getEventAttendeeMeta(
+      @PathParam("eventId") Long eventId, @PathParam("attendeeUserId") Long attendeeUserId) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData =
+          usermetaUseCase.getEventAttendeeMeta(eventId, attendeeUserId, user.getId());
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @PUT
+  @Path("/events/{eventId}/attendees/{attendeeUserId}/meta")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateEventAttendeeMeta(
+      @PathParam("eventId") Long eventId,
+      @PathParam("attendeeUserId") Long attendeeUserId,
+      UserMeta userMeta) {
+    User user = authenticatedUser.get();
+    try {
+      UserMeta metaData =
+          usermetaUseCase.updateEventAttendeeMeta(eventId, attendeeUserId, user.getId(), userMeta);
+      return Response.ok(metaData).build();
+    } catch (SecurityException e) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
           .build();
     }
   }

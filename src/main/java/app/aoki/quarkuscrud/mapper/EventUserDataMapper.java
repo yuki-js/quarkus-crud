@@ -18,14 +18,14 @@ import org.apache.ibatis.annotations.Update;
 public interface EventUserDataMapper {
 
   @Insert(
-      "INSERT INTO event_user_data (event_id, user_id, user_data, revision_meta, created_at, updated_at) "
-          + "VALUES (#{eventId}, #{userId}, #{userData}::jsonb, #{revisionMeta}::jsonb, #{createdAt}, #{updatedAt})")
+      "INSERT INTO event_user_data (event_id, user_id, user_data, usermeta, sysmeta, created_at, updated_at) "
+          + "VALUES (#{eventId}, #{userId}, #{userData}::jsonb, #{usermeta}::jsonb, #{sysmeta}::jsonb, #{createdAt}, #{updatedAt})")
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void insert(EventUserData eventUserData);
 
   @Select(
       "SELECT id, event_id, user_id, user_data::text as user_data, "
-          + "revision_meta::text as revision_meta, created_at, updated_at "
+          + "usermeta::text as usermeta, sysmeta::text as sysmeta, created_at, updated_at "
           + "FROM event_user_data WHERE id = #{id}")
   @Results(
       id = "eventUserDataResultMap",
@@ -34,7 +34,8 @@ public interface EventUserDataMapper {
         @Result(property = "eventId", column = "event_id"),
         @Result(property = "userId", column = "user_id"),
         @Result(property = "userData", column = "user_data"),
-        @Result(property = "revisionMeta", column = "revision_meta"),
+        @Result(property = "usermeta", column = "usermeta"),
+        @Result(property = "sysmeta", column = "sysmeta"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at")
       })
@@ -42,7 +43,7 @@ public interface EventUserDataMapper {
 
   @Select(
       "SELECT id, event_id, user_id, user_data::text as user_data, "
-          + "revision_meta::text as revision_meta, created_at, updated_at "
+          + "usermeta::text as usermeta, sysmeta::text as sysmeta, created_at, updated_at "
           + "FROM event_user_data WHERE event_id = #{eventId} AND user_id = #{userId} "
           + "ORDER BY created_at DESC")
   @ResultMap("eventUserDataResultMap")
@@ -51,7 +52,7 @@ public interface EventUserDataMapper {
 
   @Select(
       "SELECT id, event_id, user_id, user_data::text as user_data, "
-          + "revision_meta::text as revision_meta, created_at, updated_at "
+          + "usermeta::text as usermeta, sysmeta::text as sysmeta, created_at, updated_at "
           + "FROM event_user_data WHERE event_id = #{eventId} AND user_id = #{userId} "
           + "ORDER BY created_at DESC LIMIT 1")
   @ResultMap("eventUserDataResultMap")
@@ -60,14 +61,14 @@ public interface EventUserDataMapper {
 
   @Select(
       "SELECT id, event_id, user_id, user_data::text as user_data, "
-          + "revision_meta::text as revision_meta, created_at, updated_at "
+          + "usermeta::text as usermeta, sysmeta::text as sysmeta, created_at, updated_at "
           + "FROM event_user_data WHERE event_id = #{eventId} "
           + "ORDER BY created_at DESC")
   @ResultMap("eventUserDataResultMap")
   List<EventUserData> findByEventId(@Param("eventId") Long eventId);
 
   @Update(
-      "UPDATE event_user_data SET revision_meta = #{revisionMeta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
+      "UPDATE event_user_data SET usermeta = #{usermeta}::jsonb, sysmeta = #{sysmeta}::jsonb, updated_at = #{updatedAt} WHERE id = #{id}")
   void updateRevisionMeta(EventUserData eventUserData);
 
   @Delete("DELETE FROM event_user_data WHERE id = #{id}")
