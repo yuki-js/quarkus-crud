@@ -180,6 +180,14 @@ public class EventsApiImpl implements EventsApi {
   @Produces(MediaType.APPLICATION_JSON)
   public Response listAttendedEventsByUser(@PathParam("userId") Long userId) {
     User user = authenticatedUser.get();
+
+    // Authorization check: Users can only view their own attended events
+    if (!user.getId().equals(userId)) {
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse("Access denied. You can only view your own attended events."))
+          .build();
+    }
+
     try {
       List<Event> events = eventUseCase.listAttendedEventsByUser(userId, user.getId());
       return Response.ok(events).build();

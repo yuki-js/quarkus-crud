@@ -233,4 +233,59 @@ public class EventCrudIntegrationTest {
         .statusCode(200)
         .body("size()", equalTo(0));
   }
+
+  @Test
+  @Order(11)
+  public void testCannotViewOtherUsersAttendedEvents() {
+    // Create two users
+    Response user1Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String user1Token = user1Response.getHeader("Authorization").substring(7);
+    long user1Id = user1Response.jsonPath().getLong("id");
+
+    Response user2Response = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String user2Token = user2Response.getHeader("Authorization").substring(7);
+    long user2Id = user2Response.jsonPath().getLong("id");
+
+    // User 1 creates an event
+    Response eventResponse =
+        given()
+            .header("Authorization", "Bearer " + user1Token)
+            .contentType(ContentType.JSON)
+            .body("{}")
+            .when()
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .extract()
+            .response();
+    String invitationCode = eventResponse.jsonPath().getString("invitationCode");
+
+    // User 2 joins the event
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .contentType(ContentType.JSON)
+        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
+        .when()
+        .post("/api/events/join-by-code")
+        .then()
+        .statusCode(201);
+
+    // User 1 should NOT be able to view User 2's attended events
+    given()
+        .header("Authorization", "Bearer " + user1Token)
+        .when()
+        .get("/api/users/" + user2Id + "/attended-events")
+        .then()
+        .statusCode(403)
+        .body("error", equalTo("Access denied. You can only view your own attended events."));
+
+    // User 2 should be able to view their own attended events
+    given()
+        .header("Authorization", "Bearer " + user2Token)
+        .when()
+        .get("/api/users/" + user2Id + "/attended-events")
+        .then()
+        .statusCode(200)
+        .body("size()", greaterThanOrEqualTo(1));
+  }
 }

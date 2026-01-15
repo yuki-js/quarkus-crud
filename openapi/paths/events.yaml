@@ -241,7 +241,7 @@ paths:
       tags:
         - Events
       summary: List events attended by a user
-      description: Retrieve events where the specified user is an attendee.
+      description: Retrieve events where the specified user is an attendee. Requires authentication and the requester must be the same user (cannot view other users' attended events).
       operationId: listAttendedEventsByUser
       parameters:
         - name: userId
@@ -262,6 +262,12 @@ paths:
                   $ref: '../components/schemas/event.yaml#/Event'
         '401':
           description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '403':
+          description: Access denied. Users can only view their own attended events.
           content:
             application/json:
               schema:
