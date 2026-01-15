@@ -176,6 +176,23 @@ public class EventsApiImpl implements EventsApi {
   @Override
   @Authenticated
   @GET
+  @Path("/users/{userId}/attended-events")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response listAttendedEventsByUser(@PathParam("userId") Long userId) {
+    User user = authenticatedUser.get();
+    try {
+      List<Event> events = eventUseCase.listAttendedEventsByUser(userId, user.getId());
+      return Response.ok(events).build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    }
+  }
+
+  @Override
+  @Authenticated
+  @GET
   @Path("/events/{eventId}/live")
   @Produces("text/event-stream")
   public Response streamEventLive(@PathParam("eventId") Long eventId) {

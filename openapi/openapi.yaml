@@ -49,6 +49,8 @@ paths:
     $ref: './paths/events.yaml#/paths/~1api~1events~1{eventId}'
   /api/users/{userId}/events:
     $ref: './paths/events.yaml#/paths/~1api~1users~1{userId}~1events'
+  /api/users/{userId}/attended-events:
+    $ref: './paths/events.yaml#/paths/~1api~1users~1{userId}~1attended-events'
   /api/events/join-by-code:
     $ref: './paths/events.yaml#/paths/~1api~1events~1join-by-code'
   /api/events/{eventId}/attendees:

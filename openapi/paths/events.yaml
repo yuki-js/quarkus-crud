@@ -236,6 +236,48 @@ paths:
             application/json:
               schema:
                 $ref: '../components/schemas/common.yaml#/ErrorResponse'
+  /api/users/{userId}/attended-events:
+    get:
+      tags:
+        - Events
+      summary: List events attended by a user
+      description: Retrieve events where the specified user is an attendee.
+      operationId: listAttendedEventsByUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Identifier of the user.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of events attended by the user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../components/schemas/event.yaml#/Event'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
   /api/events/join-by-code:
     post:
       tags:

@@ -181,4 +181,56 @@ public class EventCrudIntegrationTest {
         .then()
         .statusCode(409); // Duplicate join should be rejected
   }
+
+  @Test
+  @Order(9)
+  public void testListAttendedEventsByUser() {
+    // Create a new user to join the event
+    Response newUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String newUserToken = newUserResponse.getHeader("Authorization").substring(7);
+    long newUserId = newUserResponse.jsonPath().getLong("id");
+
+    // Get the invitation code for the event
+    Response eventResponse =
+        given().header("Authorization", "Bearer " + jwtToken).when().get("/api/events/" + eventId);
+    String invitationCode = eventResponse.jsonPath().getString("invitationCode");
+
+    // Join the event using the code
+    given()
+        .header("Authorization", "Bearer " + newUserToken)
+        .contentType(ContentType.JSON)
+        .body("{\"invitationCode\":\"" + invitationCode + "\"}")
+        .when()
+        .post("/api/events/join-by-code")
+        .then()
+        .statusCode(201);
+
+    // List attended events for the new user
+    given()
+        .header("Authorization", "Bearer " + newUserToken)
+        .when()
+        .get("/api/users/" + newUserId + "/attended-events")
+        .then()
+        .statusCode(200)
+        .body("size()", greaterThanOrEqualTo(1))
+        .body("[0].id", equalTo(eventId.intValue()));
+  }
+
+  @Test
+  @Order(10)
+  public void testListAttendedEventsForUserWithNoEvents() {
+    // Create a new user who hasn't joined any events
+    Response newUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String newUserToken = newUserResponse.getHeader("Authorization").substring(7);
+    long newUserId = newUserResponse.jsonPath().getLong("id");
+
+    // List attended events - should be empty
+    given()
+        .header("Authorization", "Bearer " + newUserToken)
+        .when()
+        .get("/api/users/" + newUserId + "/attended-events")
+        .then()
+        .statusCode(200)
+        .body("size()", equalTo(0));
+  }
 }
