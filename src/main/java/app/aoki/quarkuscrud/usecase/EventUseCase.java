@@ -105,9 +105,7 @@ public class EventUseCase {
       throw new SecurityException("Only the event initiator can delete the event");
     }
 
-    if (!eventService.deleteEvent(eventId)) {
-      throw new IllegalArgumentException("Failed to delete event");
-    }
+    eventService.deleteEvent(eventId);
   }
 
   /**

@@ -149,7 +149,7 @@ public class EventService {
 
     Event event = eventOpt.get();
     event.setStatus(EventStatus.DELETED);
-    event.setUpdatedAt(java.time.LocalDateTime.now());
+    event.setUpdatedAt(LocalDateTime.now());
     eventMapper.update(event);
     return true;
   }
