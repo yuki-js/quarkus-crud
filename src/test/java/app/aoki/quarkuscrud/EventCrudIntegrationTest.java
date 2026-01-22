@@ -277,4 +277,81 @@ public class EventCrudIntegrationTest {
         .body("size()", greaterThanOrEqualTo(1))
         .body("[0].id", equalTo(((Long) createdEventId).intValue()));
   }
+
+  @Test
+  @Order(15)
+  public void testDeleteEventWithoutAuthentication() {
+    given()
+        .when()
+        .delete("/api/events/" + eventId)
+        .then()
+        .statusCode(401)
+        .body("error", equalTo("No JWT token found"));
+  }
+
+  @Test
+  @Order(16)
+  public void testDeleteEventByNonInitiator() {
+    // Create a new user who is not the event initiator
+    Response newUserResponse = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String newUserToken = newUserResponse.getHeader("Authorization").substring(7);
+
+    // Try to delete the event - should fail with 403 Forbidden
+    given()
+        .header("Authorization", "Bearer " + newUserToken)
+        .when()
+        .delete("/api/events/" + eventId)
+        .then()
+        .statusCode(403)
+        .body("error", equalTo("Only the event initiator can delete the event"));
+  }
+
+  @Test
+  @Order(17)
+  public void testDeleteNonExistentEvent() {
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .when()
+        .delete("/api/events/999999")
+        .then()
+        .statusCode(404)
+        .body("error", equalTo("Event not found"));
+  }
+
+  @Test
+  @Order(18)
+  public void testDeleteEventByInitiator() {
+    // Create a new event to delete
+    Response response =
+        given()
+            .header("Authorization", "Bearer " + jwtToken)
+            .contentType(ContentType.JSON)
+            .body("{}")
+            .when()
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .body("id", notNullValue())
+            .extract()
+            .response();
+
+    Long deleteEventId = response.jsonPath().getLong("id");
+
+    // Delete the event
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .when()
+        .delete("/api/events/" + deleteEventId)
+        .then()
+        .statusCode(204); // No content on successful delete
+
+    // Verify the event is marked as deleted (should still be retrievable but with DELETED status)
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .when()
+        .get("/api/events/" + deleteEventId)
+        .then()
+        .statusCode(200)
+        .body("status", equalTo("deleted"));
+  }
 }

@@ -135,6 +135,26 @@ public class EventService {
   }
 
   /**
+   * Deletes an event by marking it as DELETED.
+   *
+   * @param eventId the event ID
+   * @return true if the event was deleted, false if not found
+   */
+  @Transactional
+  public boolean deleteEvent(Long eventId) {
+    Optional<Event> eventOpt = eventMapper.findById(eventId);
+    if (eventOpt.isEmpty()) {
+      return false;
+    }
+
+    Event event = eventOpt.get();
+    event.setStatus(EventStatus.DELETED);
+    event.setUpdatedAt(java.time.LocalDateTime.now());
+    eventMapper.update(event);
+    return true;
+  }
+
+  /**
    * Finds all events created by a specific user.
    *
    * @param userId the initiator user ID
