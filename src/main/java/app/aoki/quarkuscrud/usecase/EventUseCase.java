@@ -83,6 +83,32 @@ public class EventUseCase {
   }
 
   /**
+   * Deletes an event by marking it as DELETED.
+   *
+   * <p>Only the event initiator can delete the event. This is a security measure to prevent
+   * unauthorized deletion (CWE-284).
+   *
+   * @param eventId the event ID
+   * @param requestingUserId the ID of the user making the request
+   * @throws IllegalArgumentException if event not found
+   * @throws SecurityException if user is not authorized to delete the event
+   */
+  @Transactional
+  public void deleteEvent(Long eventId, Long requestingUserId) {
+    Event event =
+        eventService
+            .findById(eventId)
+            .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+    // Check if requesting user is the event initiator
+    if (!requestingUserId.equals(event.getInitiatorId())) {
+      throw new SecurityException("Only the event initiator can delete the event");
+    }
+
+    eventService.deleteEvent(eventId);
+  }
+
+  /**
    * Joins an event by invitation code.
    *
    * @param userId the ID of the user joining

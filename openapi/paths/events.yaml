@@ -194,6 +194,47 @@ paths:
             application/json:
               schema:
                 $ref: '../components/schemas/common.yaml#/ErrorResponse'
+    delete:
+      tags:
+        - Events
+      summary: Delete event
+      description: Delete an event. Only the event initiator can delete the event. This marks the event as deleted.
+      operationId: deleteEvent
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          description: Identifier of the event to delete.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Event deleted successfully.
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '403':
+          description: Access denied. Only the event initiator can delete the event.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: Event not found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
   /api/users/{userId}/events:
     get:
       tags:

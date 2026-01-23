@@ -19,6 +19,7 @@ import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -96,6 +97,43 @@ public class EventsApiImpl implements EventsApi {
               });
     } finally {
       sample.stop(meterRegistry.timer("events.read.time"));
+    }
+  }
+
+  @Override
+  @Authenticated
+  @DELETE
+  @Path("/events/{eventId}")
+  public Response deleteEvent(@PathParam("eventId") Long eventId) {
+    User user = authenticatedUser.get();
+    LOG.infof("User %d attempting to delete event ID: %d", user.getId(), eventId);
+    Timer.Sample sample = Timer.start(meterRegistry);
+
+    try {
+      eventUseCase.deleteEvent(eventId, user.getId());
+      meterRegistry.counter("events.deleted").increment();
+      LOG.infof("Successfully deleted event ID: %d", eventId);
+      return Response.noContent().build();
+    } catch (IllegalArgumentException e) {
+      LOG.warnf("Event not found with ID: %d", eventId);
+      meterRegistry.counter("events.delete", "result", "not_found").increment();
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (SecurityException e) {
+      LOG.warnf("User %d not authorized to delete event ID: %d", user.getId(), eventId);
+      meterRegistry.counter("events.delete", "result", "forbidden").increment();
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (Exception e) {
+      LOG.errorf(e, "Failed to delete event ID: %d", eventId);
+      meterRegistry.counter("events.errors", "operation", "delete").increment();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(new ErrorResponse("Failed to delete event: " + e.getMessage()))
+          .build();
+    } finally {
+      sample.stop(meterRegistry.timer("events.delete.time"));
     }
   }
 
