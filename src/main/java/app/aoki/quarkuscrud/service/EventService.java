@@ -155,6 +155,38 @@ public class EventService {
   }
 
   /**
+   * Updates an event.
+   *
+   * @param eventId the event ID
+   * @param status the new status (optional)
+   * @param meta the new metadata (optional)
+   * @param expiresAt the new expiration time (optional)
+   * @return the updated event
+   * @throws IllegalArgumentException if event not found
+   */
+  @Transactional
+  public Event updateEvent(Long eventId, EventStatus status, String meta, LocalDateTime expiresAt) {
+    Optional<Event> eventOpt = eventMapper.findById(eventId);
+    if (eventOpt.isEmpty()) {
+      throw new IllegalArgumentException("Event not found");
+    }
+
+    Event event = eventOpt.get();
+    if (status != null) {
+      event.setStatus(status);
+    }
+    if (meta != null) {
+      event.setUsermeta(meta);
+    }
+    if (expiresAt != null) {
+      event.setExpiresAt(expiresAt);
+    }
+    event.setUpdatedAt(LocalDateTime.now());
+    eventMapper.update(event);
+    return event;
+  }
+
+  /**
    * Finds all events created by a specific user.
    *
    * @param userId the initiator user ID

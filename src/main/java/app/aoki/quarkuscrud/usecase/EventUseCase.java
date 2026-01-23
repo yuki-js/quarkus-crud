@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
@@ -106,6 +107,61 @@ public class EventUseCase {
     }
 
     eventService.deleteEvent(eventId);
+  }
+
+  /**
+   * Updates an event.
+   *
+   * <p>Only the event initiator can update the event. This is a security measure to prevent
+   * unauthorized updates (CWE-284).
+   *
+   * @param eventId the event ID
+   * @param requestingUserId the ID of the user making the request
+   * @param request the update request
+   * @return the updated event as DTO
+   * @throws IllegalArgumentException if event not found
+   * @throws SecurityException if user is not authorized to update the event
+   * @throws Exception if update fails
+   */
+  @Transactional
+  public app.aoki.quarkuscrud.generated.model.Event updateEvent(
+      Long eventId,
+      Long requestingUserId,
+      app.aoki.quarkuscrud.generated.model.EventUpdateRequest request)
+      throws Exception {
+    Event event =
+        eventService
+            .findById(eventId)
+            .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+    // Check if requesting user is the event initiator
+    if (!requestingUserId.equals(event.getInitiatorId())) {
+      throw new SecurityException("Only the event initiator can update the event");
+    }
+
+    // Convert status enum from DTO to entity if provided
+    app.aoki.quarkuscrud.entity.EventStatus newStatus = null;
+    if (request.getStatus() != null) {
+      newStatus = app.aoki.quarkuscrud.entity.EventStatus.valueOf(request.getStatus().name());
+    }
+
+    // Convert meta to JSON string if provided and not empty
+    String meta = null;
+    if (request.getMeta() != null && !request.getMeta().isEmpty()) {
+      meta = objectMapper.writeValueAsString(request.getMeta());
+    }
+
+    // Convert expiresAt to LocalDateTime if provided
+    LocalDateTime expiresAt = null;
+    if (request.getExpiresAt() != null) {
+      expiresAt = eventService.toLocalDateTime(request.getExpiresAt());
+    }
+
+    Event updatedEvent = eventService.updateEvent(eventId, newStatus, meta, expiresAt);
+
+    // Get invitation code for the response (only owner can see it)
+    String invitationCode = eventService.getInvitationCode(eventId).orElse(null);
+    return toEventDto(updatedEvent, invitationCode);
   }
 
   /**

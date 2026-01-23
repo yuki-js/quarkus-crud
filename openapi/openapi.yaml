@@ -94,6 +94,8 @@ components:
       $ref: './components/schemas/event.yaml#/Event'
     EventCreateRequest:
       $ref: './components/schemas/event.yaml#/EventCreateRequest'
+    EventUpdateRequest:
+      $ref: './components/schemas/event.yaml#/EventUpdateRequest'
     EventJoinByCodeRequest:
       $ref: './components/schemas/event.yaml#/EventJoinByCodeRequest'
     EventLiveEvent:

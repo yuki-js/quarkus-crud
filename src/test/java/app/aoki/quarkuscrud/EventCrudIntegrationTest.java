@@ -16,9 +16,8 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
- * Integration tests for Event CRUD operations. Tests create, read, and join functionality for
- * events. Note: Events don't support traditional update/delete operations - they use status
- * transitions instead.
+ * Integration tests for Event CRUD operations. Tests create, read, update, delete, and join
+ * functionality for events.
  */
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -353,5 +352,142 @@ public class EventCrudIntegrationTest {
         .then()
         .statusCode(200)
         .body("status", equalTo("deleted"));
+  }
+
+  @Test
+  @Order(18)
+  public void testUpdateEvent() {
+    // Create a new event for update test
+    Response createResponse =
+        given()
+            .header("Authorization", "Bearer " + jwtToken)
+            .contentType(ContentType.JSON)
+            .body("{\"meta\": {\"name\": \"Original Event\"}}")
+            .when()
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .body("id", notNullValue())
+            .extract()
+            .response();
+
+    Long updateEventId = createResponse.jsonPath().getLong("id");
+
+    // Update the event
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body(
+            "{\"status\": \"active\", \"meta\": {\"name\": \"Updated Event\", \"description\":"
+                + " \"New description\"}}")
+        .when()
+        .put("/api/events/" + updateEventId)
+        .then()
+        .statusCode(200)
+        .body("id", equalTo(updateEventId.intValue()))
+        .body("status", equalTo("active"))
+        .body("meta.name", equalTo("Updated Event"))
+        .body("meta.description", equalTo("New description"));
+
+    // Verify the update persisted
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .when()
+        .get("/api/events/" + updateEventId)
+        .then()
+        .statusCode(200)
+        .body("status", equalTo("active"))
+        .body("meta.name", equalTo("Updated Event"));
+  }
+
+  @Test
+  @Order(19)
+  public void testUpdateEventUnauthorized() {
+    // Create a second user
+    Response response2 = given().contentType(ContentType.JSON).post("/api/auth/guest");
+    String jwtToken2 = response2.getHeader("Authorization").substring(7);
+
+    // Create an event with the first user
+    Response createResponse =
+        given()
+            .header("Authorization", "Bearer " + jwtToken)
+            .contentType(ContentType.JSON)
+            .body("{}")
+            .when()
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .extract()
+            .response();
+
+    Long eventIdToUpdate = createResponse.jsonPath().getLong("id");
+
+    // Try to update with the second user (should fail)
+    given()
+        .header("Authorization", "Bearer " + jwtToken2)
+        .contentType(ContentType.JSON)
+        .body("{\"status\": \"active\"}")
+        .when()
+        .put("/api/events/" + eventIdToUpdate)
+        .then()
+        .statusCode(403)
+        .body("error", equalTo("Only the event initiator can update the event"));
+  }
+
+  @Test
+  @Order(20)
+  public void testUpdateNonExistentEvent() {
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"status\": \"active\"}")
+        .when()
+        .put("/api/events/999999")
+        .then()
+        .statusCode(404)
+        .body("error", equalTo("Event not found"));
+  }
+
+  @Test
+  @Order(21)
+  public void testUpdateEventPartialUpdate() {
+    // Create a new event
+    Response createResponse =
+        given()
+            .header("Authorization", "Bearer " + jwtToken)
+            .contentType(ContentType.JSON)
+            .body("{\"meta\": {\"name\": \"Partial Update Test\", \"venue\": \"Online\"}}")
+            .when()
+            .post("/api/events")
+            .then()
+            .statusCode(201)
+            .extract()
+            .response();
+
+    Long eventIdPartial = createResponse.jsonPath().getLong("id");
+
+    // Update only the meta (status should remain unchanged)
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"meta\": {\"name\": \"Updated Name Only\"}}")
+        .when()
+        .put("/api/events/" + eventIdPartial)
+        .then()
+        .statusCode(200)
+        .body("meta.name", equalTo("Updated Name Only"))
+        .body("status", notNullValue()); // Status should still exist
+
+    // Update only the status (meta should remain unchanged)
+    given()
+        .header("Authorization", "Bearer " + jwtToken)
+        .contentType(ContentType.JSON)
+        .body("{\"status\": \"ended\"}")
+        .when()
+        .put("/api/events/" + eventIdPartial)
+        .then()
+        .statusCode(200)
+        .body("status", equalTo("ended"))
+        .body("meta.name", equalTo("Updated Name Only")); // Meta should still have the updated name
   }
 }
