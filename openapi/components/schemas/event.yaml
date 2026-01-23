@@ -63,6 +63,30 @@ EventCreateRequest:
       type: string
       description: Optional invitation code to reserve when creating the event.
       example: FRIDAY-QUIZ
+EventUpdateRequest:
+  type: object
+  description: Payload for updating an existing event.
+  properties:
+    status:
+      type: string
+      description: Current lifecycle state of the event.
+      enum:
+        - created
+        - active
+        - ended
+        - expired
+        - deleted
+      example: active
+    meta:
+      type: object
+      description: Metadata describing the event.
+      additionalProperties: true
+      example:
+        name: Updated quiz night
+        venue: Online
+    expiresAt:
+      $ref: './common.yaml#/LocalDateTime'
+      nullable: true
 EventJoinByCodeRequest:
   type: object
   description: Request body for joining an event by invitation code.

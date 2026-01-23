@@ -194,6 +194,63 @@ paths:
             application/json:
               schema:
                 $ref: '../components/schemas/common.yaml#/ErrorResponse'
+    put:
+      tags:
+        - Events
+      summary: Update event
+      description: Update an existing event. Only the event initiator can update the event.
+      operationId: updateEvent
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          description: Identifier of the event to update.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/event.yaml#/EventUpdateRequest'
+      responses:
+        '200':
+          description: Event updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/event.yaml#/Event'
+        '400':
+          description: Invalid event data supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '403':
+          description: Access denied. Only the event initiator can update the event.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '404':
+          description: Event not found.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
     delete:
       tags:
         - Events

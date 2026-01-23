@@ -6,6 +6,7 @@ import app.aoki.quarkuscrud.generated.model.Event;
 import app.aoki.quarkuscrud.generated.model.EventAttendee;
 import app.aoki.quarkuscrud.generated.model.EventCreateRequest;
 import app.aoki.quarkuscrud.generated.model.EventJoinByCodeRequest;
+import app.aoki.quarkuscrud.generated.model.EventUpdateRequest;
 import app.aoki.quarkuscrud.generated.model.EventUserData;
 import app.aoki.quarkuscrud.generated.model.EventUserDataUpdateRequest;
 import app.aoki.quarkuscrud.generated.model.UserMeta;
@@ -134,6 +135,46 @@ public class EventsApiImpl implements EventsApi {
           .build();
     } finally {
       sample.stop(meterRegistry.timer("events.delete.time"));
+    }
+  }
+
+  @Override
+  @Authenticated
+  @PUT
+  @Path("/events/{eventId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateEvent(
+      @PathParam("eventId") Long eventId, EventUpdateRequest eventUpdateRequest) {
+    User user = authenticatedUser.get();
+    LOG.infof("User %d attempting to update event ID: %d", user.getId(), eventId);
+    Timer.Sample sample = Timer.start(meterRegistry);
+
+    try {
+      Event event = eventUseCase.updateEvent(eventId, user.getId(), eventUpdateRequest);
+      meterRegistry.counter("events.updated").increment();
+      LOG.infof("Successfully updated event ID: %d", eventId);
+      return Response.ok(event).build();
+    } catch (IllegalArgumentException e) {
+      LOG.warnf("Event not found with ID: %d", eventId);
+      meterRegistry.counter("events.update", "result", "not_found").increment();
+      return Response.status(Response.Status.NOT_FOUND)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (SecurityException e) {
+      LOG.warnf("User %d not authorized to update event ID: %d", user.getId(), eventId);
+      meterRegistry.counter("events.update", "result", "forbidden").increment();
+      return Response.status(Response.Status.FORBIDDEN)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (Exception e) {
+      LOG.errorf(e, "Failed to update event ID: %d", eventId);
+      meterRegistry.counter("events.errors", "operation", "update").increment();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(new ErrorResponse("Failed to update event: " + e.getMessage()))
+          .build();
+    } finally {
+      sample.stop(meterRegistry.timer("events.update.time"));
     }
   }
 
