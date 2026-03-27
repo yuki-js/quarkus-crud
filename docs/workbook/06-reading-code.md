@@ -40,7 +40,8 @@ Look in `resource/` folder for files with `Api` suffix.
 
 **Method 3: Check the generated API**
 
-Look in `generated/api/` for interfaces like `UsersApi`.
+Look in `build/generated-src/openapi/src/gen/java/` for interfaces like `UsersApi`.
+These files are generated under `build/` by Gradle, then added to the main source set for compilation.
 
 ### The Resource File Structure
 
@@ -94,11 +95,11 @@ public interface UserMapper {
 }
 ```
 
-**Complete chain**: Resource → Service → Repository → Database
+**Complete chain for this endpoint**: Resource → Service → Repository → Database
 
 ## Step 3: Understanding the Data Flow
 
-### Request Flow
+### Common Write-Flow Pattern
 
 ```
 HTTP Request
@@ -107,14 +108,16 @@ Resource (parse parameters)
     ↓
 UseCase (authorization)
     ↓
-Service (business logic)
+Service (technical execution)
     ↓
 Repository (data access)
     ↓
 Database
 ```
 
-### Response Flow
+Not every endpoint uses every layer. In this repository, some simple read flows go directly from Resource to Service to Repository, while multi-step or authorization-heavy flows often include a UseCase.
+
+### Common Response Flow
 
 ```
 Database
@@ -162,28 +165,15 @@ public Response createEvent(EventCreateRequest eventCreateRequest) {
 The implementation delegates to something. Let's find out:
 
 ```java
-public Response createEvent(EventCreateRequest eventCreateRequest) {
+public Response createEvent(EventCreateRequest createEventRequest) {
     User user = authenticatedUser.get();
-    
+
     try {
-        EventLiveEvent event = eventUseCase.createEvent(
-            user.getId(),
-            eventCreateRequest.getTitle(),
-            eventCreateRequest.getDescription(),
-            eventCreateRequest.getEventStatus(),
-            eventCreateRequest.getMaxAttendees(),
-            eventCreateRequest.getStartTime(),
-            eventCreateRequest.getEndTime(),
-            eventCreateRequest.getLocation()
-        );
-        return Response.ok(event).build();
-    } catch (SecurityException e) {
-        return Response.status(Response.Status.FORBIDDEN)
-            .entity(new ErrorResponse(e.getMessage()))
-            .build();
-    } catch (IllegalArgumentException e) {
-        return Response.status(Response.Status.NOT_FOUND)
-            .entity(new ErrorResponse(e.getMessage()))
+        Event event = eventUseCase.createEvent(user.getId(), createEventRequest);
+        return Response.status(Response.Status.CREATED).entity(event).build();
+    } catch (Exception e) {
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            .entity(new ErrorResponse("Failed to create event: " + e.getMessage()))
             .build();
     }
 }
@@ -194,59 +184,39 @@ So it calls `eventUseCase.createEvent()`.
 ### Step 3: Look at the UseCase
 
 ```java
-public EventLiveEvent createEvent(
-        Long organizerId,
-        String title,
-        String description,
-        EventStatus eventStatus,
-        Integer maxAttendees,
-        OffsetDateTime startTime,
-        OffsetDateTime endTime,
-        String location) {
-    
-    // Authorization: Only active users can create events
-    User organizer = userService.findById(organizerId)
-        .orElseThrow(() -> new IllegalArgumentException("Organizer not found"));
-    
-    if (organizer.getAccountLifecycle() != AccountLifecycle.ACTIVE) {
-        throw new SecurityException("Only active users can create events");
-    }
-    
-    // Business logic
-    Event event = new Event();
-    event.setOrganizerId(organizerId);
-    event.setTitle(title);
-    event.setDescription(description);
-    event.setEventStatus(eventStatus);
-    event.setMaxAttendees(maxAttendees);
-    event.setStartTime(startTime);
-    event.setEndTime(endTime);
-    event.setLocation(location);
-    event.setCreatedAt(LocalDateTime.now());
-    event.setUpdatedAt(LocalDateTime.now());
-    
-    eventMapper.insert(event);
-    
-    // Create invitation code
-    String code = generateInvitationCode();
-    // ... (more logic)
-    
-    return toEventLiveEvent(event);
+public Event createEvent(Long userId, EventCreateRequest request) throws Exception {
+    String meta = objectMapper.writeValueAsString(request.getMeta());
+
+    Event event = eventService.createEvent(
+        userId,
+        meta,
+        eventService.toLocalDateTime(request.getExpiresAt())
+    );
+
+    String invitationCode = eventService.getInvitationCode(event.getId()).orElse(null);
+    return toEventDto(event, invitationCode);
 }
 ```
+
+In the current codebase, this UseCase is mostly orchestration and DTO mapping. The deeper persistence workflow lives in the Service layer.
 
 ### Step 4: Look at the Service/Repository
 
-The UseCase calls `eventMapper.insert()`. This is in the Repository layer.
+The UseCase delegates to `eventService.createEvent()`. The Service then coordinates the lower-level writes through multiple mappers.
 
 ```java
-@Mapper
-public interface EventMapper {
-    void insert(Event event);
-    Optional<Event> findById(Long id);
-    void update(Event event);
+public Event createEvent(Long initiatorId, String meta, LocalDateTime expiresAt) {
+    eventMapper.insert(event);
+    eventInvitationCodeMapper.insertIfInvitationCodeAvailable(code);
+    eventAttendeeMapper.insert(initiatorAttendee);
+    eventUserDataMapper.insert(initiatorUserData);
+    return event;
 }
 ```
+
+So the practical chain for this feature is:
+
+**Resource → UseCase → Service → Mapper(s) → Database**
 
 ## Finding Business Rules
 
@@ -269,28 +239,29 @@ if (currentStatus == DELETED) {
 }
 ```
 
-## Reading Mapper XML
+## Reading Mapper Annotations
 
-Mapper XML files contain the actual SQL. Find them in:
+Mapper interfaces contain SQL using Java annotations (@Select, @Insert, @Update, @Delete). Find them in:
 
 ```
-src/main/resources/mapper/
+src/main/java/app/aoki/quarkuscrud/mapper/
 ```
 
-```xml
-<mapper namespace="app.aoki.quarkuscrud.mapper.EventMapper">
-    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO events (
-            organizer_id, title, description, event_status,
-            max_attendees, start_time, end_time, location,
-            created_at, updated_at
-        ) VALUES (
-            #{organizerId}, #{title}, #{description}, #{eventStatus},
-            #{maxAttendees}, #{startTime}, #{endTime}, #{location},
-            #{createdAt}, #{updatedAt}
-        )
-    </insert>
-</mapper>
+```java
+@Mapper
+public interface EventMapper {
+    
+    @Insert("INSERT INTO events (initiator_id, status, usermeta, sysmeta, expires_at, created_at, updated_at) " +
+            "VALUES (#{initiatorId}, #{status}, #{usermeta}::jsonb, #{sysmeta}::jsonb, #{expiresAt}, #{createdAt}, #{updatedAt})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void insert(Event event);
+    
+    @Select("SELECT * FROM events WHERE id = #{id}")
+    Optional<Event> findById(Long id);
+    
+    @Update("UPDATE events SET status = #{status}, updated_at = NOW() WHERE id = #{id}")
+    void update(Event event);
+}
 ```
 
 ## Exercise 6.1: Trace the Code
@@ -299,12 +270,12 @@ src/main/resources/mapper/
 
 **Questions to answer**:
 1. What's the endpoint path?
-2. Which UseCase handles it?
+2. Which class handles the friendship logic after the API resource?
 3. What authorization checks are made?
 4. What Service methods are called?
 5. What database tables are affected?
 
-**Hint**: Look in `FriendshipsApiImpl.java` and `FriendshipUseCase.java`.
+**Hint**: Start in `FriendshipsApiImpl.java`, then trace into `FriendshipUseCase.java` and `FriendshipService.java`.
 
 ## Key Takeaways
 
@@ -312,7 +283,7 @@ src/main/resources/mapper/
 2. **Follow the chain** - Resource → UseCase → Service → Repository
 3. **Understand data flow** - both request and response
 4. **Business rules are in UseCase** - search for SecurityException
-5. **SQL is in Mapper XML** - check resources/mapper/
+5. **SQL is in Mapper annotations** - check mapper/ with @Select, @Insert, etc.
 
 ---
 

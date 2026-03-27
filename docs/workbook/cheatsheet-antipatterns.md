@@ -42,24 +42,36 @@ public Response createUser(CreateUserRequest req) {
 
 | Red Flag | Problem | Fix |
 |----------|---------|-----|
-| `@Select` annotations | Data access leak | Use Service |
-| Direct `mapper.insert()` calls | Skipping Service | Use Service |
 | No authorization checks | Missing business rules | Add auth |
 | HTTP handling | Wrong abstraction | Should be in Resource |
 | Single method over 100 lines | Doing too much | Split |
+| Calling Service for operations that should be in Mapper | Unnecessary abstraction | Call Mapper directly |
 
 **Bad UseCase Example:**
 ```java
 public class BadUseCase {
+    @Inject UserService userService;
+    
+    public void createUser(String email) {
+        // ❌ Unnecessary delegation - UserService just wraps UserMapper
+        if (userService.emailExists(email)) {
+            throw new IllegalArgumentException();
+        }
+        User user = userService.createUser(email);
+    }
+}
+```
+
+**Good UseCase Pattern (direct Mapper access):**
+```java
+public class GoodUseCase {
     @Inject UserMapper userMapper;
     
     public void createUser(String email) {
-        // ❌ SQL in UseCase
+        // ✓ Direct Mapper access is acceptable for UseCase
         if (userMapper.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException();
         }
-        
-        // ❌ Creating and saving - should be Service
         User user = new User(email);
         userMapper.insert(user);
     }

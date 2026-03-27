@@ -87,9 +87,9 @@ public User createUser(String email, String password) {
 throw new UserBannedException(userId, eventId);
 ```
 
-**Answer**: `exception/UserBannedException.java`
+**Answer**: Near the feature that owns it, for example `usecase/...` or `service/...`
 
-**Reason**: This is a custom exception representing a specific error type. Custom exceptions belong in the `exception/` package.
+**Reason**: This is a custom exception representing a specific error type, but this project does not have a dedicated `exception/` package. Error types are kept near the code that owns them, while shared exception mappers live in `support/`.
 
 ---
 
@@ -102,7 +102,7 @@ throw new UserBannedException(userId, eventId);
 | C | UseCase | `usecase/` |
 | D | Repository | `mapper/` |
 | E | Service | `service/` |
-| F | Error | `exception/` |
+| F | Error | Near the owning `usecase/` or `service/` |
 
 ---
 
@@ -127,4 +127,4 @@ Is it just data with no logic?
     → ENTITY
 
 Is it an error type?
-    → EXCEPTION
+    → Keep it near the owning USECASE/SERVICE (or in `support/` for exception mappers)

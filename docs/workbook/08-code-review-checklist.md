@@ -64,7 +64,7 @@ public Response createUser(CreateUserRequest req) {
 - [ ] Are exceptions converted to proper HTTP status codes?
 - [ ] Is `@Authenticated` used for protected endpoints?
 - [ ] Are `@Path` and HTTP method annotations correct?
-- [ ] Does it inject and use UseCases, not Services directly?
+- [ ] Does it inject and use a UseCase or Service appropriately for the endpoint?
 
 ---
 
@@ -126,9 +126,10 @@ public Order createOrder(Long userId, Long productId, Integer quantity) {
 - [ ] Is authorization handled in UseCase, not Service or Resource?
 - [ ] Are exceptions thrown for business rule violations?
 - [ ] Is the flow clear (validate → authorize → execute → post-action)?
-- [ ] Does UseCase delegate technical work to Service?
+- [ ] Does UseCase delegate technical work to Service or call Mapper directly?
 - [ ] Is `@Transactional` used for operations that modify data?
 - [ ] Are all side effects (emails, notifications) intentional and after the main operation?
+- [ ] Is Service used only for complex/reusable operations, not simple CRUD?
 
 ---
 
@@ -194,6 +195,7 @@ public class UserService {
 - [ ] Does Service contain only technical "how" logic?
 - [ ] Are no authorization decisions made in Service?
 - [ ] Are methods reusable by multiple UseCases?
+- [ ] Is Service used for complex operations, not simple CRUD (that could be Mapper-only)?
 - [ ] Is `@Transactional` used appropriately?
 - [ ] Are technical validations (null checks, range checks) in Service?
 
@@ -293,7 +295,7 @@ Ask: "Would a new developer know where to find this?"
 | Technical operations | `service/` |
 | Database operations | `mapper/` |
 | Data objects | `entity/` |
-| Error types | `exception/` |
+| Error handling types | `support/` for exception mappers, or near the owning `service/` / `usecase/` |
 
 ### File Organization Review Checklist
 
@@ -323,7 +325,7 @@ Ask: "Would a new developer know where to find this?"
 | Service has `if (userId.equals(...))` | Probably authorization |
 | Resource has SQL | Should be in Mapper |
 | Entity has `calculate()` | Should be in Service |
-| UseCase calls many repositories | Should probably call Services |
+| UseCase calls Service that just wraps Mapper | Should call Mapper directly |
 | Mapper has business validation | Should be in UseCase/Service |
 
 ---
@@ -354,8 +356,8 @@ Ask: "Would a new developer know where to find this?"
 Before approving a PR, verify:
 
 - [ ] Resource is thin (HTTP handling only)
-- [ ] UseCase handles authorization + flow
-- [ ] Service has only technical logic
+- [ ] UseCase handles authorization + flow, calls Mapper or Service as appropriate
+- [ ] Service has only technical logic (complex/reusable operations)
 - [ ] Repository has only data access
 - [ ] Entity is anemic (data only)
 - [ ] Each file is in the correct directory

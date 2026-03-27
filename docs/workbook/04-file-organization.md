@@ -18,14 +18,12 @@ Here's the structure we use:
 ```
 src/main/java/app/aoki/quarkuscrud/
 ├── entity/              # Domain models (the data)
-├── dto/                 # Request/Response objects
 ├── mapper/              # MyBatis data access interfaces
 ├── repository/          # (not used in this template - mappers are used instead)
 ├── resource/            # REST API endpoints
 ├── service/             # Business logic (technical "how")
 ├── usecase/             # Business logic (flow + authorization)
-├── exception/           # Custom exceptions
-└── support/             # Utilities, helpers, security context
+└── support/             # Utilities, helpers, security context, exception mappers
 ```
 
 ## The Rules
@@ -67,7 +65,7 @@ public class User {
 
 **Location**: `resource/`
 
-**Contains**: Thin REST endpoints that parse HTTP and delegate to UseCases. **No business logic**.
+**Contains**: Thin REST endpoints that parse HTTP and delegate to a UseCase or Service as appropriate. **No business logic**.
 
 ```java
 // GOOD: resource/UsersApiImpl.java
@@ -121,24 +119,27 @@ public class UsersApiImpl {
 
 **Location**: `usecase/`
 
-**Contains**: Business flow and authorization rules. **No SQL, no HTTP**.
+**Contains**: Business flow and authorization rules. **No SQL (use Mapper), no HTTP**.
 
 ```java
 // GOOD: usecase/RegistrationUseCase.java
 @ApplicationScoped
 public class RegistrationUseCase {
     
-    @Inject UserService userService;
-    @Inject EmailService emailService;
+    @Inject UserMapper userMapper;          // Direct Mapper access is acceptable
+    @Inject EmailService emailService;      // External service
     
     public User registerUser(String email, String password) {
         // Authorization check (USECASE)
-        if (userService.emailExists(email)) {
+        if (userMapper.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already exists");
         }
         
-        // Technical work (delegates to Service)
-        User user = userService.createUser(email, password);
+        // Create user entity directly
+        User user = new User();
+        user.setEmail(email);
+        user.setPasswordHash(hashPassword(password));
+        userMapper.insert(user);
         
         // Post-action (FLOW)
         emailService.sendWelcome(email);
@@ -183,53 +184,56 @@ public class UserService {
 
 ### Rule 5: Mapper = SQL Only
 
-**Location**: `mapper/` (interface) + `src/main/resources/mapper/` (XML)
+**Location**: `mapper/`
 
-**Contains**: Database operations only. **No business logic**.
+**Contains**: Database operations only using Java annotations. **No business logic**.
 
 ```java
 // GOOD: mapper/UserMapper.java
 @Mapper
 public interface UserMapper {
+    
+    @Select("SELECT * FROM users WHERE id = #{id}")
     Optional<User> findById(Long id);
+    
+    @Select("SELECT * FROM users WHERE email = #{email}")
     Optional<User> findByEmail(String email);
+    
+    @Insert("INSERT INTO users (email, password_hash, created_at) VALUES (#{email}, #{passwordHash}, #{createdAt})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(User user);
+    
+    @Update("UPDATE users SET email = #{email}, password_hash = #{passwordHash}, updated_at = NOW() WHERE id = #{id}")
     void update(User user);
+    
+    @Delete("DELETE FROM users WHERE id = #{id}")
     void delete(Long id);
 }
 ```
 
-```xml
-<!-- GOOD: resources/mapper/UserMapper.xml -->
-<mapper namespace="app.aoki.quarkuscrud.mapper.UserMapper">
-    <select id="findById" resultType="User">
-        SELECT * FROM users WHERE id = #{id}
-    </select>
-    
-    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO users (email, password_hash, created_at)
-        VALUES (#{email}, #{passwordHash}, #{createdAt})
-    </insert>
-</mapper>
-```
+### Rule 6: Error Handling = Match the Project Structure
 
-### Rule 6: Exception = Error Handling
+**Location**: There is no dedicated `exception/` package in this project.
 
-**Location**: `exception/`
-
-**Contains**: Custom exceptions that represent business errors.
+**Contains**: Error handling is split by responsibility: exception mappers live in `support/`, and some feature-specific exceptions are defined close to the service or use case that uses them.
 
 ```java
-// GOOD: exception/UserNotFoundException.java
-public class UserNotFoundException extends RuntimeException {
-    private final Long userId;
-    
-    public UserNotFoundException(Long userId) {
-        super("User not found: " + userId);
-        this.userId = userId;
+// GOOD: support/WebApplicationExceptionMapper.java
+@Provider
+public class WebApplicationExceptionMapper implements ExceptionMapper<WebApplicationException> {
+    @Override
+    public Response toResponse(WebApplicationException exception) {
+        return exception.getResponse();
     }
-    
-    public Long getUserId() { return userId; }
+}
+```
+
+```java
+// ALSO USED: usecase/LlmUseCase.java
+public static class RateLimitExceededException extends RuntimeException {
+    public RateLimitExceededException(String message) {
+        super(message);
+    }
 }
 ```
 
@@ -237,7 +241,7 @@ public class UserNotFoundException extends RuntimeException {
 
 **Location**: `support/`
 
-**Contains**: Authentication context, utility methods, shared helpers.
+**Contains**: Authentication context, utility methods, shared helpers, exception mappers.
 
 ```java
 // GOOD: support/AuthenticatedUser.java
@@ -261,10 +265,10 @@ public class AuthenticatedUser {
 |-----------|-------------------|----------|----------|
 | Entity | "What data?" | `entity/` | Fields, getters, setters |
 | Resource | "HTTP endpoint?" | `resource/` | REST handlers, delegation |
-| UseCase | "What flow? Who can?" | `usecase/` | Flow, authorization |
-| Service | "How to do?" | `service/` | Technical operations |
+| UseCase | "What flow? Who can?" | `usecase/` | Flow, authorization, may call Mapper or Service |
+| Service | "How to do?" | `service/` | Technical operations (reusable) |
 | Mapper | "SQL query?" | `mapper/` | Database operations |
-| Exception | "What error?" | `exception/` | Error types |
+| Error handling | "What error happened?" | `support/` or near the owning `service/` / `usecase/` | Exception mappers and project-local error types |
 | Support | "Shared utility?" | `support/` | Cross-cutting concerns |
 
 ## Exercise 4.1: File Placement Quiz
@@ -322,7 +326,7 @@ throw new UserBannedException(userId, eventId);
 
 ## Discussion Questions
 
-1. Why do you think we separate entity from dto?
+1. Why do you think we separate entity classes from API request/response models?
 2. What would happen if UseCase put SQL in its code?
 3. Can you think of a reason why Service should NOT make authorization decisions?
 

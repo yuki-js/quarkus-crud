@@ -46,13 +46,11 @@
 ```
 src/main/java/app/aoki/quarkuscrud/
 ├── entity/              # Plain data objects (fields + getters/setters)
-├── dto/                 # Request/Response objects
 ├── resource/            # REST endpoints (@Path, @GET, @POST)
 ├── service/             # Business logic (technical "how")
 ├── usecase/             # Business logic (flow + authorization)
 ├── mapper/              # MyBatis interfaces (SQL operations)
-├── exception/           # Custom exceptions
-└── support/            # Utilities, auth context
+└── support/             # Utilities, auth context, exception mappers
 ```
 
 ---

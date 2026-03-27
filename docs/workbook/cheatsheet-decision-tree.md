@@ -149,6 +149,7 @@ Use this decision tree to find the right layer for any piece of code.
 | Business logic in Resource | UseCase | Resource should only delegate |
 | Calculations in Entity | Service | Data objects shouldn't compute |
 | HTTP handling in UseCase | Resource | HTTP is Resource responsibility |
+| UseCase calling Service that just wraps Mapper | UseCase calling Mapper directly | Unnecessary indirection |
 
 ---
 

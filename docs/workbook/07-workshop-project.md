@@ -186,18 +186,9 @@ Add to `src/main/java/app/aoki/quarkuscrud/mapper/UserMapper.java`:
 public interface UserMapper {
     // ... existing methods
     
+    @Update("UPDATE users SET avatar_url = #{avatarUrl}, updated_at = NOW() WHERE id = #{id}")
     void updateAvatarUrl(@Param("id") Long id, @Param("avatarUrl") String avatarUrl);
 }
-```
-
-Add to `src/main/resources/mapper/UserMapper.xml`:
-
-```xml
-<update id="updateAvatarUrl">
-    UPDATE users 
-    SET avatar_url = #{avatarUrl}, updated_at = NOW()
-    WHERE id = #{id}
-</update>
 ```
 
 ### Step 6: Create Service

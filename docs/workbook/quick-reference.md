@@ -18,8 +18,7 @@ src/main/java/app/aoki/quarkuscrud/
 ├── service/          # Technical "how"
 ├── usecase/          # Flow + authorization
 ├── mapper/           # MyBatis interfaces
-├── exception/        # Custom exceptions
-└── support/          # Utilities, context
+└── support/          # Utilities, context, exception mappers
 ```
 
 ## The Golden Rules
@@ -98,14 +97,14 @@ When something breaks:
 ## Schema-First Workflow
 
 ```bash
-# 1. Edit OpenAPI YAML
+# 1. Edit source OpenAPI YAML under openapi/
 vim openapi/paths/users.yaml
 vim openapi/components/schemas/user.yaml
 
-# 2. Compile spec
+# 2. Compile source spec to build/openapi-compiled/openapi.yaml
 ./gradlew compileOpenApi
 
-# 3. Generate code
+# 3. Generate code from the compiled spec
 ./gradlew generateOpenApiModels
 
 # 4. Implement interface
@@ -123,4 +122,4 @@ Is it database? → Repository/Mapper
 Is it authorization? → UseCase
 Is it reusable technical logic? → Service
 Is it just data? → Entity
-Is it an error? → Exception
+Is it an error? → `support/` for exception mappers, otherwise keep the error type near the owning `usecase/` or `service/`

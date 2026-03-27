@@ -6,73 +6,50 @@
 
 **1. What's the endpoint path?**
 
-Based on `FriendshipsApiImpl.java`:
+For the friendship creation flow, the endpoint is:
 
 ```
-POST /api/friendships/{otherUserId}
-GET /api/friendships/{otherUserId}
-PUT /api/friendships/{otherUserId}
-GET /api/me/friendships/received
 POST /api/users/{userId}/friendship
 ```
 
-**2. Which UseCase handles it?**
+Related friendship endpoints in this repository also include `GET /api/friendships/{otherUserId}` and `GET /api/me/friendships/received`.
 
-Looking at `FriendshipsApiImpl.java`:
+**2. Which class handles the friendship logic after the API resource?**
 
-```java
-@Inject FriendshipUseCase friendshipUseCase;
-```
+Start in `FriendshipsApiImpl.java`, then follow the creation flow into `FriendshipUseCase.java`.
 
-The `FriendshipUseCase` handles friendship business logic.
+The practical chain is:
+
+`FriendshipsApiImpl` → `FriendshipUseCase` → `FriendshipService` → `FriendshipMapper`
+
+`FriendshipUseCase` owns the flow, while `FriendshipService` performs the reusable technical friendship operations.
 
 **3. What authorization checks are made?**
 
-In `FriendshipUseCase.java`:
+For the creation endpoint itself, the main access control is that the caller must already be authenticated.
 
-```java
-public Friendship getFriendshipByOtherUser(Long requestingUserId, Long otherUserId) {
-    // Check if friendship exists
-    Friendship friendship = friendshipMapper
-        .findBySenderAndRecipient(requestingUserId, otherUserId)
-        .orElseThrow(() -> new IllegalArgumentException("Friendship not found"));
-    
-    // Only sender can view the friendship details
-    if (!friendship.getSenderId().equals(requestingUserId)) {
-        throw new SecurityException("You can only view your own friendships");
-    }
-    
-    return friendship;
-}
-```
+Within the current creation flow:
+- `FriendshipsApiImpl` requires authentication
+- the sender user ID comes from the authenticated context, not from the request body
+- `FriendshipUseCase` validates that the recipient user exists before creating or updating the friendship
 
-Authorization rules from `FriendshipUseCase`:
-- Only the sender can view friendship details
-- Only sender can update friendship metadata
-- Receiver can mark friendship as received
+There is no extra explicit sender-vs-recipient authorization rule in the create flow beyond using the authenticated user as the sender.
 
 **4. What Service methods are called?**
 
-Looking at `FriendshipUseCase`:
+In the current create-or-update flow, `FriendshipUseCase` calls these methods from `FriendshipService.java`:
 
 ```java
-@Inject FriendshipMapper friendshipMapper;
-@Inject UserMapper userMapper;
+findByParticipants(senderId, recipientId);
+createFriendship(senderId, recipientId, meta);
+updateMeta(friendshipId, meta);
 ```
 
-The "services" are actually mappers in this template (MyBatis):
-
-```java
-friendshipMapper.findBySenderAndRecipient(senderId, recipientId);
-friendshipMapper.findByRecipient(recipientId);
-friendshipMapper.insert(friendship);
-friendshipMapper.update(friendship);
-userMapper.findById(userId);
-```
+The UseCase also calls `UserService.findById(recipientId)` to verify that the target user exists.
 
 **5. What database tables are affected?**
 
-From the SQL in `FriendshipMapper.xml`:
+From the SQL in `FriendshipMapper.java` (using @Select annotation):
 
 ```sql
 CREATE TABLE friendships (
@@ -102,52 +79,33 @@ Search in `resource/` folder for the API endpoint:
 grep -r "friendships" src/main/java/app/aoki/quarkuscrud/resource/
 ```
 
-### Step 2: Find the UseCase
+### Step 2: Find the Friendship Logic
 
-Look at the Resource class for `@Inject` fields:
-
-```java
-@Inject FriendshipUseCase friendshipUseCase;
-```
+Look at the Resource class first, then trace the feature into `FriendshipUseCase.java`.
 
 ### Step 3: Follow the Chain
 
-In the Resource method:
-
-```java
-public Response getFriendshipByOtherUser(Long otherUserId) {
-    User user = authenticatedUser.get();
-    return friendshipUseCase.getFriendshipByOtherUser(user.getId(), otherUserId);
-}
-```
+For this feature, follow the path from `FriendshipsApiImpl.java` into `FriendshipUseCase.java`, then into `FriendshipService.java`.
 
 ### Step 4: Check Authorization
 
-In the UseCase method:
-
-```java
-if (!friendship.getSenderId().equals(requestingUserId)) {
-    throw new SecurityException("You can only view your own friendships");
-}
-```
+Check the authenticated resource methods in `FriendshipsApiImpl.java` and any related friendship-handling code they call.
 
 ### Step 5: Find Data Access
 
-In the UseCase:
+In `FriendshipUseCase.java` and `FriendshipService.java`, look for calls into `FriendshipMapper`, such as:
 
 ```java
-friendshipMapper.findBySenderAndRecipient(requestingUserId, otherUserId);
+friendshipMapper.findByParticipants(userId1, userId2);
 ```
 
 ### Step 6: Check SQL
 
-In `src/main/resources/mapper/FriendshipMapper.xml`:
+In `src/main/java/app/aoki/quarkuscrud/mapper/FriendshipMapper.java`:
 
-```xml
-<select id="findBySenderAndRecipient" resultType="Friendship">
-    SELECT * FROM friendships 
-    WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}
-</select>
+```java
+@Select("SELECT * FROM friendships WHERE sender_id = #{senderId} AND recipient_id = #{recipientId}")
+Optional<Friendship> findBySenderAndRecipient(@Param("senderId") Long senderId, @Param("recipientId") Long recipientId);
 ```
 
 ---
@@ -163,8 +121,8 @@ Still stuck?
    grep -r "friendship" src/
    ```
 
-3. **Hint 3**: Look for `@Inject` in the Resource to find which UseCase/Service it uses.
+3. **Hint 3**: Look for the friendship-related class used after the Resource. For this feature, that means tracing into `FriendshipUseCase.java` first.
 
-4. **Hint 4**: In UseCase, look for `SecurityException` for authorization logic.
+4. **Hint 4**: In the friendship flow, check authenticated resource methods and related UseCase logic for authorization behavior.
 
-5. **Hint 5**: In UseCase, look for `@Transactional` for data modification logic.
+5. **Hint 5**: In `FriendshipService.java`, look for `@Transactional` methods for data modification logic.

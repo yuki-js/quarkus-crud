@@ -17,7 +17,7 @@ Here's how we organize code in this template:
 │   "The Receptionist / Traffic Cop"                          │
 │   - Handles HTTP requests/responses                         │
 │   - Parses input, formats output                            │
-│   - Delegates to UseCase layer                              │
+│   - Delegates to UseCase or Service layer                   │
 │   - NOTHING ELSE                                             │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -26,11 +26,12 @@ Here's how we organize code in this template:
 │                       USECASE LAYER                         │
 │                                                             │
 │   "The Concierge / Coordinator"                             │
-│   - Contains BUSINESS LOGIC FLOW                            │
+│   - Contains BUSINESS LOGIC FLOW                             │
 │   - Handles AUTHORIZATION (who can do what)                 │
-│   - Orchestrates multiple services                         │
+│   - Orchestrates multiple services                          │
 │   - Transaction boundaries                                  │
-│   - NO database queries                                      │
+│   - May call Service OR Mapper directly                    │
+│     (Use Mapper for simple CRUD, Service for complex logic) │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -189,10 +190,9 @@ public interface UserMapper {
 ```
 
 **Notice**: The Repository layer:
-- Is a MyBatis mapper interface
+- Is a MyBatis mapper interface with Java annotations
 - Contains NO business logic
-- Just defines data access methods
-- SQL is in the corresponding XML file
+- Just defines data access methods with @Select, @Insert, etc.
 
 ## Exercise 2.1: Layer Identification
 
@@ -245,17 +245,16 @@ public OrderResult createOrder(Long userId, Long productId, Integer quantity) {
 
 ## The Dependency Rule
 
-Here's an important principle: **Layers only depend on the layer below them**.
+Here's an important principle: **Dependencies should flow downward, not upward**.
 
 ```
 Resource → UseCase → Service → Repository
-   ↑          ↑         ↑         ↓
-   └──────────┴─────────┴─────────┘
-         (Dependency flows DOWN)
+Resource → Service → Repository
 ```
 
 This means:
-- Resource can call UseCase
+- Resource can call UseCase for business flows
+- Resource can call Service directly for simple operations
 - UseCase can call Service
 - Service can call Repository
 - But Service should NOT call Resource

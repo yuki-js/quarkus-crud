@@ -9,12 +9,14 @@ You should have completed these steps:
 In `openapi/components/schemas/user.yaml`, you added:
 
 ```yaml
-UserStatusUpdateRequest:
+UserAccountLifecycleUpdateRequest:
   type: object
+  required:
+    - accountLifecycle
   properties:
-    status:
+    accountLifecycle:
       type: string
-      enum: [ACTIVE, SUSPENDED]
+      enum: [created, provisioned, active, paused, deleted]
 ```
 
 ### Step 2: Path Added
@@ -22,12 +24,12 @@ UserStatusUpdateRequest:
 In `openapi/paths/users.yaml`, you added:
 
 ```yaml
-/api/users/{userId}/status:
+/api/users/{userId}/account-lifecycle:
   patch:
     tags:
       - Users
-    summary: Update user status
-    operationId: updateUserStatus
+    summary: Update user account lifecycle
+    operationId: updateUserAccountLifecycle
     parameters:
       - name: userId
         in: path
@@ -40,15 +42,17 @@ In `openapi/paths/users.yaml`, you added:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/user.yaml#/UserStatusUpdateRequest'
+            $ref: '../components/schemas/user.yaml#/UserAccountLifecycleUpdateRequest'
     responses:
       '200':
-        description: Status updated
+        description: Account lifecycle updated
       '403':
         description: Not authorized
       '404':
         description: User not found
 ```
+
+And because this repository uses a modular root spec, you also registered the path in `openapi/openapi.yaml`.
 
 ### Step 3: Generate Code
 
@@ -57,20 +61,20 @@ You ran:
 ./gradlew compileOpenApi generateOpenApiModels
 ```
 
+`compileOpenApi` reads the source spec at `openapi/openapi.yaml` and writes the compiled spec to `build/openapi-compiled/openapi.yaml`. `generateOpenApiModels` then generates code from that compiled spec.
+
 ### Step 4: Implementation
 
 The generated interface method looks like:
 
 ```java
-@Path("/api")
 public interface UsersApi {
     @PATCH
-    @Path("/users/{userId}/status")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response updateUserStatus(
+    Response updateUserAccountLifecycle(
         @PathParam("userId") Long userId,
-        UserStatusUpdateRequest request
+        UserAccountLifecycleUpdateRequest request
     );
 }
 ```
@@ -81,25 +85,20 @@ You would implement it in `UsersApiImpl.java`:
 @Override
 @Authenticated
 @PATCH
-@Path("/users/{userId}/status")
+@Path("/users/{userId}/account-lifecycle")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public Response updateUserStatus(
+public Response updateUserAccountLifecycle(
         @PathParam("userId") Long userId,
-        UserStatusUpdateRequest request) {
-    
-    User user = authenticatedUser.get();
-    
-    // Authorization: Only admins or the user themselves
-    if (!user.isAdmin() && !user.getId().equals(userId)) {
-        return Response.status(Response.Status.FORBIDDEN)
-            .entity(new ErrorResponse("Not authorized"))
-            .build();
-    }
-    
+        UserAccountLifecycleUpdateRequest request) {
+
     try {
-        userUseCase.updateUserStatus(userId, request.getStatus());
+        userUseCase.updateAccountLifecycle(userId, request.getAccountLifecycle());
         return Response.ok().build();
+    } catch (SecurityException e) {
+        return Response.status(Response.Status.FORBIDDEN)
+            .entity(new ErrorResponse(e.getMessage()))
+            .build();
     } catch (IllegalArgumentException e) {
         return Response.status(Response.Status.NOT_FOUND)
             .entity(new ErrorResponse(e.getMessage()))
@@ -108,28 +107,30 @@ public Response updateUserStatus(
 }
 ```
 
+Notice that the Resource still stays thin. It delegates the authorization and business rule decisions to the UseCase instead of hard-coding project-specific role checks in the endpoint.
+
 ---
 
 ## Common Mistakes
 
 ### Mistake 1: Forgetting to Run Gradle Tasks
 
-After modifying YAML, you MUST run:
+After modifying the source YAML under `openapi/`, you MUST run:
 ```bash
 ./gradlew compileOpenApi generateOpenApiModels
 ```
 
-If you forget, you'll get compilation errors because the generated classes don't exist.
+`compileOpenApi` refreshes `build/openapi-compiled/openapi.yaml`, and `generateOpenApiModels` uses that compiled spec to regenerate the classes. If you forget, you'll get compilation errors because the generated classes don't exist.
 
 ### Mistake 2: Wrong Ref Path
 
 Make sure your `$ref` paths are correct:
 ```yaml
 # Correct
-$ref: '../components/schemas/user.yaml#/UserStatusUpdateRequest'
+$ref: '../components/schemas/user.yaml#/UserAccountLifecycleUpdateRequest'
 
 # Wrong (missing ../)
-$ref: 'components/schemas/user.yaml#/UserStatusUpdateRequest'
+$ref: 'components/schemas/user.yaml#/UserAccountLifecycleUpdateRequest'
 ```
 
 ### Mistake 3: Putting Implementation in Resource
@@ -139,19 +140,18 @@ Remember: Resource should be THIN. Don't put business logic there:
 ```java
 // WRONG - business logic in resource
 @Patch
-public Response updateUserStatus(Long userId, Request req) {
+public Response updateUserAccountLifecycle(Long userId, Request req) {
     User user = userMapper.findById(userId);
     if (user == null) throw new IllegalArgumentException();
-    if (!user.isAdmin()) throw new SecurityException();
-    user.setStatus(req.getStatus());
+    user.setAccountLifecycle(req.getAccountLifecycle());
     userMapper.update(user);
     return ok();
 }
 
 // RIGHT - delegation
 @Patch
-public Response updateUserStatus(Long userId, Request req) {
-    return userUseCase.updateStatus(userId, req.getStatus());
+public Response updateUserAccountLifecycle(Long userId, Request req) {
+    return userUseCase.updateAccountLifecycle(userId, req.getAccountLifecycle());
 }
 ```
 
